@@ -1,0 +1,13 @@
+(executable
+ (public_name absint)
+ (name main)
+ (modules ast lexer main parser )
+ (libraries base stdio stdlib)
+ (preprocess
+  (pps ppx_jane ppx_sexp_conv)))
+
+(ocamllex lexer)
+
+(menhir
+ (modules parser))
+
