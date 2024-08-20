@@ -1,4 +1,5 @@
-Implementing an RDMS from scratch in OCaml.
+Implementing an Relational Database Management System (RDBMS)
+from scratch in OCaml.
 
 First goal:
 
