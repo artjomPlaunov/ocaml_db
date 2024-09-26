@@ -1,4 +1,0 @@
-(lang dune 3.16)
-(name ocaml_db)
-(sections (lib .) (bin ../../bin))
-(files (lib (META dune-package opam)) (bin (ocaml_db)))
