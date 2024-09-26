@@ -1,1 +1,3 @@
-let () = print_endline "Hello, World!"
+let _blk = Block.make "testfile" 2 in
+()
+

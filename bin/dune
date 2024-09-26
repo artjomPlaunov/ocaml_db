@@ -1,4 +1,10 @@
 (executable
  (public_name ocaml_db)
  (name main)
- (libraries ocaml_db))
+ (modules 
+  block
+  main
+  page
+ )
+ (libraries stdlib)
+)
