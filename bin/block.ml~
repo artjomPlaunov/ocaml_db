@@ -1,4 +1,0 @@
-type t = Filename * int
-
-let file_name (f,_) = f
-

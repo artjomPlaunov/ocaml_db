@@ -1,3 +1,0 @@
-type t
-
-val file_name : t -> Stdlib.Filename
