@@ -1,13 +1,4 @@
 (executable
- (public_name absint)
+ (public_name ocaml_db)
  (name main)
- (modules ast lexer main parser )
- (libraries base stdio stdlib)
- (preprocess
-  (pps ppx_jane ppx_sexp_conv)))
-
-(ocamllex lexer)
-
-(menhir
- (modules parser))
-
+ (libraries ocaml_db))
