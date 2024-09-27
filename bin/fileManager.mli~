@@ -1,3 +1,0 @@
-type t
-
-val make : Unix.dir_handle -> int -> t
