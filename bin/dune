@@ -5,6 +5,7 @@
   block
   main
   page
+  fileManager
  )
- (libraries stdlib)
+ (libraries stdlib unix)
 )

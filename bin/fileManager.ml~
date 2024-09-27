@@ -1,0 +1,7 @@
+type t = {
+     db_dir	: Unix.dir_handle
+     blocksize	: int
+}
+
+
+
