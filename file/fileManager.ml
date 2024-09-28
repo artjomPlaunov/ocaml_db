@@ -1,8 +1,7 @@
-open Unix
 
 type t = {
     _is_new     : bool;
-    _db_dir	    : dir_handle;
+    _db_dir	    : Unix.dir_handle;
      db_dirname  : string;
      blocksize	  : int;
    }
@@ -13,7 +12,7 @@ exception FileMgrReadErr
 
 let rec clean_temp_dirs db_dirname db_dir = 
   try 
-    let cur_file = readdir db_dir in
+    let cur_file = Unix.readdir db_dir in
     if String.length cur_file >= 4 && (String.sub cur_file 0 4) = "temp"
     then
       let _ = Sys.remove (Filename.concat db_dirname cur_file) in
@@ -28,22 +27,22 @@ let make db_dirname blocksize =
   (* Create open file handler for DB directory *)
   let (_db_dir, _is_new) =
     try
-      let stat = stat db_dirname in
+      let stat = Unix.stat db_dirname in
       if stat.st_kind = Unix.S_DIR
       then
-        (opendir db_dirname, false)
+        (Unix.opendir db_dirname, false)
       else
         raise InitDbErr
     with
     (* If it doesn't exist already, create it. *)
-    | Unix_error (Unix.ENOENT,_,_) ->
-      let _ = mkdir db_dirname 0o755 in
-      (opendir db_dirname, true)
+    | Unix.Unix_error (Unix.ENOENT,_,_) ->
+      let _ = Unix.mkdir db_dirname 0o755 in
+      (Unix.opendir db_dirname, true)
     | _ -> raise InitDbErr 
   in
   (* Remove leftover temporary tables. *)
   let _ = clean_temp_dirs db_dirname _db_dir in
-  let _ = rewinddir _db_dir in 
+  let _ = Unix.rewinddir _db_dir in 
   { _is_new; _db_dir; db_dirname; blocksize; }
 
 let is_new file_mgr = file_mgr._is_new
@@ -52,13 +51,15 @@ let get_blocksize file_mgr = file_mgr.blocksize
 
 let get_file file_mgr fname = 
   let full_path = Filename.concat file_mgr.db_dirname fname in 
-  openfile full_path [O_RDWR; O_CREAT; O_SYNC] 0o640
+  Unix.openfile full_path Unix.([O_RDWR; O_CREAT; O_SYNC]) 0o755
+
 
 let read file_mgr block page = 
   let open BlockId in 
   let fd = get_file file_mgr (file_name block) in 
   let offset = (block_num block) * file_mgr.blocksize in 
-  let n = read fd (Page.contents page) offset (file_mgr.blocksize) in
+  let _ = Unix.lseek fd offset SEEK_SET in 
+  let n = Unix.read fd (Page.contents page) 0 (file_mgr.blocksize) in
   if n <> file_mgr.blocksize then raise FileMgrReadErr else ()
 
 (*  Since Unix.write doesn't guarantee writing all n bytes, 
@@ -71,17 +72,18 @@ let read file_mgr block page =
 let rec write_n fd page offset n = 
   if n = 0 then ()
   else 
-    let bytes_written = write fd page offset n in
+    let bytes_written = Unix.write fd page offset n in
     write_n fd page (offset + bytes_written) (n - bytes_written)
 
 let write file_mgr block page = 
   let open BlockId in 
   let fd = get_file file_mgr (file_name block) in 
-  let offset = (block_num block) * file_mgr.blocksize in 
-  write_n fd (Page.contents page) offset (file_mgr.blocksize) 
+  let offset = (block_num block) * file_mgr.blocksize in
+  let _ = Unix.lseek fd offset SEEK_SET in 
+  write_n fd (Page.contents page) 0 (file_mgr.blocksize) 
 
 let size file_mgr fname =
-  let stat = stat fname in 
+  let stat = Unix.stat fname in 
   stat.st_size / file_mgr.blocksize
 
 let append file_mgr fname = 
