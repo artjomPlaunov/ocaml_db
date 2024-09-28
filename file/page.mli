@@ -1,6 +1,5 @@
 type t
   
-(* initialize page of blocksize. *)
 val make : int -> t
 
 val get_int32 : t -> int -> int32
