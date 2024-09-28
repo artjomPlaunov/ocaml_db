@@ -1,7 +1,7 @@
 module To_test = struct
   let test1 = 
     let f_mgr = File.FileManager.make "db_test" 400 in
-    let block = File.BlockId.make "testfile" 0 in 
+    let block = File.BlockId.make "testfile" 100 in 
     let p1 = File.Page.make (File.FileManager.get_blocksize f_mgr) in 
     let pos1 = 88 in
     let _ = File.Page.set_string p1 pos1 "abcdefghijklm" in 

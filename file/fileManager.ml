@@ -90,7 +90,7 @@ let size file_mgr fname =
 let append file_mgr fname = 
   let block_num = size file_mgr fname in 
   let block = BlockId.make fname block_num in 
-  let b = Bytes.make file_mgr.blocksize '0' in 
+  let b = Bytes.make file_mgr.blocksize '\000' in 
   let fd = get_file file_mgr fname in 
   let _ = write_n fd b (block_num * file_mgr.blocksize) file_mgr.blocksize in
   block
