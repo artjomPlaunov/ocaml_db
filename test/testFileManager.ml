@@ -26,6 +26,9 @@ module To_test = struct
     let page2 = File.Page.make blocksize in 
     let _ = File.FileManager.read f_mgr block page2 in 
     Printf.sprintf "offset %d contains %s" pos1 (File.Page.get_string page2 pos1)
+
+    let test3 =
+      LogManager.test "hello"
   end
 
 
@@ -35,11 +38,17 @@ let test1 () =
 let test2 () = 
   Alcotest.(check string) "same string" "offset 4091 contains a" (To_test.test2)
 
+let test3 () = 
+  Alcotest.(check string) "same string" "hello" (To_test.test3)
+
 let () = 
   let open Alcotest in 
-  run "FileManager" [
-    "simple tests", [
+  run "AllTests" [
+    "FileManager", [
       test_case "Test 1" `Quick test1;
       test_case "Test 2" `Quick test2;
+    ];
+    "LogManager", [
+      test_case "Test 3" `Quick test3;
     ];
   ]

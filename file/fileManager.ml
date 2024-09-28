@@ -83,12 +83,12 @@ let write file_mgr block page =
   write_n fd (Page.contents page) 0 (file_mgr.blocksize) 
 
 let size file_mgr fname =
-  let stat = Unix.stat fname in 
+  let full_path = (Filename.concat file_mgr.db_dirname fname) in
+  let stat = Unix.stat full_path in 
   stat.st_size / file_mgr.blocksize
 
 let append file_mgr fname = 
-  let full_path = (Filename.concat file_mgr.db_dirname fname) in 
-  let block_num = size file_mgr full_path in 
+  let block_num = size file_mgr fname in 
   let block = BlockId.make fname block_num in 
   let b = Bytes.make file_mgr.blocksize '0' in 
   let fd = get_file file_mgr fname in 

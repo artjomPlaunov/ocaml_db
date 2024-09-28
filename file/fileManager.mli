@@ -7,3 +7,4 @@ val get_file : t -> string -> Unix.file_descr
 val read : t -> BlockId.t -> Page.t -> unit
 val write : t -> BlockId.t -> Page.t -> unit 
 val append : t -> string -> BlockId.t
+val size : t -> string -> int
