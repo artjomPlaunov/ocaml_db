@@ -1,4 +1,4 @@
 (test
- (name test_file)
- (modules test_file)
+ (name test_file_manager)
+ (modules test_file_manager)
  (libraries file alcotest))

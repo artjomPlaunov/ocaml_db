@@ -1,6 +1,6 @@
 type t = bytes
 
-let make blocksize = Bytes.make blocksize '0'
+let make blocksize = Bytes.make blocksize '\000'
 
 let get_int32 page offset = Bytes.get_int32_ne page offset
 
