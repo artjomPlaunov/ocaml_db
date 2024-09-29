@@ -1,16 +1,16 @@
 module To_test = struct
   let test1 =
-    let f_mgr = File.FileManager.make "db_test" 400 in
-    let block = File.BlockId.make "testfile" 100 in
-    let p1 = File.Page.make (File.FileManager.get_blocksize f_mgr) in
+    let f_mgr = File.File_manager.make ~db_dirname:"db_test" ~block_size:400 in
+    let block = File.Block_id.make ~filename:"testfile" ~block_num:100 in
+    let p1 = File.Page.make (File.File_manager.get_blocksize f_mgr) in
     let pos1 = 88 in
     let _ = File.Page.set_string p1 pos1 "abcdefghijklm" in
     let size = File.Page.max_len (String.length "abcdefghijklm") in
     let pos2 = pos1 + size in
     let _ = File.Page.set_int32 p1 pos2 (Int32.of_int 69) in
-    let _ = File.FileManager.write f_mgr block p1 in
-    let p2 = File.Page.make (File.FileManager.get_blocksize f_mgr) in
-    let _ = File.FileManager.read f_mgr block p2 in
+    let _ = File.File_manager.write f_mgr block p1 in
+    let p2 = File.Page.make (File.File_manager.get_blocksize f_mgr) in
+    let _ = File.File_manager.read f_mgr block p2 in
     let s1 =
       Printf.sprintf "offset %d contains %d," pos2
         (Int32.to_int (File.Page.get_int32 p2 pos2))
@@ -22,19 +22,19 @@ module To_test = struct
     s1 ^ s2
 
   let test2 =
-    let f_mgr = File.FileManager.make "db" 4096 in
-    let blocksize = File.FileManager.get_blocksize f_mgr in
-    let block = File.BlockId.make "tbl1" 2 in
+    let f_mgr = File.File_manager.make ~db_dirname:"db" ~block_size:4096 in
+    let blocksize = File.File_manager.get_blocksize f_mgr in
+    let block = File.Block_id.make ~filename:"tbl1" ~block_num:2 in
     let page1 = File.Page.make blocksize in
     let pos1 = 4091 in
     let _ = File.Page.set_string page1 pos1 "a" in
-    let _ = File.FileManager.write f_mgr block page1 in
+    let _ = File.File_manager.write f_mgr block page1 in
     let page2 = File.Page.make blocksize in
-    let _ = File.FileManager.read f_mgr block page2 in
+    let _ = File.File_manager.read f_mgr block page2 in
     Printf.sprintf "offset %d contains %s" pos1
       (File.Page.get_string page2 pos1)
 
-  let test3 = LogManager.test "hello"
+  let test3 = LogManager.Log_manager.test "hello"
 end
 
 let test1 () =
@@ -51,7 +51,7 @@ let () =
   let open Alcotest in
   run "AllTests"
     [
-      ( "FileManager",
+      ( "File_manager",
         [ test_case "Test 1" `Quick test1; test_case "Test 2" `Quick test2 ] );
       ("LogManager", [ test_case "Test 3" `Quick test3 ]);
     ]
