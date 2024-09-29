@@ -1,0 +1,8 @@
+(library
+ (name buffer_manager)
+ (public_name ocaml_db.buffer_manager)
+ (modules buffer)
+ (flags
+  (-w -69)
+  (-w -26))
+ (libraries file unix logManager))
