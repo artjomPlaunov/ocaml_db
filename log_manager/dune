@@ -1,5 +1,6 @@
 (library
  (name logManager)
- (public_name ocaml_db.logManager)
+ (public_name ocaml_db.log_manager)
+ (modules log_iterator log_manager)
  (flags ( -w -69) (-w -26))
  (libraries file unix))
