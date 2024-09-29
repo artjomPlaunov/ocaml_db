@@ -1,4 +1,0 @@
-(library
- (name logManager)
- (public_name ocaml_db.logManager)
- (libraries file unix))

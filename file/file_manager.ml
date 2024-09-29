@@ -46,9 +46,8 @@ let get_file file_mgr fname =
   Unix.openfile full_path Unix.[ O_RDWR; O_CREAT; O_SYNC ] 0o755
 
 let read file_mgr block page =
-  let open BlockId in
-  let fd = get_file file_mgr (file_name block) in
-  let offset = block_num block * file_mgr.block_size in
+  let fd = get_file file_mgr (Block_id.file_name block) in
+  let offset = Block_id.block_num block * file_mgr.block_size in
   let _ = Unix.lseek fd offset SEEK_SET in
   let n = Unix.read fd (Page.contents page) 0 file_mgr.block_size in
   if n <> file_mgr.block_size then raise FileMgrReadErr else ()
@@ -67,9 +66,8 @@ let rec write_n fd page offset n =
     write_n fd page (offset + bytes_written) (n - bytes_written)
 
 let write file_mgr block page =
-  let open BlockId in
-  let fd = get_file file_mgr (file_name block) in
-  let offset = block_num block * file_mgr.block_size in
+  let fd = get_file file_mgr (Block_id.file_name block) in
+  let offset = Block_id.block_num block * file_mgr.block_size in
   let _ = Unix.lseek fd offset SEEK_SET in
   write_n fd (Page.contents page) 0 file_mgr.block_size
 
@@ -78,10 +76,10 @@ let size file_mgr fname =
   let stat = Unix.stat full_path in
   stat.st_size / file_mgr.block_size
 
-let append file_mgr fname =
-  let block_num = size file_mgr fname in
-  let block = BlockId.make fname block_num in
+let append file_mgr filename =
+  let block_num = size file_mgr filename in
+  let block = Block_id.make ~filename ~block_num in
   let b = Bytes.make file_mgr.block_size '\000' in
-  let fd = get_file file_mgr fname in
+  let fd = get_file file_mgr filename in
   let _ = write_n fd b (block_num * file_mgr.block_size) file_mgr.block_size in
   block

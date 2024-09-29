@@ -1,4 +1,5 @@
 (library
  (name file)
  (public_name ocaml_db.file)
+ (modules block_id file_manager page)
  (libraries unix))
