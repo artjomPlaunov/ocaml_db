@@ -64,3 +64,7 @@ let append log_mgr log_rec =
   let _ = Page.set_int32 log_mgr.log_page 0 (Int32.of_int rec_pos) in
   log_mgr.latest_lsn <- log_mgr.latest_lsn + 1;
   log_mgr.latest_lsn
+
+let get_iterator log_mgr =
+  let _ = flush_aux log_mgr in
+  Log_iterator.make log_mgr.file_manager log_mgr.cur_block
