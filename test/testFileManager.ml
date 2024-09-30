@@ -53,5 +53,5 @@ let () =
     [
       ( "File_manager",
         [ test_case "Test 1" `Quick test1; test_case "Test 2" `Quick test2 ] );
-      ("LogManager", [ test_case "Test 3" `Quick test3 ]);
+      ("Log_manager", [ test_case "Test 3" `Quick test3 ]);
     ]
