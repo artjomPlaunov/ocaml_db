@@ -1,4 +1,7 @@
 (test
  (name test_file_manager)
  (modules test_file_manager)
+  (flags
+  (-w -69)
+  (-w -26))
  (libraries file log_manager alcotest))

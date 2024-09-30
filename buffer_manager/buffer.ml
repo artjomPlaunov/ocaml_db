@@ -1,5 +1,5 @@
 open File
-open LogManager
+open Log_manager
 
 type t = {
   file_manager : File_manager.t;
