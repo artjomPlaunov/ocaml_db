@@ -9,10 +9,7 @@ type t = {
   mutable last_saved_lsn : int;
 }
 
-let test s = s
-
 let make ~file_manager ~log_file =
-  
   let blocksize = File_manager.get_blocksize file_manager in
   let log_page = Page.make blocksize in
   let log_size = File_manager.size file_manager log_file in

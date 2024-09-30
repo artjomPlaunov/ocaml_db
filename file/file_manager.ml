@@ -3,7 +3,7 @@ type t = {
   db_dir : Unix.dir_handle;
   db_dirname : string;
   block_size : int;
-  open_files : (string, Unix.file_descr) Hashtbl.t
+  open_files : (string, Unix.file_descr) Hashtbl.t;
 }
 
 exception InitDbErr
@@ -37,19 +37,19 @@ let make ~db_dirname ~block_size =
   (* Remove leftover temporary tables. *)
   clean_temp_dirs db_dirname db_dir;
   Unix.rewinddir db_dir;
-  let open_files = Hashtbl.create 10 in 
+  let open_files = Hashtbl.create 10 in
   { is_new; db_dir; db_dirname; block_size; open_files }
 
 let is_new file_mgr = file_mgr.is_new
 let get_blocksize file_mgr = file_mgr.block_size
 
-let get_file file_mgr fname =
-  match Hashtbl.find_opt file_mgr.open_files fname with 
-  | Some fd -> fd 
-  | None -> 
-      let full_path = Filename.concat file_mgr.db_dirname fname in
-      let fd = Unix.openfile full_path Unix.[ O_RDWR; O_CREAT; O_SYNC ] 0o755 in 
-      let _ = Hashtbl.add file_mgr.open_files fname fd in 
+let get_file file_mgr filename =
+  match Hashtbl.find_opt file_mgr.open_files filename with
+  | Some fd -> fd
+  | None ->
+      let full_path = Filename.concat file_mgr.db_dirname filename in
+      let fd = Unix.openfile full_path Unix.[ O_RDWR; O_CREAT; O_SYNC ] 0o755 in
+      let _ = Hashtbl.add file_mgr.open_files filename fd in
       fd
 
 let read file_mgr block page =
@@ -79,7 +79,7 @@ let write file_mgr block page =
   write_n fd (Page.contents page) 0 file_mgr.block_size
 
 let size file_mgr filename =
-  let _ = get_file file_mgr filename in 
+  let _ = get_file file_mgr filename in
   let full_path = Filename.concat file_mgr.db_dirname filename in
   let stat = Unix.stat full_path in
   stat.st_size / file_mgr.block_size
