@@ -36,7 +36,7 @@ let unpin buffer = buffer.pins <- buffer.pins - 1
 
 let flush buffer =
   if buffer.tx_num >= 0 then (
-    (* Log_manager.flush log_manager lsn; *)
+    Log_manager.flush buffer.log_manager buffer.lsn;
     File_manager.write buffer.file_manager buffer.block buffer.contents;
     unpin buffer)
 

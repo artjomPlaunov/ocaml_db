@@ -5,8 +5,8 @@ type t = {
   _log_file : string;
   _log_page : Page.t;
   _cur_block : Block_id.t ref;
-  _latest_lsn : int ref;
-  _last_saved_lsn : int ref;
+  mutable latest_lsn : int;
+  mutable last_saved_lsn : int;
 }
 
 let test s = s
@@ -27,9 +27,9 @@ let make _fm _log_file =
       b
   in
   let _cur_block = ref _cur_block in
-  let _latest_lsn = ref 0 in
-  let _last_saved_lsn = ref 0 in
-  { _fm; _log_file; _log_page; _cur_block; _latest_lsn; _last_saved_lsn }
+  let latest_lsn = 0 in
+  let last_saved_lsn = 0 in
+  { _fm; _log_file; _log_page; _cur_block; latest_lsn; last_saved_lsn }
 
 let append_new_block log_mgr =
   let log_page = log_mgr._log_page in
@@ -43,7 +43,9 @@ let flush_aux log_mgr =
   let _ =
     File_manager.write log_mgr._fm !(log_mgr._cur_block) log_mgr._log_page
   in
-  log_mgr._last_saved_lsn := !(log_mgr._latest_lsn)
+  log_mgr.last_saved_lsn <- log_mgr.latest_lsn
+
+let flush log_mgr lsn = if lsn >= log_mgr.latest_lsn then flush_aux log_mgr
 
 let append log_mgr log_rec =
   let boundary = ref 0 in
@@ -60,5 +62,5 @@ let append log_mgr log_rec =
   let recpos = !boundary - bytes_needed in
   let _ = Page.set_bytes log_mgr._log_page recpos log_rec in
   let _ = Page.set_int32 log_mgr._log_page 0 (Int32.of_int recpos) in
-  let _ = log_mgr._latest_lsn := !(log_mgr._latest_lsn) + 1 in
-  !(log_mgr._latest_lsn)
+  log_mgr.latest_lsn <- log_mgr.latest_lsn + 1;
+  log_mgr.latest_lsn
