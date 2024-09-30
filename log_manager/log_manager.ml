@@ -12,9 +12,11 @@ type t = {
 let test s = s
 
 let make ~file_manager ~log_file =
+  
   let blocksize = File_manager.get_blocksize file_manager in
   let log_page = Page.make blocksize in
   let log_size = File_manager.size file_manager log_file in
+
   let cur_block =
     if log_size = 0 then
       let block = File_manager.append file_manager log_file in
