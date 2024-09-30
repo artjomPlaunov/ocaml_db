@@ -1,6 +1,6 @@
 type t = {
-  _is_new : bool;
-  _db_dir : Unix.dir_handle;
+  is_new : bool;
+  db_dir : Unix.dir_handle;
   db_dirname : string;
   block_size : int;
 }
@@ -12,16 +12,16 @@ exception FileMgrReadErr
 let rec clean_temp_dirs db_dirname db_dir =
   try
     let cur_file = Unix.readdir db_dir in
-    if String.length cur_file >= 4 && String.sub cur_file 0 4 = "temp" then
-      let _ = Sys.remove (Filename.concat db_dirname cur_file) in
-      clean_temp_dirs db_dirname db_dir
+    if String.length cur_file >= 4 && String.sub cur_file 0 4 = "temp" then (
+      Sys.remove (Filename.concat db_dirname cur_file);
+      clean_temp_dirs db_dirname db_dir)
     else clean_temp_dirs db_dirname db_dir
   with End_of_file -> ()
 
 (* File Manager constructor. *)
 let make ~db_dirname ~block_size =
   (* Create open file handler for DB directory *)
-  let _db_dir, _is_new =
+  let db_dir, is_new =
     try
       let stat = Unix.stat db_dirname in
       if stat.st_kind = Unix.S_DIR then (Unix.opendir db_dirname, false)
@@ -34,11 +34,11 @@ let make ~db_dirname ~block_size =
     | _ -> raise InitDbErr
   in
   (* Remove leftover temporary tables. *)
-  let _ = clean_temp_dirs db_dirname _db_dir in
-  let _ = Unix.rewinddir _db_dir in
-  { _is_new; _db_dir; db_dirname; block_size }
+  clean_temp_dirs db_dirname db_dir;
+  Unix.rewinddir db_dir;
+  { is_new; db_dir; db_dirname; block_size }
 
-let is_new file_mgr = file_mgr._is_new
+let is_new file_mgr = file_mgr.is_new
 let get_blocksize file_mgr = file_mgr.block_size
 
 let get_file file_mgr fname =
@@ -81,5 +81,5 @@ let append file_mgr filename =
   let block = Block_id.make ~filename ~block_num in
   let b = Bytes.make file_mgr.block_size '\000' in
   let fd = get_file file_mgr filename in
-  let _ = write_n fd b (block_num * file_mgr.block_size) file_mgr.block_size in
+  write_n fd b (block_num * file_mgr.block_size) file_mgr.block_size;
   block
