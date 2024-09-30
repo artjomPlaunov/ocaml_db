@@ -1,4 +1,4 @@
 (test
- (name testFileManager)
- (modules testFileManager)
- (libraries file logManager alcotest))
+ (name test_file_manager)
+ (modules test_file_manager)
+ (libraries file log_manager alcotest))

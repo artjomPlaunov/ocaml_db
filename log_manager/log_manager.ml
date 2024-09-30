@@ -46,6 +46,8 @@ let flush_aux log_mgr =
 
 let flush log_mgr lsn = if lsn >= log_mgr.latest_lsn then flush_aux log_mgr
 
+(* append also returns the latest lsn *)
+(* TODO think about if we want to rename or separate out the lsn return *)
 let append log_mgr log_rec =
   let boundary = ref 0 in
   let _ = boundary := Int32.to_int (Page.get_int32 log_mgr.log_page 0) in
@@ -58,8 +60,8 @@ let append log_mgr log_rec =
       boundary := Int32.to_int (Page.get_int32 log_mgr.log_page 0)
     else ()
   in
-  let recpos = !boundary - bytes_needed in
-  let _ = Page.set_bytes log_mgr.log_page recpos log_rec in
-  let _ = Page.set_int32 log_mgr.log_page 0 (Int32.of_int recpos) in
+  let rec_pos = !boundary - bytes_needed in
+  let _ = Page.set_bytes log_mgr.log_page rec_pos log_rec in
+  let _ = Page.set_int32 log_mgr.log_page 0 (Int32.of_int rec_pos) in
   log_mgr.latest_lsn <- log_mgr.latest_lsn + 1;
   log_mgr.latest_lsn
