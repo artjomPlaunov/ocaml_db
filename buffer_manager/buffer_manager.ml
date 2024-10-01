@@ -1,21 +1,21 @@
 open File
 
 type t = {
-  mutable bufferpool : Db_buffer.t list;
+  mutable bufferpool : Db_buffer.t array;
   mutable num_available : int;
   max_wait_time : int;
 }
 
-let make ?(max_wait_time = 10000) ~file_manager ~log_manager ~num_buffers =
+let make ?(max_wait_time = 10000) ~file_manager ~log_manager ~num_buffers () =
   let bufferpool =
-    List.init num_buffers (fun i -> Db_buffer.make ~file_manager ~log_manager)
+    Array.init num_buffers (fun i -> Db_buffer.make ~file_manager ~log_manager)
   in
   { bufferpool; num_available = num_buffers; max_wait_time }
 
 let available buffer_manager = buffer_manager.num_available
 
 let flush_all buffer_manager tx_num =
-  List.iter
+  Array.iter
     (fun buffer ->
       if Db_buffer.modifying_tx buffer == tx_num then Db_buffer.flush buffer)
     buffer_manager.bufferpool
@@ -30,18 +30,13 @@ let timedout { max_wait_time; _ } start_time =
   max_wait_time < int_of_float time_now - start_time
 
 let find_buffer_opt buffer_mgr block =
-  List.find_opt
+  Array.find_opt
     (fun buffer -> Db_buffer.block buffer = block)
     buffer_mgr.bufferpool
 
-(* TODO change this implementation to use early return -- implement our own with_return *)
 let choose_unpinned_buffer_opt buffer_mgr =
-  let choices =
-    List.filter
-      (fun buffer -> Db_buffer.is_unpinned buffer)
-      buffer_mgr.bufferpool
-  in
-  if List.length choices = 0 then None else Some (List.hd choices)
+  Array.find_opt (fun buffer -> Db_buffer.is_unpinned buffer) buffer_mgr.bufferpool 
+
 
 let try_pinning_opt buffer_mgr block : Db_buffer.t option =
   let find_buf_opt = find_buffer_opt buffer_mgr block in
