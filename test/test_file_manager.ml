@@ -47,7 +47,6 @@ module To_test = struct
   let create_log_record str num =
     let num_pos = File.Page.max_len (String.length str) in
     let blocksize = num_pos + 4 in
-    let _ = Printf.printf "blocksize: %d\n" blocksize in 
     let page = File.Page.make blocksize in
     let _ = File.Page.set_string page 0 str in 
     let _ = File.Page.set_int32 page num_pos (Int32.of_int num) in 
@@ -85,11 +84,14 @@ module To_test = struct
 
   let test3 =
     let file_manager =
-      File.File_manager.make ~db_dirname:"db_test3" ~block_size:64
+      File.File_manager.make ~db_dirname:"db_test3" ~block_size:400
     in
     let log_file = "log_test3" in
     let log_manager = Log_manager.make ~file_manager ~log_file in
-    let _ = create_records log_manager 1 21 in 
+    let _ = create_records log_manager 1 35 in 
+    let _ = print_log_records log_manager "The log file now has these records:" in
+    let _ = create_records log_manager 36 70 in 
+    let _ = Log_manager.flush log_manager 65 in 
     let _ = print_log_records log_manager "The log file now has these records:" in
     "hello"
 end
