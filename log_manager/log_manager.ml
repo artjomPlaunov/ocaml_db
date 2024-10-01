@@ -52,9 +52,9 @@ let flush log_mgr lsn = if lsn >= log_mgr.latest_lsn then flush_aux log_mgr
 let append log_mgr log_rec =
   let boundary = ref 0 in
   let _ = boundary := Int32.to_int (Page.get_int32 log_mgr.log_page 0) in
-  let _ = Printf.printf "boundary: %d\n" !boundary in 
   let rec_size = Bytes.length log_rec in
   let bytes_needed = rec_size + 4 in
+  let _ = Printf.printf "%d\n" rec_size in 
   let _ =
     if !boundary - bytes_needed < 4 then
       let _ = flush_aux log_mgr in

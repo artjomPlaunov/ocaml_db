@@ -26,6 +26,7 @@ let move_to_block log_itr b =
   log_itr.cur_pos := !(log_itr.boundary)
 
 let next log_itr =
+  let _ = Printf.printf "cur pos: %d\n" !(log_itr.cur_pos) in 
   let blocksize = File_manager.get_blocksize log_itr.fm in
   let _ =
     if !(log_itr.cur_pos) = blocksize then
@@ -38,5 +39,6 @@ let next log_itr =
     else ()
   in
   let record = Page.get_bytes log_itr.page !(log_itr.cur_pos) in
-  let _ = log_itr.cur_pos := 4 + Bytes.length record in
+  let _ = Printf.printf "rec length: %d\n" (Bytes.length record) in 
+  let _ = log_itr.cur_pos := !(log_itr.cur_pos) + 4 + Bytes.length record in
   record

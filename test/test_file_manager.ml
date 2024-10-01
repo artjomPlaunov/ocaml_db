@@ -47,6 +47,7 @@ module To_test = struct
   let create_log_record str num =
     let num_pos = File.Page.max_len (String.length str) in
     let blocksize = num_pos + 4 in
+    let _ = Printf.printf "blocksize: %d\n" blocksize in 
     let page = File.Page.make blocksize in
     let _ = File.Page.set_string page 0 str in 
     let _ = File.Page.set_int32 page num_pos (Int32.of_int num) in 
@@ -56,7 +57,7 @@ module To_test = struct
     let _ = Printf.printf "Creating records: " in
     let _ =
       for i = start to end_ do
-        let record = create_log_record ("record" ^ string_of_int i) (i) in
+        let record = create_log_record ("record" ^ string_of_int i) (i) in 
         let lsn = Log_manager.append log_manager (File.Page.contents record) in
         Printf.printf "%d " lsn
       done
@@ -75,7 +76,7 @@ module To_test = struct
         let s = File.Page.get_string page 0 in 
         let num_pos = File.Page.max_len (String.length s) in 
         let v = Int32.to_int (File.Page.get_int32 page num_pos) in 
-        let _ = Printf.printf "[%s, %d]" s v in 
+        let _ = Printf.printf "[%s, %d]" s v  in 
         iterate iter
       else 
         () 
@@ -84,12 +85,11 @@ module To_test = struct
 
   let test3 =
     let file_manager =
-      File.File_manager.make ~db_dirname:"db_test3" ~block_size:512
+      File.File_manager.make ~db_dirname:"db_test3" ~block_size:64
     in
     let log_file = "log_test3" in
     let log_manager = Log_manager.make ~file_manager ~log_file in
-    let _ = create_records log_manager 1 50 in 
-    Log_manager.flush log_manager 50;
+    let _ = create_records log_manager 1 21 in 
     let _ = print_log_records log_manager "The log file now has these records:" in
     "hello"
 end
