@@ -1,10 +1,12 @@
 open File
 
 type t = {
-  mutable bufferpool : Db_buffer.t array;
+  bufferpool : Db_buffer.t array;
   mutable num_available : int;
   max_wait_time : int;
 }
+
+exception BufferAbortException
 
 let make ?(max_wait_time = 10000) ~file_manager ~log_manager ~num_buffers () =
   let bufferpool =
@@ -55,4 +57,17 @@ let try_pinning_opt buffer_mgr block : Db_buffer.t option =
       Db_buffer.pin find_buf;
       Some find_buf
 
-let pin buffer_mgr block = failwith "todo"
+let waiting_too_long start_time max_time = 
+  (* system.currtime_ms - starttime > max_time*)
+  let cur_time = int_of_float ((Unix.gettimeofday ()) *. 1000.0) in
+  cur_time - start_time > max_time 
+
+(* TODO: this code does not work in a multithreaded context, 
+  so it is a dumbed down version that just tries to immediately get 
+    a pin. This needs to be reworked with threads in mind, 
+    and possibly include the waiting code. *)
+let pin buffer_mgr block = 
+  match try_pinning_opt buffer_mgr block with
+    Some db_buf -> db_buf
+  | None -> raise BufferAbortException
+
