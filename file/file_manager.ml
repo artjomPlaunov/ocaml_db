@@ -89,5 +89,6 @@ let append file_mgr filename =
   let block = Block_id.make ~filename ~block_num in
   let b = Bytes.make file_mgr.block_size '\000' in
   let fd = get_file file_mgr filename in
-  write_n fd b (block_num * file_mgr.block_size) file_mgr.block_size;
+  let _ = Unix.lseek fd (block_num * file_mgr.block_size) SEEK_SET in 
+  write_n fd b 0 file_mgr.block_size;
   block

@@ -17,8 +17,8 @@ let make fm b =
   { fm; block; page; cur_pos; boundary }
 
 let has_next log_itr =
-  !(log_itr.cur_pos) < File_manager.get_blocksize log_itr.fm
-  || Block_id.block_num !(log_itr.block) > 0
+  (!(log_itr.cur_pos) < File_manager.get_blocksize log_itr.fm)
+  || ((Block_id.block_num !(log_itr.block)) > 0)
 
 let move_to_block log_itr b =
   let _ = File_manager.read log_itr.fm b log_itr.page in
