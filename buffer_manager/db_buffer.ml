@@ -29,6 +29,7 @@ let set_modified buffer tx_num lsn =
   if buffer.lsn >= 0 then buffer.lsn <- lsn
 
 let is_pinned buffer = buffer.pins > 0
+let is_unpinned buffer = buffer.pins == 0
 let modifying_tx buffer = buffer.tx_num
 let pin buffer = buffer.pins <- buffer.pins + 1
 let unpin buffer = buffer.pins <- buffer.pins - 1
