@@ -65,7 +65,7 @@ let waiting_too_long start_time max_time =
 (* TODO: this code does not work in a multithreaded context, 
   so it is a dumbed down version that just tries to immediately get 
     a pin. This needs to be reworked with threads in mind, 
-    and possibly include the waiting code. *)
+    and possibly include the waiting code.  *)
 let pin buffer_mgr block = 
   match try_pinning_opt buffer_mgr block with
     Some db_buf -> db_buf

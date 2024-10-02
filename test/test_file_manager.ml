@@ -84,14 +84,49 @@ module To_test = struct
 
   let test3 =
     let file_manager =
-      File.File_manager.make ~db_dirname:"db_test3" ~block_size:30
+      File.File_manager.make ~db_dirname:"db_test3" ~block_size:100
     in
     let log_file = "log_test3" in
     let log_manager = Log_manager.make ~file_manager ~log_file in
     let _ = create_records log_manager 1 10 in 
     let _ = print_log_records log_manager "The log file now has these records:" in
-    let _ = create_records log_manager 11 160 in 
+    let _ = create_records log_manager 11 20 in 
     let _ = print_log_records log_manager "The log file now has these records:" in
+    "hello"
+
+  let test4 = 
+    let file_manager =
+      File.File_manager.make ~db_dirname:"buffertest" ~block_size:400
+    in
+
+    let log_file = "buffertest_log" in 
+
+    let log_manager = Log_manager.make ~file_manager ~log_file in 
+
+    let buffer_manager = Buffer_manager.make ~file_manager ~log_manager ~num_buffers:3 () in 
+
+    let block = File.Block_id.make ~filename:"testfile" ~block_num:1 in 
+
+    let buff = Buffer_manager.pin buffer_manager block in 
+
+    let p = Buffer_manager__Db_buffer.contents buff in 
+    let n = Int32.to_int (File.Page.get_int32 p 80) in 
+    let _ = File.Page.set_int32 p 80 (Int32.of_int n) in
+    let _ = Buffer_manager__Db_buffer.set_modified buff 1 0 in 
+    let _ = Printf.printf "new value is %d\n" (n+1) in 
+    let _ = Buffer_manager.unpin buffer_manager buff in 
+    let block2 = File.Block_id.make ~filename:"testfile" ~block_num:2 in 
+    let block3 = File.Block_id.make ~filename:"testfile" ~block_num:3 in 
+    let block4 = File.Block_id.make ~filename:"testfile" ~block_num:4 in 
+    let buf2 = Buffer_manager.pin buffer_manager block2 in 
+    let buf3 = Buffer_manager.pin buffer_manager block3 in 
+    let buf4 = Buffer_manager.pin buffer_manager block4 in 
+    let _ = Buffer_manager.unpin buffer_manager buf2 in 
+    let buf2 = Buffer_manager.pin buffer_manager block in 
+    let p2 = Buffer_manager__Db_buffer.contents buf2 in
+    let _ = File.Page.set_int32 p2 80 (Int32.of_int 9999) in 
+    let _ = Buffer_manager__Db_buffer.set_modified buff 1 0 in 
+    let _ = Buffer_manager.unpin buffer_manager buf2 in  
     "hello"
 end
 
@@ -105,6 +140,9 @@ let test2 () =
 
 let test3 () = Alcotest.(check string) "same string" "hello" To_test.test3
 
+let test4 () = Alcotest.(check string) "same string" "hello" To_test.test4
+
+
 let () =
   let open Alcotest in
   run "AllTests"
@@ -112,5 +150,6 @@ let () =
       ( "File_manager",
         [ test_case "Test 1" `Quick test1; test_case "Test 2" `Quick test2 ] );
       ("Log_manager", [ test_case "Test 3" `Quick test3 ]);
+      ("Buffer", [ test_case "Test 4" `Quick test4])
     ]
 

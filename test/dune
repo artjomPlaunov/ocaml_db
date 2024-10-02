@@ -4,4 +4,4 @@
  (flags
   (-w -69)
   (-w -26))
- (libraries file log_manager alcotest))
+ (libraries file log_manager buffer_manager alcotest))

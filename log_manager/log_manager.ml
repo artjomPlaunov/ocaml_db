@@ -68,4 +68,5 @@ let append log_mgr log_rec =
   log_mgr.latest_lsn
 
 let get_iterator log_mgr =
+  let _ = flush_aux log_mgr in 
   Log_iterator.make log_mgr.file_manager log_mgr.cur_block

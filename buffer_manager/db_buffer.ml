@@ -41,6 +41,10 @@ let flush buffer =
     unpin buffer)
 
 let assign_to_block buffer block =
+
   flush buffer;
+  let _ = Printf.printf "%s\n" (File.Block_id.file_name block) in 
+  (* let _ = Printf.printf "\nHERE%s\n" (File.Block_id.file_name block) in  *)
   File_manager.read buffer.file_manager block buffer.contents;
+  let _ = Printf.printf "%s\n" (File.Block_id.file_name block) in 
   buffer.pins <- 0
