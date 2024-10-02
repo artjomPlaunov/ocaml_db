@@ -11,3 +11,4 @@ val get_string : t -> int -> string
 val set_string : t -> int -> string -> unit
 val max_len : int -> int
 val ( = ) : t -> t -> bool
+val zero_out : t -> unit

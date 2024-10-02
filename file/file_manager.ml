@@ -58,6 +58,9 @@ let read file_mgr block page =
   let offset = Block_id.block_num block * file_mgr.block_size in
   let _ = Unix.lseek fd offset SEEK_SET in
   let n = Unix.read fd (Page.contents page) 0 file_mgr.block_size in
+  if n = 0 
+  then Page.zero_out page
+  else
   ()
 
 (* Since Unix.write doesn't guarantee writing all n bytes,

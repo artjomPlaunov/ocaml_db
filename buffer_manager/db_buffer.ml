@@ -44,5 +44,6 @@ let flush buffer =
 let assign_to_block buffer block =
   flush buffer;
   buffer.block <- block;
+  Printf.printf "assign BLOCK NUM%d\n" (File.Block_id.block_num block);
   File_manager.read buffer.file_manager block buffer.contents;
   buffer.pins <- 0

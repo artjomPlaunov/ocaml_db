@@ -31,22 +31,26 @@ module To_test = struct
     let buffer_manager =
       Buffer_manager.make ~file_manager ~log_manager ~num_buffers:3 ()
     in
-    let block = Block_id.make ~filename:"testfile" ~block_num:1 in
-    let buff = Buffer_manager.pin buffer_manager block in
-    let p = Buffer_manager__Db_buffer.contents buff in
-    let n = Int32.to_int (File.Page.get_int32 p 80) in
-    Page.set_int32 p 80 (Int32.of_int (n + 1));
-    Buffer_manager__Db_buffer.set_modified buff 1 0;
+    let block1 = Block_id.make ~filename:"testfile" ~block_num:0 in
+    let buf1 = Buffer_manager.pin buffer_manager block1 in
+    let p = Buffer_manager__Db_buffer.contents buf1 in
+    let n = Int32.to_int (File.Page.get_int32 p 0) in
+    Page.set_int32 p 0 (Int32.of_int (n + 1));
+    Buffer_manager__Db_buffer.set_modified buf1 1 0;
     Printf.printf "new value is %d\n" (n + 1);
-    Buffer_manager.unpin buffer_manager buff;
-    let block2 = Block_id.make ~filename:"testfile" ~block_num:2 in
+    Buffer_manager.unpin buffer_manager buf1;
+    let block2 = Block_id.make ~filename:"testfile" ~block_num:100 in
     let block3 = Block_id.make ~filename:"testfile" ~block_num:3 in
     let block4 = Block_id.make ~filename:"testfile" ~block_num:4 in
     let buf2 = Buffer_manager.pin buffer_manager block2 in
+    let p2 = Buffer_manager__Db_buffer.contents buf2 in 
+    let n = Int32.to_int (File.Page.get_int32 p2 0) in 
+    Printf.printf "page 2 contents: %d\n" n;
     let buf3 = Buffer_manager.pin buffer_manager block3 in
     let buf4 = Buffer_manager.pin buffer_manager block4 in
     Buffer_manager.unpin buffer_manager buf2;
-    let buf2 = Buffer_manager.pin buffer_manager block in
+
+    let buf2 = Buffer_manager.pin buffer_manager block1 in
     let p2 = Buffer_manager__Db_buffer.contents buf2 in
     Page.set_int32 p2 80 (Int32.of_int 9999);
     Buffer_manager__Db_buffer.set_modified buf2 1 0;

@@ -22,3 +22,6 @@ let set_string page offset s = set_bytes page offset (Bytes.of_string s)
 (* only ascii encoding for now *)
 let max_len l = 4 + l
 let ( = ) = Bytes.equal
+
+let zero_out page = 
+  Bytes.fill page 0 (Bytes.length page) '\000';
