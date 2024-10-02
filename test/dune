@@ -1,6 +1,6 @@
 (test
- (name test_file_manager)
- (modules test_file_manager)
+ (name run_tests)
+ (modules run_tests buffer_manager_tests log_manager_tests file_manager_tests)
  (flags
   (-w -69)
   (-w -26))

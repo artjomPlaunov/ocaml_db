@@ -24,7 +24,7 @@ let flush_all buffer_manager tx_num =
 
 let unpin buffer_mgr buffer =
   Db_buffer.unpin buffer;
-  if Db_buffer.is_pinned buffer then
+  if Db_buffer.is_unpinned buffer then
     buffer_mgr.num_available <- buffer_mgr.num_available + 1
 
 let timedout { max_wait_time; _ } start_time =
