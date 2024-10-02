@@ -111,7 +111,7 @@ module To_test = struct
 
     let p = Buffer_manager__Db_buffer.contents buff in 
     let n = Int32.to_int (File.Page.get_int32 p 80) in 
-    let _ = File.Page.set_int32 p 80 (Int32.of_int n) in
+    let _ = File.Page.set_int32 p 80 (Int32.of_int (n+1)) in
     let _ = Buffer_manager__Db_buffer.set_modified buff 1 0 in 
     let _ = Printf.printf "new value is %d\n" (n+1) in 
     let _ = Buffer_manager.unpin buffer_manager buff in 
