@@ -14,7 +14,7 @@ let make ~file_manager ~log_manager =
   {
     file_manager;
     log_manager;
-    contents = Page.make (File_manager.get_blocksize file_manager);
+    contents = Page.make ~block_size:(File_manager.get_blocksize file_manager);
     block = Block_id.make ~filename:"" ~block_num:(-1);
     pins = 0;
     tx_num = -1;
@@ -44,6 +44,5 @@ let flush buffer =
 let assign_to_block buffer block =
   flush buffer;
   buffer.block <- block;
-  Printf.printf "assign BLOCK NUM%d\n" (File.Block_id.block_num block);
   File_manager.read buffer.file_manager block buffer.contents;
   buffer.pins <- 0

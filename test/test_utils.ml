@@ -9,7 +9,6 @@ let no_diff generated_file reference_file =
   let current_dir = Sys.getcwd () in
     (* Combine the current directory with the relative path *)
     let full_path = Filename.concat current_dir generated_file in
-    let _ = Printf.printf "%s\n%s\n" full_path reference_file in 
     no_diff_aux full_path ("../../../test/" ^ reference_file)
   
 

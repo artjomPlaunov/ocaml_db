@@ -36,13 +36,13 @@ module To_test = struct
 
   let test1 =
     let file_manager =
-      File.File_manager.make ~db_dirname:"db_test3" ~block_size:100
+      File.File_manager.make ~db_dirname:"db_test3" ~block_size:500
     in
     let log_file = "log_test3" in
     let log_manager = Log_manager.make ~file_manager ~log_file in
     create_records log_manager 1 10;
     print_log_records log_manager "The log file now has these records:";
-    create_records log_manager 11 20;
+    create_records log_manager 11 100;
     print_log_records log_manager "The log file now has these records:";
     "hello"
 end

@@ -12,14 +12,14 @@ type t = {
 }
 
 let make ~file_manager ~log_file =
-  let blocksize = File_manager.get_blocksize file_manager in
-  let log_page = Page.make blocksize in
+  let block_size = File_manager.get_blocksize file_manager in
+  let log_page = Page.make ~block_size in
   let log_size = File_manager.size file_manager log_file in
 
   let cur_block =
     if log_size = 0 then
       let block = File_manager.append file_manager log_file in
-      let _ = Page.set_int32 log_page 0 (Int32.of_int blocksize) in
+      let _ = Page.set_int32 log_page 0 (Int32.of_int block_size) in
       let _ = File_manager.write file_manager block log_page in
       block
     else
