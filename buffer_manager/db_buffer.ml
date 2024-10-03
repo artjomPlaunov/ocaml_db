@@ -32,7 +32,10 @@ let is_pinned buffer = buffer.pins > 0
 let is_unpinned buffer = buffer.pins == 0
 let modifying_tx buffer = buffer.tx_num
 let pin buffer = buffer.pins <- buffer.pins + 1
-let unpin buffer = buffer.pins <- buffer.pins - 1
+
+let unpin buffer =
+  assert (buffer.pins > 0);
+  buffer.pins <- buffer.pins - 1
 
 let flush buffer =
   if buffer.tx_num >= 0 then (

@@ -12,8 +12,7 @@ module To_test = struct
   let create_records_in_log log_mgr start end_ =
     for i = start to end_ do
       let record = create_log_record ("record" ^ string_of_int i) i in
-      let _ = Log_manager.append log_mgr (Page.contents record) in
-      ()
+      Log_manager.append log_mgr (Page.contents record)
     done
 
   let print_log_records_with_message log_mgr msg =

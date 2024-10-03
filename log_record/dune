@@ -1,0 +1,7 @@
+(library
+ (name log_record)
+ (public_name ocaml_db.log_record)
+ (flags
+  (-w -69)
+  (-w -26))
+ (libraries file unix))
