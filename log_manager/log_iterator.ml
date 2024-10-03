@@ -8,7 +8,7 @@ type t = {
   mutable boundary : int;
 }
 
-let make file_manager block =
+let make ~file_manager ~block =
   let page = Page.make ~block_size:(File_manager.get_blocksize file_manager) in
   File_manager.read file_manager block page;
   let boundary = Int32.to_int (Page.get_int32 page 0) in
