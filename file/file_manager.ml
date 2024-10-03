@@ -47,7 +47,6 @@ let get_file file_mgr filename =
   match Hashtbl.find_opt file_mgr.open_files filename with
   | Some fd -> fd
   | None ->
-
       let full_path = Filename.concat file_mgr.db_dirname filename in
       let fd = Unix.openfile full_path Unix.[ O_RDWR; O_CREAT; O_SYNC ] 0o755 in
       let _ = Hashtbl.add file_mgr.open_files filename fd in
@@ -58,10 +57,7 @@ let read file_mgr block page =
   let offset = Block_id.block_num block * file_mgr.block_size in
   let _ = Unix.lseek fd offset SEEK_SET in
   let n = Unix.read fd (Page.contents page) 0 file_mgr.block_size in
-  if n = 0 
-  then Page.zero_out page
-  else
-  ()
+  if n = 0 then Page.zero_out page else ()
 
 (* Since Unix.write doesn't guarantee writing all n bytes,
    we have a helper function to repeatedly call write until we
@@ -93,6 +89,6 @@ let append file_mgr filename =
   let block = Block_id.make ~filename ~block_num in
   let b = Bytes.make file_mgr.block_size '\000' in
   let fd = get_file file_mgr filename in
-  let _ = Unix.lseek fd (block_num * file_mgr.block_size) SEEK_SET in 
+  let _ = Unix.lseek fd (block_num * file_mgr.block_size) SEEK_SET in
   write_n fd b 0 file_mgr.block_size;
   block

@@ -37,8 +37,9 @@ let find_buffer_opt buffer_mgr block =
     buffer_mgr.bufferpool
 
 let choose_unpinned_buffer_opt buffer_mgr =
-  Array.find_opt (fun buffer -> Db_buffer.is_unpinned buffer) buffer_mgr.bufferpool 
-
+  Array.find_opt
+    (fun buffer -> Db_buffer.is_unpinned buffer)
+    buffer_mgr.bufferpool
 
 let try_pinning_opt buffer_mgr block : Db_buffer.t option =
   let find_buf_opt = find_buffer_opt buffer_mgr block in
@@ -57,17 +58,16 @@ let try_pinning_opt buffer_mgr block : Db_buffer.t option =
       Db_buffer.pin find_buf;
       Some find_buf
 
-let waiting_too_long start_time max_time = 
+let waiting_too_long start_time max_time =
   (* system.currtime_ms - starttime > max_time*)
-  let cur_time = int_of_float ((Unix.gettimeofday ()) *. 1000.0) in
-  cur_time - start_time > max_time 
+  let cur_time = int_of_float (Unix.gettimeofday () *. 1000.0) in
+  cur_time - start_time > max_time
 
-(* TODO: this code does not work in a multithreaded context, 
-  so it is a dumbed down version that just tries to immediately get 
-    a pin. This needs to be reworked with threads in mind, 
-    and possibly include the waiting code.  *)
-let pin buffer_mgr block = 
+(* TODO: this code does not work in a multithreaded context,
+   so it is a dumbed down version that just tries to immediately get
+     a pin. This needs to be reworked with threads in mind,
+     and possibly include the waiting code. *)
+let pin buffer_mgr block =
   match try_pinning_opt buffer_mgr block with
-    Some db_buf -> db_buf
+  | Some db_buf -> db_buf
   | None -> raise BufferAbortException
-

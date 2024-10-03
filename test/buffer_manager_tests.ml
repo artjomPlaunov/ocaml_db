@@ -43,8 +43,8 @@ module To_test = struct
     let block3 = Block_id.make ~filename:"testfile" ~block_num:3 in
     let block4 = Block_id.make ~filename:"testfile" ~block_num:4 in
     let buf2 = Buffer_manager.pin buffer_manager block2 in
-    let p2 = Buffer_manager__Db_buffer.contents buf2 in 
-    let n = Int32.to_int (File.Page.get_int32 p2 0) in 
+    let p2 = Buffer_manager__Db_buffer.contents buf2 in
+    let n = Int32.to_int (File.Page.get_int32 p2 0) in
     let buf3 = Buffer_manager.pin buffer_manager block3 in
     let buf4 = Buffer_manager.pin buffer_manager block4 in
     Buffer_manager.unpin buffer_manager buf2;
@@ -57,7 +57,7 @@ module To_test = struct
     "hello"
 
   (* Buffer_manager test. *)
-  let test3 = 
+  let test3 =
     let file_manager =
       File.File_manager.make ~db_dirname:"buffer_manager_test" ~block_size:512
     in
@@ -84,22 +84,21 @@ module To_test = struct
     (* Pin block 1 again. Buffer is now full again. *)
     let buf4 = Buffer_manager.pin buffer_manager block1 in
     Printf.printf "Attempting to pin block 3...\n";
-    let _ = try let _ = Buffer_manager.pin buffer_manager block3 in ()
-            with
-            | Buffer_manager.BufferAbortException -> Printf.printf "Exception: No available Buffers";
-          in 
+    let _ =
+      try
+        let _ = Buffer_manager.pin buffer_manager block3 in
+        ()
+      with Buffer_manager.BufferAbortException ->
+        Printf.printf "Exception: No available Buffers"
+    in
     Buffer_manager.unpin buffer_manager buf2;
     (* Now we should be able to pin block3, after unpinning block2. *)
     let buf5 = Buffer_manager.pin buffer_manager block3 in
     ()
 end
 
-
-
-
 let test1 () = Alcotest.(check bool) "bool equality" true To_test.test1
 let test2 () = Alcotest.(check string) "same string" "hello" To_test.test2
-
 let test3 () = Alcotest.(check unit) "unit return" () To_test.test3
 
 let all_tests () =
