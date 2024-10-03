@@ -17,14 +17,13 @@ module To_test = struct
     let n = Int32.to_int (File.Page.get_int32 page 80) in
     Page.set_int32 page 80 (Int32.of_int (n + 1));
     Buffer_manager__Db_buffer.set_modified buf1 1 0;
-    Printf.printf "new value is %d\n" (n + 1);
     Buffer_manager.unpin buffer_manager buf1;
     let buf2 = Buffer_manager.pin buffer_manager block2 in
     Test_utils.no_diff "buffertest1/testfile" "buffer_manager_output/test1.txt"
 
   let test2 =
     let file_manager =
-      File.File_manager.make ~db_dirname:"buffertest" ~block_size:512
+      File.File_manager.make ~db_dirname:"buffertest2" ~block_size:512
     in
     let log_file = "buffertest_log" in
     let log_manager = Log_manager.make ~file_manager ~log_file in
@@ -37,7 +36,6 @@ module To_test = struct
     let n = Int32.to_int (File.Page.get_int32 p 0) in
     Page.set_int32 p 0 (Int32.of_int (n + 1));
     Buffer_manager__Db_buffer.set_modified buf1 1 0;
-    Printf.printf "new value is %d\n" (n + 1);
     Buffer_manager.unpin buffer_manager buf1;
     let block2 = Block_id.make ~filename:"testfile" ~block_num:100 in
     let block3 = Block_id.make ~filename:"testfile" ~block_num:3 in
@@ -54,12 +52,12 @@ module To_test = struct
     Page.set_int32 p2 80 (Int32.of_int 9999);
     Buffer_manager__Db_buffer.set_modified buf2 1 0;
     Buffer_manager.unpin buffer_manager buf2;
-    "hello"
+    Test_utils.no_diff "buffertest2/testfile" "buffer_manager_output/test2.txt"
 
   (* Buffer_manager test. *)
   let test3 =
     let file_manager =
-      File.File_manager.make ~db_dirname:"buffer_manager_test" ~block_size:512
+      File.File_manager.make ~db_dirname:"buffertest3" ~block_size:512
     in
     let log_file = "buffer_manager_test_log" in
     let log_manager = Log_manager.make ~file_manager ~log_file in
@@ -83,23 +81,25 @@ module To_test = struct
     let buf3 = Buffer_manager.pin buffer_manager block0 in
     (* Pin block 1 again. Buffer is now full again. *)
     let buf4 = Buffer_manager.pin buffer_manager block1 in
-    Printf.printf "Attempting to pin block 3...\n";
-    let _ =
+    let s1 = Printf.sprintf "Attempting to pin block 3...\n" in
+    let s2 =
       try
         let _ = Buffer_manager.pin buffer_manager block3 in
-        ()
+        "test fail"
       with Buffer_manager.BufferAbortException ->
-        Printf.printf "Exception: No available Buffers"
+        Printf.sprintf "Exception: No available Buffers"
     in
     Buffer_manager.unpin buffer_manager buf2;
     (* Now we should be able to pin block3, after unpinning block2. *)
     let buf5 = Buffer_manager.pin buffer_manager block3 in
-    ()
+    s1 ^ s2
 end
 
+
+
 let test1 () = Alcotest.(check bool) "bool equality" true To_test.test1
-let test2 () = Alcotest.(check string) "same string" "hello" To_test.test2
-let test3 () = Alcotest.(check unit) "unit return" () To_test.test3
+let test2 () = Alcotest.(check bool) "bool equality" true To_test.test2
+let test3 () = Alcotest.(check string) "same string" "Attempting to pin block 3...\nException: No available Buffers" To_test.test3
 
 let all_tests () =
   [
