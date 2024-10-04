@@ -1,0 +1,8 @@
+(library
+ (name transaction)
+ (public_name ocaml_db.transaction)
+ (modules transaction)
+ (flags
+  (-w -69)
+  (-w -26))
+ (libraries file log_manager buffer_manager))
