@@ -39,10 +39,11 @@ let unpin buffer =
 
 let flush buffer =
   if buffer.tx_num >= 0 then (
+    assert (buffer.pins = 0);
     Log_manager.flush buffer.log_manager buffer.lsn;
     File_manager.write buffer.file_manager buffer.block buffer.contents;
     buffer.tx_num <- buffer.tx_num - 1;
-    unpin buffer)
+    )
 
 let assign_to_block buffer block =
   flush buffer;

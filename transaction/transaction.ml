@@ -9,3 +9,5 @@ type t = {
 
 let make file_mgr log_mgr buffer_mgr = 
   { next_tx_num = 0; eof = -1; buffer_mgr; file_mgr; log_mgr; tx_num = -1}
+
+ 
