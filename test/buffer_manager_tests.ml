@@ -17,7 +17,7 @@ module To_test = struct
     let n = Int32.to_int (File.Page.get_int32 page 80) in
     Page.set_int32 page 80 (Int32.of_int (n + 1));
     Buffer_manager__Db_buffer.set_modified buf1 1 0;
-    
+
     Buffer_manager.unpin buffer_manager buf1;
     let buf2 = Buffer_manager.pin buffer_manager block2 in
     Test_utils.no_diff "buffertest1/testfile" "buffer_manager_output/test1.txt"
