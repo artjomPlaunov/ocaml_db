@@ -4,4 +4,5 @@
  (flags
   (-w -69)
   (-w -26))
+ (modules update_int update_string)
  (libraries file unix))
