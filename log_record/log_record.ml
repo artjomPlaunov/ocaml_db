@@ -163,5 +163,5 @@ let make ~byte =
 
   let to_string log_record = match log_record with 
   | UpdateInt r -> 
-    Printf.sprintf "<UPDATE INT %d %d %d %d>" r.tx_num (File.Block_id.block_num r.block) r.offset  
+    Printf.sprintf "<UPDATE INT %d %s %d %d>" r.tx_num (File.Block_id.to_string r.block) r.offset  
   | _ -> failwith "todo"
