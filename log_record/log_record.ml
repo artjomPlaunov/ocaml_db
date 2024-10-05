@@ -44,25 +44,6 @@ let make_update_int_record page =
   let block = Block_id.make ~filename ~block_num in
   UpdateInt { tx_num; offset; value; block }
 
-let write_update_int_log_record log_mgr tx_num blk offset value = 
-  let tx_pos = 4 in 
-  let fname_pos = tx_pos + 4 in 
-  let blk_num_pos = fname_pos + (File.Page.max_len (String.length (File.Block_id.file_name blk))) in
-  let offset_pos = blk_num_pos + 4 in 
-  let value_pos = offset_pos + 4 in 
-  let rec_len = value_pos + 4 in 
-  let page = File.Page.make ~block_size:rec_len in 
-  Page.set_int32 page 0 (Int32.of_int 3);
-  Page.set_int32 page tx_pos (Int32.of_int tx_num);
-  Page.set_string page fname_pos (File.Block_id.file_name blk); 
-  Page.set_int32 page blk_num_pos (Int32.of_int (File.Block_id.block_num blk));
-  Page.set_int32 page offset_pos (Int32.of_int offset);
-  Page.set_int32 page value_pos value;
-  Log_manager.append log_mgr (File.Page.contents page)
-
-
-
-
 let make_update_string_record page =
   let tx_pos = 4 in
   let filename_pos = tx_pos + 4 in
@@ -112,6 +93,42 @@ let make_rollback_record page =
   let offset = Page.get_int32 page offset_pos |> Int32.to_int in
   let block = Block_id.make ~filename ~block_num in
   Rollback { tx_num; offset; block }
+
+let write_update_int_log_record log_mgr tx_num blk offset value =
+  let tx_pos = 4 in
+  let fname_pos = tx_pos + 4 in
+  let blk_num_pos =
+    fname_pos + Page.max_len (String.length (Block_id.file_name blk))
+  in
+  let offset_pos = blk_num_pos + 4 in
+  let value_pos = offset_pos + 4 in
+  let rec_len = value_pos + 4 in
+  let page = Page.make ~block_size:rec_len in
+  Page.set_int32 page 0 (Int32.of_int 3);
+  Page.set_int32 page tx_pos (Int32.of_int tx_num);
+  Page.set_string page fname_pos (Block_id.file_name blk);
+  Page.set_int32 page blk_num_pos (Int32.of_int (Block_id.block_num blk));
+  Page.set_int32 page offset_pos (Int32.of_int offset);
+  Page.set_int32 page value_pos value;
+  Log_manager.append log_mgr (Page.contents page)
+
+let write_update_string_log_record log_mgr tx_num blk offset value =
+  let tx_pos = 4 in
+  let fname_pos = tx_pos + 4 in
+  let blk_num_pos =
+    fname_pos + Page.max_len (String.length (Block_id.file_name blk))
+  in
+  let offset_pos = blk_num_pos + 4 in
+  let value_pos = offset_pos + 4 in
+  let rec_len = value_pos + Page.max_len (String.length value) in
+  let page = Page.make ~block_size:rec_len in
+  Page.set_int32 page 0 (Int32.of_int 3);
+  Page.set_int32 page tx_pos (Int32.of_int tx_num);
+  Page.set_string page fname_pos (Block_id.file_name blk);
+  Page.set_int32 page blk_num_pos (Int32.of_int (Block_id.block_num blk));
+  Page.set_int32 page offset_pos (Int32.of_int offset);
+  Page.set_string page value_pos value;
+  Log_manager.append log_mgr (Page.contents page)
 
 let make ~byte =
   let page = Page.from_bytes byte in
