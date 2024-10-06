@@ -30,9 +30,6 @@ type t =
       mutable block : Block_id.t;
     }
 
-
-
-
 let make_update_int_record page =
   let tx_pos = 4 in
   let filename_pos = tx_pos + 4 in
@@ -145,8 +142,11 @@ let make ~byte =
   | 5 -> make_rollback_record page
   | _ -> failwith "we're dead"
 
-
-  let to_string log_record = match log_record with 
-  | UpdateInt r -> 
-    Printf.sprintf "<UPDATE INT %d %s %d %d>" r.tx_num (File.Block_id.to_string r.block) r.offset  
+let to_string log_record =  
+  match log_record with
+  | UpdateInt r ->
+      Printf.sprintf "<UPDATE INT %d %s %d %d>" r.tx_num
+        (File.Block_id.to_string r.block)
+        r.offset
+        (Int32.to_int r.value)
   | _ -> failwith "todo"
