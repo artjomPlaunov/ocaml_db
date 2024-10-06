@@ -33,11 +33,11 @@ module To_test = struct
     let _ = Log_manager.flush log_manager 1 in
     let iter = Log_manager.get_iterator log_manager in
     let next_rec = Log_manager__Log_iterator.next iter in
-    let int_rec = Log_record.make ~byte:next_rec in
+    let checkpoint_rec = Log_record.make ~byte:next_rec in
 
     let next_rec = Log_manager__Log_iterator.next iter in 
 
-    let checkpoint_rec = Log_record.make ~byte:next_rec in 
+    let int_rec = Log_record.make ~byte:next_rec in 
     let s1 = Printf.sprintf "%s" (Log_record.to_string int_rec) in 
     let s2 = Printf.sprintf "%s" (Log_record.to_string checkpoint_rec)in 
     s1 ^ s2

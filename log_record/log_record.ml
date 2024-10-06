@@ -102,6 +102,24 @@ let write_checkpoint_log_record log_mgr =
   Page.set_int32 page 0 (Int32.of_int 0);
   Log_manager.append log_mgr (Page.contents page)
 
+let write_start_log_record log_mgr tx_num = 
+  let page = Page.make ~block_size:8 in 
+  Page.set_int32 page 0 (Int32.of_int 1);
+  Page.set_int32 page 4 (Int32.of_int tx_num);
+  Log_manager.append log_mgr (Page.contents page)
+
+let write_commit_log_record log_mgr tx_num = 
+  let page = Page.make ~block_size:8 in 
+  Page.set_int32 page 0 (Int32.of_int 2);
+  Page.set_int32 page 4 (Int32.of_int tx_num);
+  Log_manager.append log_mgr (Page.contents page)
+
+let write_rollback_log_record log_mgr tx_num = 
+  let page = Page.make ~block_size:8 in 
+  Page.set_int32 page 0 (Int32.of_int 5);
+  Page.set_int32 page 4 (Int32.of_int tx_num);
+  Log_manager.append log_mgr (Page.contents page)
+
 let write_update_int_log_record log_mgr tx_num blk offset value =
   let tx_pos = 4 in
   let fname_pos = tx_pos + 4 in
@@ -111,7 +129,6 @@ let write_update_int_log_record log_mgr tx_num blk offset value =
   let offset_pos = blk_num_pos + 4 in
   let value_pos = offset_pos + 4 in
   let rec_len = value_pos + 4 in
-  Printf.printf "%d\n" rec_len;
   let page = Page.make ~block_size:rec_len in
   Page.set_int32 page 0 (Int32.of_int 3);
   Page.set_int32 page tx_pos (Int32.of_int tx_num);
@@ -159,4 +176,11 @@ let to_string log_record =
         (File.Block_id.to_string r.block)
         r.offset
         (Int32.to_int r.value)
-  | _ -> failwith "todo"
+  | UpdateString r -> 
+    Printf.sprintf "<UPDATE INT %d %s %d %s>" r.tx_num
+      (File.Block_id.to_string r.block)
+      r.offset
+      r.value
+  | Commit r -> Printf.sprintf "<COMMIT %d>" r.tx_num
+  | Rollback r -> Printf.sprintf "<ROLLBACK %d>" r.tx_num
+  | Start r -> Printf.sprintf "<START %d>" r.tx_num
