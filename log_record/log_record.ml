@@ -30,6 +30,9 @@ type t =
       mutable block : Block_id.t;
     }
 
+let make_checkpoint_record = 
+  Checkpoint
+
 let make_update_int_record page =
   let tx_pos = 4 in
   let filename_pos = tx_pos + 4 in
@@ -94,6 +97,11 @@ let make_rollback_record page =
   let block = Block_id.make ~filename ~block_num in
   Rollback { tx_num; offset; block }
 
+let write_checkpoint_log_record log_mgr = 
+  let page = Page.make ~block_size:4 in 
+  Page.set_int32 page 0 (Int32.of_int 0);
+  Log_manager.append log_mgr (Page.contents page)
+
 let write_update_int_log_record log_mgr tx_num blk offset value =
   let tx_pos = 4 in
   let fname_pos = tx_pos + 4 in
@@ -123,13 +131,14 @@ let write_update_string_log_record log_mgr tx_num blk offset value =
   let value_pos = offset_pos + 4 in
   let rec_len = value_pos + Page.max_len (String.length value) in
   let page = Page.make ~block_size:rec_len in
-  Page.set_int32 page 0 (Int32.of_int 3);
+  Page.set_int32 page 0 (Int32.of_int 4);
   Page.set_int32 page tx_pos (Int32.of_int tx_num);
   Page.set_string page fname_pos (Block_id.file_name blk);
   Page.set_int32 page blk_num_pos (Int32.of_int (Block_id.block_num blk));
   Page.set_int32 page offset_pos (Int32.of_int offset);
   Page.set_string page value_pos value;
   Log_manager.append log_mgr (Page.contents page)
+
 
 let make ~byte =
   let page = Page.from_bytes byte in
@@ -144,6 +153,7 @@ let make ~byte =
 
 let to_string log_record =  
   match log_record with
+  | Checkpoint -> Printf.sprintf "<CHECKPOINT>"
   | UpdateInt r ->
       Printf.sprintf "<UPDATE INT %d %s %d %d>" r.tx_num
         (File.Block_id.to_string r.block)

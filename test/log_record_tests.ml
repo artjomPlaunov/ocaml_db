@@ -1,7 +1,7 @@
 module To_test = struct
   open File
 
-  let create_int_log () =
+  let test_create_int_log () =
     let file_manager =
       File_manager.make ~db_dirname:"db_test_create_int_logs" ~block_size:1024
     in
@@ -19,7 +19,7 @@ module To_test = struct
     Printf.sprintf "%s" (Log_record.to_string int_rec);
 end
 
-let test_create_log () =
-  Alcotest.(check string) "same string" "<UPDATE INT 15 fname, 1 255 15>" (To_test.create_int_log ())
+let test_create_int_log () =
+  Alcotest.(check string) "same string" "<UPDATE INT 15 fname, 1 255 15>" (To_test.test_create_int_log ())
 
-let all_tests () = [ Alcotest.test_case "create logs" `Quick test_create_log ]
+let all_tests () = [ Alcotest.test_case "create logs" `Quick test_create_int_log ]
