@@ -1,7 +1,7 @@
 module To_test = struct
   open File
 
-  let create_int_log () =
+  let test_create_int_log () =
     let file_manager =
       File_manager.make ~db_dirname:"db_test_create_int_logs" ~block_size:1024
     in
