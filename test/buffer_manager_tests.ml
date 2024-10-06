@@ -37,7 +37,6 @@ module To_test = struct
     let n = Int32.to_int (File.Page.get_int32 p 0) in
     Page.set_int32 p 0 (Int32.of_int (n + 1));
     Buffer_manager__Db_buffer.set_modified buf1 1 0;
-    Printf.printf "test2 buf1\n";
     Buffer_manager.unpin buffer_manager buf1;
     let block2 = Block_id.make ~filename:"testfile" ~block_num:100 in
     let block3 = Block_id.make ~filename:"testfile" ~block_num:3 in
@@ -47,7 +46,6 @@ module To_test = struct
     let n = Int32.to_int (File.Page.get_int32 p2 0) in
     let buf3 = Buffer_manager.pin buffer_manager block3 in
     let buf4 = Buffer_manager.pin buffer_manager block4 in
-    Printf.printf "test2 buf4\n";
     Buffer_manager.unpin buffer_manager buf2;
 
     let buf2 = Buffer_manager.pin buffer_manager block1 in

@@ -48,6 +48,7 @@ let make_update_int_record page =
   UpdateInt { tx_num; offset; value; block }
 
 let write_update_int_log_record log_mgr tx_num blk offset value = 
+  Printf.printf "update int log record";
   let tx_pos = 4 in 
   let fname_pos = tx_pos + 4 in 
   let blk_num_pos = fname_pos + (File.Page.max_len (String.length (File.Block_id.file_name blk))) in
