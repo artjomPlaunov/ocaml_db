@@ -29,6 +29,7 @@ module To_test = struct
       Log_record.write_update_int_log_record log_manager 15 blk 255
         (Int32.of_int 15)
     in
+<<<<<<<<< Temporary merge branch 1
     Printf.printf "here";
     let n = Log_record.write_checkpoint_log_record log_manager in 
     let _ = Log_manager.flush log_manager 1 in
