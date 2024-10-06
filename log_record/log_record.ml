@@ -143,7 +143,7 @@ let write_update_string_log_record log_mgr tx_num blk offset value =
 let make ~byte =
   let page = Page.from_bytes byte in
   match Page.get_int32 page 0 |> Int32.to_int with
-  | 0 -> failwith "checkpoint record"
+  | 0 -> make_checkpoint_record
   | 1 -> make_start_record page
   | 2 -> make_commit_record page
   | 3 -> make_update_int_record page
