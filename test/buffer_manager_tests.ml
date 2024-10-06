@@ -1,7 +1,7 @@
 module To_test = struct
   open File
 
-  let test1 =
+  let single_buffer_update =
     let file_manager =
       File_manager.make ~db_dirname:"buffertest1" ~block_size:512
     in
@@ -22,7 +22,7 @@ module To_test = struct
     let buf2 = Buffer_manager.pin buffer_manager block2 in
     Test_utils.no_diff "buffertest1/testfile" "buffer_manager_output/test1.txt"
 
-  let test2 =
+  let multiple_buffer_update =
     let file_manager =
       File.File_manager.make ~db_dirname:"buffertest2" ~block_size:512
     in
@@ -56,7 +56,7 @@ module To_test = struct
     Test_utils.no_diff "buffertest2/testfile" "buffer_manager_output/test2.txt"
 
   (* Buffer_manager test. *)
-  let test3 =
+  let pin_unpin =
     let file_manager =
       File.File_manager.make ~db_dirname:"buffertest3" ~block_size:512
     in
@@ -96,7 +96,7 @@ module To_test = struct
     s1 ^ s2
 
   (* Check that pinning twice on same block requires unpinning two times before pin. *)
-  let test4 =
+  let double_pin =
     let file_manager =
       File.File_manager.make ~db_dirname:"buffertest4" ~block_size:1024
     in
@@ -129,26 +129,30 @@ module To_test = struct
     s1 ^ s2 ^ s3
 end
 
-let test1 () = Alcotest.(check bool) "bool equality" true To_test.test1
-let test2 () = Alcotest.(check bool) "bool equality" true To_test.test2
+let test_single_buffer_update () =
+  Alcotest.(check bool) "bool equality" true To_test.single_buffer_update
 
-let test3 () =
+let test_multiple_buffer_update () =
+  Alcotest.(check bool) "bool equality" true To_test.multiple_buffer_update
+
+let test_pin_unpin () =
   Alcotest.(check string)
     "same string"
     "Attempting to pin block 3...\nException: No available Buffers"
-    To_test.test3
+    To_test.pin_unpin
 
-let test4 () =
+let test_double_pin () =
   Alcotest.(check string)
     "same string"
     "Attempting to pin block 1...Exception: No available \
      Buffers...Successfully pinned..."
-    To_test.test4
+    To_test.double_pin
 
 let all_tests () =
   [
-    Alcotest.test_case "Test 1" `Quick test1;
-    Alcotest.test_case "Test 2" `Quick test2;
-    Alcotest.test_case "Test 3" `Quick test3;
-    Alcotest.test_case "Test 4" `Quick test4;
+    Alcotest.test_case "update single buffer" `Quick test_single_buffer_update;
+    Alcotest.test_case "update multiple buffers" `Quick
+      test_multiple_buffer_update;
+    Alcotest.test_case "pin and unpin" `Quick test_pin_unpin;
+    Alcotest.test_case "double pinning" `Quick test_double_pin;
   ]
