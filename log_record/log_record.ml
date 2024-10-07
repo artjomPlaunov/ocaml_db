@@ -4,13 +4,9 @@ type t =
   | Checkpoint
   | Start of {
       mutable tx_num : int;
-      mutable offset : int;
-      mutable block : Block_id.t;
     }
   | Commit of {
       mutable tx_num : int;
-      mutable offset : int;
-      mutable block : Block_id.t;
     }
   | UpdateInt of {
       mutable tx_num : int;
@@ -26,8 +22,6 @@ type t =
     }
   | Rollback of {
       mutable tx_num : int;
-      mutable offset : int;
-      mutable block : Block_id.t;
     }
 
 let make_checkpoint_record = 
@@ -63,39 +57,18 @@ let make_update_string_record page =
 
 let make_start_record page =
   let tx_pos = 4 in
-  let filename_pos = tx_pos + 4 in
-  let filename = Page.get_string page filename_pos in
-  let block_pos = filename_pos + Page.max_len (String.length filename) in
-  let block_num = Page.get_int32 page block_pos |> Int32.to_int in
-  let offset_pos = block_pos + 4 in
   let tx_num = Page.get_int32 page tx_pos |> Int32.to_int in
-  let offset = Page.get_int32 page offset_pos |> Int32.to_int in
-  let block = Block_id.make ~filename ~block_num in
-  Start { tx_num; offset; block }
+  Start { tx_num; }
 
 let make_commit_record page =
   let tx_pos = 4 in
-  let filename_pos = tx_pos + 4 in
-  let filename = Page.get_string page filename_pos in
-  let block_pos = filename_pos + Page.max_len (String.length filename) in
-  let block_num = Page.get_int32 page block_pos |> Int32.to_int in
-  let offset_pos = block_pos + 4 in
   let tx_num = Page.get_int32 page tx_pos |> Int32.to_int in
-  let offset = Page.get_int32 page offset_pos |> Int32.to_int in
-  let block = Block_id.make ~filename ~block_num in
-  Commit { tx_num; offset; block }
+  Commit { tx_num; }
 
 let make_rollback_record page =
   let tx_pos = 4 in
-  let filename_pos = tx_pos + 4 in
-  let filename = Page.get_string page filename_pos in
-  let block_pos = filename_pos + Page.max_len (String.length filename) in
-  let block_num = Page.get_int32 page block_pos |> Int32.to_int in
-  let offset_pos = block_pos + 4 in
   let tx_num = Page.get_int32 page tx_pos |> Int32.to_int in
-  let offset = Page.get_int32 page offset_pos |> Int32.to_int in
-  let block = Block_id.make ~filename ~block_num in
-  Rollback { tx_num; offset; block }
+  Rollback { tx_num; }
 
 let write_checkpoint_log_record log_mgr = 
   let page = Page.make ~block_size:4 in 
@@ -177,7 +150,7 @@ let to_string log_record =
         r.offset
         (Int32.to_int r.value)
   | UpdateString r -> 
-    Printf.sprintf "<UPDATE INT %d %s %d %s>" r.tx_num
+    Printf.sprintf "<UPDATE STRING %d %s %d %s>" r.tx_num
       (File.Block_id.to_string r.block)
       r.offset
       r.value
