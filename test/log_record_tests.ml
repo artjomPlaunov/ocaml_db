@@ -15,7 +15,7 @@ module To_test = struct
     let _ = Log_manager.flush log_manager 1 in
     let iter = Log_manager.get_iterator log_manager in
     let next_rec = Log_manager__Log_iterator.next iter in
-    let int_rec = Log_record.make ~byte:next_rec in
+    let int_rec = Log_record.make ~bytes:next_rec in
     Printf.sprintf "%s" (Log_record.to_string int_rec)
 
   let test_create_logs1 () =
@@ -33,11 +33,11 @@ module To_test = struct
     let _ = Log_manager.flush log_manager 1 in
     let iter = Log_manager.get_iterator log_manager in
     let next_rec = Log_manager__Log_iterator.next iter in
-    let checkpoint_rec = Log_record.make ~byte:next_rec in
+    let checkpoint_rec = Log_record.make ~bytes:next_rec in
 
     let next_rec = Log_manager__Log_iterator.next iter in
 
-    let int_rec = Log_record.make ~byte:next_rec in
+    let int_rec = Log_record.make ~bytes:next_rec in
     let s1 = Printf.sprintf "%s" (Log_record.to_string int_rec) in
     let s2 = Printf.sprintf "%s" (Log_record.to_string checkpoint_rec) in
     s1 ^ s2
@@ -86,7 +86,7 @@ module To_test = struct
     let rec iterate_records iterator s1 =
       if Log_manager__Log_iterator.has_next iterator then
         let bytes = Log_manager__Log_iterator.next iterator in
-        let next_rec = Log_record.make ~byte:bytes in
+        let next_rec = Log_record.make ~bytes in
         let s2 = Printf.sprintf "%s" (Log_record.to_string next_rec) in
         iterate_records iterator s1 ^ s2
       else s1
