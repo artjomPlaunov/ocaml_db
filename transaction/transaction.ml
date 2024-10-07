@@ -18,25 +18,24 @@ type t = {
 
 let make ~file_manager ~log_manager ~buffer_manager =
   {
-    next_tx_num = 0;
+    next_tx_num = 1;
     eof = -1;
     buffer_manager;
     file_manager;
     log_manager;
-    tx_num = -1;
+    tx_num = 1;
     buffers = Buffer_list.make ~buffer_mgr:buffer_manager;
   }
 
 let size ~tx ~filename =
-  let block = File.Block_id.make ~filename ~block_num:(tx.eof) in
+  let block = File.Block_id.make ~filename ~block_num:tx.eof in
   File.File_manager.size tx.file_manager filename
 
 let append ~tx ~filename =
-  let block = File.Block_id.make ~filename ~block_num:(tx.eof) in
+  let block = File.Block_id.make ~filename ~block_num:tx.eof in
   File.File_manager.append tx.file_manager filename
 
-let block_size ~tx =
-  File.File_manager.get_blocksize tx.file_manager
+let block_size ~tx = File.File_manager.get_blocksize tx.file_manager
 
 let next_tx_num ~tx =
   tx.next_tx_num <- tx.next_tx_num + 1;
@@ -94,7 +93,7 @@ let commit tx =
   let lsn = Log_record.write_commit_log_record tx.log_manager tx.tx_num in
   Log_manager.flush tx.log_manager lsn;
   Transaction__Buffer_list.unpin_all ~buf_list:tx.buffers;
-  Printf.printf "transaction %d committed" tx.tx_num
+  Printf.printf "transaction %d committed\n" tx.tx_num
 
 let run_recover tx =
   let finished_txs = ref IntSet.empty in
@@ -119,13 +118,13 @@ let run_recover tx =
           set_int ~tx ~block:r.block ~offset:r.offset ~value:r.value
             ~to_log:false;
           unpin ~tx ~block:r.block)
-        else ()    
+        else ()
     | _ -> failwith "todo"
   done
 
 let recover tx =
   run_recover tx;
-  Buffer_manager.flush_all tx.buffer_manager tx.tx_num;  
+  Buffer_manager.flush_all tx.buffer_manager tx.tx_num;
   let lsn = Log_record.write_checkpoint_log_record tx.log_manager in
   Log_manager.flush tx.log_manager lsn
 

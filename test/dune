@@ -6,8 +6,9 @@
   log_manager_tests
   file_manager_tests
   log_record_tests
+  transaction_tests
   test_utils)
  (flags
   (-w -69)
   (-w -26))
- (libraries file log_manager buffer_manager log_record alcotest))
+ (libraries file log_manager transaction buffer_manager log_record alcotest))
