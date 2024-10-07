@@ -1,7 +1,7 @@
 (library
  (name transaction)
  (public_name ocaml_db.transaction)
- (modules transaction)
+ (modules transaction buffer_list)
  (flags
   (-w -69)
   (-w -26))

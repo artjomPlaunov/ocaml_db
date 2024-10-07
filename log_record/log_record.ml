@@ -2,12 +2,8 @@ open File
 
 type t =
   | Checkpoint
-  | Start of {
-      mutable tx_num : int;
-    }
-  | Commit of {
-      mutable tx_num : int;
-    }
+  | Start of { mutable tx_num : int }
+  | Commit of { mutable tx_num : int }
   | UpdateInt of {
       mutable tx_num : int;
       mutable offset : int;
@@ -20,12 +16,9 @@ type t =
       mutable value : string;
       mutable block : Block_id.t;
     }
-  | Rollback of {
-      mutable tx_num : int;
-    }
+  | Rollback of { mutable tx_num : int }
 
-let make_checkpoint_record = 
-  Checkpoint
+let make_checkpoint_record = Checkpoint
 
 let make_update_int_record page =
   let tx_pos = 4 in
@@ -58,37 +51,37 @@ let make_update_string_record page =
 let make_start_record page =
   let tx_pos = 4 in
   let tx_num = Page.get_int32 page tx_pos |> Int32.to_int in
-  Start { tx_num; }
+  Start { tx_num }
 
 let make_commit_record page =
   let tx_pos = 4 in
   let tx_num = Page.get_int32 page tx_pos |> Int32.to_int in
-  Commit { tx_num; }
+  Commit { tx_num }
 
 let make_rollback_record page =
   let tx_pos = 4 in
   let tx_num = Page.get_int32 page tx_pos |> Int32.to_int in
-  Rollback { tx_num; }
+  Rollback { tx_num }
 
-let write_checkpoint_log_record log_mgr = 
-  let page = Page.make ~block_size:4 in 
+let write_checkpoint_log_record log_mgr =
+  let page = Page.make ~block_size:4 in
   Page.set_int32 page 0 (Int32.of_int 0);
   Log_manager.append log_mgr (Page.contents page)
 
-let write_start_log_record log_mgr tx_num = 
-  let page = Page.make ~block_size:8 in 
+let write_start_log_record log_mgr tx_num =
+  let page = Page.make ~block_size:8 in
   Page.set_int32 page 0 (Int32.of_int 1);
   Page.set_int32 page 4 (Int32.of_int tx_num);
   Log_manager.append log_mgr (Page.contents page)
 
-let write_commit_log_record log_mgr tx_num = 
-  let page = Page.make ~block_size:8 in 
+let write_commit_log_record log_mgr tx_num =
+  let page = Page.make ~block_size:8 in
   Page.set_int32 page 0 (Int32.of_int 2);
   Page.set_int32 page 4 (Int32.of_int tx_num);
   Log_manager.append log_mgr (Page.contents page)
 
-let write_rollback_log_record log_mgr tx_num = 
-  let page = Page.make ~block_size:8 in 
+let write_rollback_log_record log_mgr tx_num =
+  let page = Page.make ~block_size:8 in
   Page.set_int32 page 0 (Int32.of_int 5);
   Page.set_int32 page 4 (Int32.of_int tx_num);
   Log_manager.append log_mgr (Page.contents page)
@@ -129,7 +122,6 @@ let write_update_string_log_record log_mgr tx_num blk offset value =
   Page.set_string page value_pos value;
   Log_manager.append log_mgr (Page.contents page)
 
-
 let make ~byte =
   let page = Page.from_bytes byte in
   match Page.get_int32 page 0 |> Int32.to_int with
@@ -141,19 +133,17 @@ let make ~byte =
   | 5 -> make_rollback_record page
   | _ -> failwith "we're dead"
 
-let to_string log_record =  
+let to_string log_record =
   match log_record with
   | Checkpoint -> Printf.sprintf "<CHECKPOINT>"
   | UpdateInt r ->
       Printf.sprintf "<UPDATE INT %d %s %d %d>" r.tx_num
         (File.Block_id.to_string r.block)
-        r.offset
-        (Int32.to_int r.value)
-  | UpdateString r -> 
-    Printf.sprintf "<UPDATE STRING %d %s %d %s>" r.tx_num
-      (File.Block_id.to_string r.block)
-      r.offset
-      r.value
+        r.offset (Int32.to_int r.value)
+  | UpdateString r ->
+      Printf.sprintf "<UPDATE STRING %d %s %d %s>" r.tx_num
+        (File.Block_id.to_string r.block)
+        r.offset r.value
   | Commit r -> Printf.sprintf "<COMMIT %d>" r.tx_num
   | Rollback r -> Printf.sprintf "<ROLLBACK %d>" r.tx_num
   | Start r -> Printf.sprintf "<START %d>" r.tx_num
