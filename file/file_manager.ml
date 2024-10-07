@@ -49,7 +49,7 @@ let get_file file_mgr filename =
   | None ->
       let full_path = Filename.concat file_mgr.db_dirname filename in
       let fd = Unix.openfile full_path Unix.[ O_RDWR; O_CREAT; O_SYNC ] 0o755 in
-      let _ = Hashtbl.add file_mgr.open_files filename fd in
+      Hashtbl.add file_mgr.open_files filename fd;
       fd
 
 let read file_mgr block page =

@@ -7,7 +7,7 @@ type t = {
   file_manager : File_manager.t;
   log_manager : Log_manager.t;
   tx_num : int;
-  buffers: Transaction__Buffer_list.t;
+  buffers : Transaction__Buffer_list.t;
 }
 
 let make ~file_manager ~log_manager ~buffer_manager =
@@ -18,7 +18,7 @@ let make ~file_manager ~log_manager ~buffer_manager =
     file_manager;
     log_manager;
     tx_num = -1;
-    buffers =  Buffer_list.make ~buffer_mgr:buffer_manager;
+    buffers = Buffer_list.make ~buffer_mgr:buffer_manager;
   }
 
 let set_string ~tx ~block ~offset ~value ~to_log =
@@ -26,6 +26,17 @@ let set_string ~tx ~block ~offset ~value ~to_log =
   let buf = Transaction__Buffer_list.get_buffer ~buf_list:tx.buffers ~block in 
   let lsn = ref (-1) in
   ()
+
+let set_int ~tx ~block ~offset ~value ~to_log =
+  let buffer = Transaction__Buffer_list.get_buffer ~buf_list:tx.buffers ~block in
+  let page = Buffer_manager__Db_buffer.contents buffer in
+  let lsn = if to_log then (
+      let old_val = Page.get_int32 page offset in
+      let block = Buffer_manager__Db_buffer.block buffer in
+      Log_record.write_update_int_log_record tx.log_manager tx.tx_num block offset old_val
+    ) else -1 in
+  Page.set_int32 page offset value;
+  Buffer_manager__Db_buffer.set_modified buffer tx.tx_num lsn;
 
 let commit tx =
   (* recoveryMgr.commit code *)
@@ -66,3 +77,24 @@ let recover tx =
   
 let rollback transaction = failwith "todo"
 
+  Printf.printf "transaction %d committed" tx.tx_num
+(* concurMgr.release() *)
+
+let rollback tx =
+  let log_iter = Log_manager.get_iterator tx.log_manager in
+  let rec loop () =
+    if Log_manager__Log_iterator.has_next log_iter then (
+      let bytes = Log_manager__Log_iterator.next log_iter in
+      let rollback_record = Log_record.make ~bytes in
+      if rollback_record.tx_num != tx_num (failwith "todo")
+        else (
+      loop ())
+     in
+  loop();
+  Buffer_manager.flush_all tx.buffer_manager tx.tx_num;
+  let lsn = Log_record.write_rollback_log_record tx.log_manager tx.tx_num in
+  Log_manager.flush tx.log_manager lsn;
+  Transaction__Buffer_list.unpin_all tx.buffers;
+  Printf.printf "transaction %d rolled back" tx.tx_num
+
+let recover transaction = failwith "todo"

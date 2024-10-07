@@ -122,8 +122,8 @@ let write_update_string_log_record log_mgr tx_num blk offset value =
   Page.set_string page value_pos value;
   Log_manager.append log_mgr (Page.contents page)
 
-let make ~byte =
-  let page = Page.from_bytes byte in
+let make ~bytes =
+  let page = Page.from_bytes bytes in
   match Page.get_int32 page 0 |> Int32.to_int with
   | 0 -> make_checkpoint_record
   | 1 -> make_start_record page
