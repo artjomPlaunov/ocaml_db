@@ -129,17 +129,49 @@ let recover tx =
   Log_manager.flush tx.log_manager lsn
 
 let rollback tx =
+  (* recover_manager.rollback *)
+  (* do_rollback *)
   let log_iter = Log_manager.get_iterator tx.log_manager in
   let rec loop () =
     if Log_manager__Log_iterator.has_next log_iter then
       let bytes = Log_manager__Log_iterator.next log_iter in
       let rollback_record = Log_record.make ~bytes in
-      failwith "todo"
+      match rollback_record with
+      | Checkpoint -> ()
+      | Start r -> ()
+      | Commit r -> ()
+      | UpdateInt r ->
+          if r.tx_num == tx.tx_num then (
+            pin ~tx ~block:r.block;
+            let buffer =
+              Buffer_list.get_buffer ~buf_list:tx.buffers ~block:r.block
+            in
+            let lsn = -1 in
+            let page = Buffer_manager__Db_buffer.contents buffer in
+            Page.set_int32 page r.offset r.value;
+            Buffer_manager__Db_buffer.set_modified buffer tx.tx_num lsn;
+            unpin ~tx ~block:r.block)
+          else ()
+      | UpdateString r ->
+          if r.tx_num == tx.tx_num then (
+            pin ~tx ~block:r.block;
+            let buffer =
+              Buffer_list.get_buffer ~buf_list:tx.buffers ~block:r.block
+            in
+            let lsn = -1 in
+            let page = Buffer_manager__Db_buffer.contents buffer in
+            Page.set_string page r.offset r.value;
+            Buffer_manager__Db_buffer.set_modified buffer tx.tx_num lsn;
+            unpin ~tx ~block:r.block)
+          else ()
+      | Rollback r -> ()
     else ()
   in
   loop ();
+
   Buffer_manager.flush_all tx.buffer_manager tx.tx_num;
   let lsn = Log_record.write_rollback_log_record tx.log_manager tx.tx_num in
   Log_manager.flush tx.log_manager lsn;
+
   Transaction__Buffer_list.unpin_all ~buf_list:tx.buffers;
   Printf.printf "transaction %d rolled back" tx.tx_num
