@@ -23,12 +23,14 @@ type t = {
 }
 
 let make ~file_manager ~log_manager ~buffer_manager =
+  let tx_num = get_next_tx_num () in
+  let _ = Log_record.write_start_log_record log_manager tx_num in 
   {
     eof = -1;
     buffer_manager;
     file_manager;
     log_manager;
-    tx_num = get_next_tx_num ();
+    tx_num;
     buffers = Buffer_list.make ~buffer_mgr:buffer_manager;
   }
 

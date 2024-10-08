@@ -15,8 +15,8 @@ module To_test = struct
     let block = Block_id.make ~filename:"testfile" ~block_num:1 in
     Transaction.pin ~tx:tx1 ~block;
     Transaction.set_int ~tx:tx1 ~block ~offset:80 ~value:(Int32.of_int 1)
-      ~to_log:false;
-    Transaction.set_string ~tx:tx1 ~block ~offset:40 ~value:"one" ~to_log:false;
+      ~to_log:true;
+    Transaction.set_string ~tx:tx1 ~block ~offset:40 ~value:"one" ~to_log:true;
     Transaction.commit tx1;
     let tx2 =
       Transaction.make ~file_manager:fm ~log_manager:lm ~buffer_manager:bm
@@ -70,7 +70,7 @@ module To_test = struct
 
   let test_transaction2 () =
     let fm =
-      File_manager.make ~db_dirname:"transaction_tests" ~block_size:1024
+      File_manager.make ~db_dirname:"transaction_tests2" ~block_size:1024
     in
     let lm = Log_manager.make ~file_manager:fm ~log_file:"transaction_logs" in
     let bm =
@@ -139,7 +139,7 @@ end
 
 let test_transaction1 () =
   Alcotest.(check string)
-    "string equality" "lolz"
+    "string equality" "<START 1><UPDATE INT 1 testfile, 1 80 0><UPDATE STRING 1 testfile, 1 40 ><COMMIT 1><START 2><UPDATE INT 2 testfile, 1 80 1><UPDATE STRING 2 testfile, 1 40 one><COMMIT 2><START 3><UPDATE INT 3 testfile, 1 80 2><ROLLBACK 3><START 4>"
     (To_test.test_transaction1 ())
 
 let test_transaction2 () =
