@@ -27,7 +27,46 @@ module To_test = struct
     let sval = Transaction.get_string ~tx:tx2 ~block ~offset:40 in
     Printf.printf "initial value at location 80 = %d\n" ival;
     Printf.printf "initial value at location 40 = %s\n" sval;
-    ""
+    let newival = ival + 1 in
+    let newsval = sval ^ "!" in
+    Transaction.set_int ~tx:tx2 ~block ~offset:80 ~value:(Int32.of_int newival)
+      ~to_log:true;
+    Transaction.set_string ~tx:tx2 ~block ~offset:40 ~value:newsval ~to_log:true;
+    Transaction.commit tx2;
+    let tx3 =
+      Transaction.make ~file_manager:fm ~log_manager:lm ~buffer_manager:bm
+    in
+    Transaction.pin ~tx:tx3 ~block;
+    let ival = Transaction.get_int32 ~tx:tx3 ~block ~offset:80 in
+    let ival = Int32.to_int ival in
+    let sval = Transaction.get_string ~tx:tx3 ~block ~offset:40 in
+    Printf.printf "new value at location 80 = %d\n" ival;
+    Printf.printf "new value at location 40 = %s\n" sval;
+    Transaction.set_int ~tx:tx3 ~block ~offset:80 ~value:(Int32.of_int 9999)
+      ~to_log:true;
+    let ival = Transaction.get_int32 ~tx:tx3 ~block ~offset:80 in
+    let ival = Int32.to_int ival in
+    Printf.printf "pre-rollback value at location 80 = %d\n" ival;
+    Transaction.rollback tx3;
+
+    let tx4 =
+      Transaction.make ~file_manager:fm ~log_manager:lm ~buffer_manager:bm
+    in
+    Transaction.pin ~tx:tx4 ~block;
+    let ival = Transaction.get_int32 ~tx:tx4 ~block ~offset:80 in
+    let ival = Int32.to_int ival in
+    Printf.printf "post-rollback at location 80 = %d\n" ival;
+    let iterator = Log_manager.get_iterator lm in
+    let s = "" in
+    let rec iterate_records iterator s1 =
+      if Log_manager__Log_iterator.has_next iterator then
+        let bytes = Log_manager__Log_iterator.next iterator in
+        let next_rec = Log_record.make ~bytes in
+        let s2 = Printf.sprintf "%s" (Log_record.to_string next_rec) in
+        iterate_records iterator s1 ^ s2
+      else s1
+    in
+    iterate_records iterator s
 end
 
 let test_transaction1 () =

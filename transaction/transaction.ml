@@ -6,8 +6,14 @@ module IntSet = Set.Make (struct
   let compare = compare
 end)
 
+let next_tx_num = ref 0
+
+let get_next_tx_num () =
+  next_tx_num := !next_tx_num + 1;
+  Printf.printf "new transaction: %d\n" !next_tx_num;
+  !next_tx_num
+
 type t = {
-  mutable next_tx_num : int;
   eof : int;
   buffer_manager : Buffer_manager.t;
   file_manager : File_manager.t;
@@ -18,12 +24,11 @@ type t = {
 
 let make ~file_manager ~log_manager ~buffer_manager =
   {
-    next_tx_num = 1;
     eof = -1;
     buffer_manager;
     file_manager;
     log_manager;
-    tx_num = 1;
+    tx_num = get_next_tx_num ();
     buffers = Buffer_list.make ~buffer_mgr:buffer_manager;
   }
 
@@ -36,12 +41,6 @@ let append ~tx ~filename =
   File.File_manager.append tx.file_manager filename
 
 let block_size ~tx = File.File_manager.get_blocksize tx.file_manager
-
-let next_tx_num ~tx =
-  tx.next_tx_num <- tx.next_tx_num + 1;
-  Printf.printf "new transaction: %d\n" tx.next_tx_num;
-  tx.next_tx_num
-
 let pin ~tx ~block = Transaction__Buffer_list.pin ~buf_list:tx.buffers ~block
 
 let unpin ~tx ~block =
