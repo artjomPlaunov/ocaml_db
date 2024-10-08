@@ -92,7 +92,7 @@ module To_test = struct
     let tx3 =
       Transaction.make ~file_manager:fm ~log_manager:lm ~buffer_manager:bm
     in
-    Transaction.pin ~tx:tx3 ~block;
+
     let ival = Transaction.get_int32 ~tx:tx2 ~block ~offset:80 in
     let ival = Int32.to_int ival in
     let sval = Transaction.get_string ~tx:tx2 ~block ~offset:40 in
@@ -115,6 +115,7 @@ module To_test = struct
     Printf.printf "pre-rollback value at location 80 = %d\n" ival;
     (* commit tx2 *)
     Transaction.commit tx2;
+    
     Transaction.rollback tx3;
 
     let tx4 =
@@ -145,7 +146,7 @@ let test_transaction1 () =
 let test_transaction2 () =
   Alcotest.(check string)
     "string equality" "lolz"
-    (To_test.test_transaction1 ())
+    (To_test.test_transaction2 ())
 
 let all_tests () =
   [
