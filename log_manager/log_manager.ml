@@ -40,7 +40,7 @@ let flush_aux log_mgr =
   File_manager.write log_mgr.file_manager log_mgr.cur_block log_mgr.log_page;
   log_mgr.last_saved_lsn <- log_mgr.latest_lsn
 
-let flush log_mgr lsn = if lsn >= log_mgr.latest_lsn then flush_aux log_mgr
+let flush log_mgr lsn = if lsn >= log_mgr.last_saved_lsn then flush_aux log_mgr
 
 (* append also returns the latest lsn *)
 (* TODO think about if we want to rename or separate out the lsn return *)

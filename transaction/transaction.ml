@@ -42,8 +42,6 @@ let append ~tx ~filename =
 
 let block_size ~tx = File.File_manager.get_blocksize tx.file_manager
 
-
-
 let pin ~tx ~block = Transaction__Buffer_list.pin ~buf_list:tx.buffers ~block
 
 let unpin ~tx ~block =
