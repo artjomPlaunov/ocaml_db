@@ -10,7 +10,6 @@ let next_tx_num = ref 0
 
 let get_next_tx_num () =
   next_tx_num := !next_tx_num + 1;
-  Printf.printf "new transaction: %d\n" !next_tx_num;
   !next_tx_num
 
 type t = {
@@ -94,8 +93,7 @@ let commit tx =
   Buffer_manager.flush_all tx.buffer_manager tx.tx_num;
   let lsn = Log_record.write_commit_log_record tx.log_manager tx.tx_num in
   Log_manager.flush tx.log_manager lsn;
-  Transaction__Buffer_list.unpin_all ~buf_list:tx.buffers;
-  Printf.printf "transaction %d committed\n" tx.tx_num
+  Transaction__Buffer_list.unpin_all ~buf_list:tx.buffers
 
 let run_recover tx =
   let finished_txs = ref IntSet.empty in

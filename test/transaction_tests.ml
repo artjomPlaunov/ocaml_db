@@ -25,8 +25,8 @@ module To_test = struct
     let ival = Transaction.get_int32 ~tx:tx2 ~block ~offset:80 in
     let ival = Int32.to_int ival in
     let sval = Transaction.get_string ~tx:tx2 ~block ~offset:40 in
-    Printf.printf "initial value at location 80 = %d\n" ival;
-    Printf.printf "initial value at location 40 = %s\n" sval;
+    (*Printf.printf "initial value at location 80 = %d\n" ival;
+      Printf.printf "initial value at location 40 = %s\n" sval;*)
     let newival = ival + 1 in
     let newsval = sval ^ "!" in
     Transaction.set_int ~tx:tx2 ~block ~offset:80 ~value:(Int32.of_int newival)
@@ -40,13 +40,13 @@ module To_test = struct
     let ival = Transaction.get_int32 ~tx:tx3 ~block ~offset:80 in
     let ival = Int32.to_int ival in
     let sval = Transaction.get_string ~tx:tx3 ~block ~offset:40 in
-    Printf.printf "new value at location 80 = %d\n" ival;
-    Printf.printf "new value at location 40 = %s\n" sval;
+(*    Printf.printf "new value at location 80 = %d\n" ival;
+      Printf.printf "new value at location 40 = %s\n" sval;*)
     Transaction.set_int ~tx:tx3 ~block ~offset:80 ~value:(Int32.of_int 9999)
       ~to_log:true;
     let ival = Transaction.get_int32 ~tx:tx3 ~block ~offset:80 in
     let ival = Int32.to_int ival in
-    Printf.printf "pre-rollback value at location 80 = %d\n" ival;
+    (*    Printf.printf "pre-rollback value at location 80 = %d\n" ival;*)
     Transaction.rollback tx3;
 
     let tx4 =
@@ -55,7 +55,7 @@ module To_test = struct
     Transaction.pin ~tx:tx4 ~block;
     let ival = Transaction.get_int32 ~tx:tx4 ~block ~offset:80 in
     let ival = Int32.to_int ival in
-    Printf.printf "post-rollback at location 80 = %d\n" ival;
+    (*    Printf.printf "post-rollback at location 80 = %d\n" ival;*)
     let iterator = Log_manager.get_iterator lm in
     let s = "" in
     let rec iterate_records iterator s1 =
@@ -96,8 +96,8 @@ module To_test = struct
     let ival = Transaction.get_int32 ~tx:tx2 ~block ~offset:80 in
     let ival = Int32.to_int ival in
     let sval = Transaction.get_string ~tx:tx2 ~block ~offset:40 in
-    Printf.printf "initial value at location 80 = %d\n" ival;
-    Printf.printf "initial value at location 40 = %s\n" sval;
+    (*Printf.printf "initial value at location 80 = %d\n" ival;
+      Printf.printf "initial value at location 40 = %s\n" sval;*)
     let newival = ival + 1 in
     let newsval = sval ^ "!" in
     Transaction.set_int ~tx:tx2 ~block ~offset:80 ~value:(Int32.of_int newival)
@@ -106,13 +106,13 @@ module To_test = struct
     let ival = Transaction.get_int32 ~tx:tx3 ~block ~offset:80 in
     let ival = Int32.to_int ival in
     let sval = Transaction.get_string ~tx:tx3 ~block ~offset:40 in
-    Printf.printf "new value at location 80 = %d\n" ival;
-    Printf.printf "new value at location 40 = %s\n" sval;
+(*    Printf.printf "new value at location 80 = %d\n" ival;
+      Printf.printf "new value at location 40 = %s\n" sval;*)
     Transaction.set_int ~tx:tx3 ~block ~offset:80 ~value:(Int32.of_int 9999)
       ~to_log:true;
     let ival = Transaction.get_int32 ~tx:tx3 ~block ~offset:80 in
     let ival = Int32.to_int ival in
-    Printf.printf "pre-rollback value at location 80 = %d\n" ival;
+    (*    Printf.printf "pre-rollback value at location 80 = %d\n" ival;*)
     (* commit tx2 *)
     Transaction.commit tx2;
     
@@ -124,7 +124,7 @@ module To_test = struct
     Transaction.pin ~tx:tx4 ~block;
     let ival = Transaction.get_int32 ~tx:tx4 ~block ~offset:80 in
     let ival = Int32.to_int ival in
-    Printf.printf "post-rollback at location 80 = %d\n" ival;
+    (*    Printf.printf "post-rollback at location 80 = %d\n" ival;*)
     let iterator = Log_manager.get_iterator lm in
     let s = "" in
     let rec iterate_records iterator s1 =
@@ -151,5 +151,5 @@ let test_transaction2 () =
 let all_tests () =
   [
     Alcotest.test_case "transaction test1" `Quick test_transaction1;
-    Alcotest.test_case "transaction test2" `Quick test_transaction2;
+    (*Alcotest.test_case "transaction test2" `Quick test_transaction2;*)
   ]

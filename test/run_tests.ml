@@ -7,4 +7,5 @@ let () =
       ("Buffer_manager", Buffer_manager_tests.all_tests ());
       ("Log Records", Log_record_tests.all_tests ());
       ("Transactions", Transaction_tests.all_tests ());
+      ("Concurrency", Concurrency_tests.all_tests ());
     ]

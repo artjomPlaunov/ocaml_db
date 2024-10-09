@@ -2,6 +2,7 @@
  (name run_tests)
  (modules
   run_tests
+  concurrency_tests
   buffer_manager_tests
   log_manager_tests
   file_manager_tests
@@ -11,4 +12,4 @@
  (flags
   (-w -69)
   (-w -26))
- (libraries file log_manager transaction buffer_manager log_record alcotest))
+ (libraries threads file log_manager transaction buffer_manager log_record alcotest))
