@@ -64,10 +64,9 @@ let set_string ~tx ~block ~offset ~value ~to_log =
   let page = Buffer_manager__Db_buffer.contents buf in
   let lsn =
     if to_log then
-      let old_val = Page.get_string page offset in
       let block = Buffer_manager__Db_buffer.block buf in
       Log_record.write_update_string_log_record tx.log_manager tx.tx_num block
-        offset old_val
+        offset value
     else -1
   in
   Page.set_string page offset value;
@@ -80,10 +79,9 @@ let set_int ~tx ~block ~offset ~value ~to_log =
   let page = Buffer_manager__Db_buffer.contents buffer in
   let lsn =
     if to_log then
-      let old_val = Page.get_int32 page offset in
       let block = Buffer_manager__Db_buffer.block buffer in
       Log_record.write_update_int_log_record tx.log_manager tx.tx_num block
-        offset old_val
+        offset value
     else -1
   in
   Page.set_int32 page offset value;

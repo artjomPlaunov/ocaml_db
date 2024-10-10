@@ -18,7 +18,7 @@ module To_test = struct
     let tx = Transaction.make ~file_manager:fm ~log_manager:lm ~buffer_manager:bm in
     let block = Block_id.make ~filename:"testfile" ~block_num:0 in
     Transaction.pin ~tx ~block;
-    Transaction.set_int ~tx ~block ~offset:0 ~value:(Int32.of_int 1) ~to_log:true;
+    Transaction.set_int ~tx ~block ~offset:0 ~value:(Int32.of_int 677) ~to_log:true;
     Transaction.commit tx
 
   let transaction_a fm lm bm () =
@@ -28,7 +28,8 @@ module To_test = struct
     let x = Int32.to_int (Transaction.get_int32 ~tx ~block ~offset:0) in
     (* Force the other thread to run by letting this thread sleep. Here we fetched 
        the same initial value the other thread will have fetched. *)
-    Thread.delay 1.0;
+    Printf.printf "transaction A val: %d\n" x;
+    Thread.delay 3.0;
     Transaction.set_int ~tx ~block ~offset:0 ~value:(Int32.of_int (x+1)) ~to_log:true;
     Transaction.commit tx
 
@@ -37,6 +38,7 @@ module To_test = struct
     let block = Block_id.make ~filename:"testfile" ~block_num:0 in
     Transaction.pin ~tx:tx ~block;
     let x = Int32.to_int (Transaction.get_int32 ~tx ~block ~offset:0) in
+        Printf.printf "transaction B val: %d\n" x;
     Transaction.set_int ~tx ~block ~offset:0 ~value:(Int32.of_int (x+1)) ~to_log:true;
     Transaction.commit tx
   
@@ -69,6 +71,7 @@ module To_test = struct
     let bm = Buffer_manager.make ~file_manager:fm ~log_manager:lm ~num_buffers:8 () in
     let t1 = Thread.create (f_a fm lm bm) () in
     Thread.join t1;
+    Thread.delay 1.0;
     (* Initial value *)
     let old_val = read_tx fm lm bm in
     let threadA = Thread.create (transaction_a fm lm bm) () in
@@ -83,7 +86,7 @@ end
 
 let test_concurrency1 () =
   Alcotest.(check string)
-    "simple concurrency test" "lolz"
+    "simple concurrency test" "<START 6><UPDATE INT 6 testfile, 0 0 677><COMMIT 6><START 7><COMMIT 7><START 8><START 9><UPDATE INT 9 testfile, 0 0 678><COMMIT 9><UPDATE INT 8 testfile, 0 0 678><COMMIT 8><START 10><COMMIT 10>"
     (To_test.test_concurrency1 ())
 
 let all_tests () =
