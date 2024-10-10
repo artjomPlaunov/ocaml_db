@@ -1,19 +1,6 @@
 module To_test = struct
   open File
 
-  let get_logs lm =
-    let iterator = Log_manager.get_iterator lm in
-    let s = "" in
-    let rec iterate_records iterator s1 =
-      if Log_manager__Log_iterator.has_next iterator then
-        let bytes = Log_manager__Log_iterator.next iterator in
-        let next_rec = Log_record.make ~bytes in
-        let s2 = Printf.sprintf "%s" (Log_record.to_string next_rec) in
-        iterate_records iterator s1 ^ s2
-      else s1
-    in
-    iterate_records iterator s
-  
   let f_a fm lm bm () =
     let tx = Transaction.make ~file_manager:fm ~log_manager:lm ~buffer_manager:bm in
     let block = Block_id.make ~filename:"testfile" ~block_num:0 in
@@ -56,14 +43,18 @@ module To_test = struct
      state in the database. 
 
      Each transaction tries to increment a counter at the same location of the disk,
-     which is initialized to 1. So we would expect the final result to be 3 if the 
+     which is initialized to 677. So we would expect the final result to be 679 if the 
      transactions were serial.
 
      However without a concurrency manager in place, it is possible that threadA 
      reads the initial value, and gets interrupted at which point threadB runs and also
-     reads the same initial value of 1. Then both threads finish operation in whatever 
-     order, and we get the result of 2 instead of 3. This interruption is forced in the 
+     reads the same initial value of 677. 
+     Then both threads finish operation in whatever 
+     order, and we get the result of 678 instead of 679.
+     This interruption is forced in the 
      test by making transactionA sleep after fetching the initial value.
+
+     Once the concurrency manager is implemented, then we should see the 
   *)
   let test_concurrency1 () =
     let fm = File_manager.make ~db_dirname:"concurrency_tests" ~block_size:400 in
@@ -80,7 +71,7 @@ module To_test = struct
     Thread.join threadB;
     let new_val = read_tx fm lm bm in
     Printf.printf "new val: %d\n" new_val;
-    get_logs lm
+    Test_utils.get_logs lm
 
 end
 
