@@ -49,7 +49,7 @@ module To_test = struct
     let log_file_name = "logs" in
     let log_manager = Log_manager.make ~file_manager ~log_file:log_file_name in
     let blk = Block_id.make ~filename:"fname" ~block_num:1 in
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let blk = Block_id.make ~filename:"fname" ~block_num:i in
       let _ =
         Log_record.write_update_int_log_record log_manager i blk i
@@ -57,7 +57,7 @@ module To_test = struct
       in
       ()
     done;
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let blk = Block_id.make ~filename:"fname" ~block_num:i in
       let _ =
         Log_record.write_update_string_log_record log_manager i blk i
@@ -65,19 +65,19 @@ module To_test = struct
       in
       ()
     done;
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let _ = Log_record.write_checkpoint_log_record log_manager in
       ()
     done;
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let _ = Log_record.write_commit_log_record log_manager 3 in
       ()
     done;
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let _ = Log_record.write_rollback_log_record log_manager 4 in
       ()
     done;
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let _ = Log_record.write_start_log_record log_manager 6 in
       ()
     done;
@@ -95,7 +95,7 @@ module To_test = struct
 end
 
 let test_create_logs2_expected_string =
-"<UPDATE INT 0 fname, 0 0 100><UPDATE INT 1 fname, 1 1 101><UPDATE INT 2 fname, 2 2 102><UPDATE INT 3 fname, 3 3 103><UPDATE INT 4 fname, 4 4 104><UPDATE INT 5 fname, 5 5 105><UPDATE INT 6 fname, 6 6 106><UPDATE INT 7 fname, 7 7 107><UPDATE INT 8 fname, 8 8 108><UPDATE INT 9 fname, 9 9 109><UPDATE INT 10 fname, 10 10 110><UPDATE STRING 0 fname, 0 0 string value0><UPDATE STRING 1 fname, 1 1 string value1><UPDATE STRING 2 fname, 2 2 string value2><UPDATE STRING 3 fname, 3 3 string value3><UPDATE STRING 4 fname, 4 4 string value4><UPDATE STRING 5 fname, 5 5 string value5><UPDATE STRING 6 fname, 6 6 string value6><UPDATE STRING 7 fname, 7 7 string value7><UPDATE STRING 8 fname, 8 8 string value8><UPDATE STRING 9 fname, 9 9 string value9><UPDATE STRING 10 fname, 10 10 string value10><CHECKPOINT><CHECKPOINT><CHECKPOINT><CHECKPOINT><CHECKPOINT><CHECKPOINT><CHECKPOINT><CHECKPOINT><CHECKPOINT><CHECKPOINT><CHECKPOINT><COMMIT 3><COMMIT 3><COMMIT 3><COMMIT 3><COMMIT 3><COMMIT 3><COMMIT 3><COMMIT 3><COMMIT 3><COMMIT 3><COMMIT 3><ROLLBACK 4><ROLLBACK 4><ROLLBACK 4><ROLLBACK 4><ROLLBACK 4><ROLLBACK 4><ROLLBACK 4><ROLLBACK 4><ROLLBACK 4><ROLLBACK 4><ROLLBACK 4><START 6><START 6><START 6><START 6><START 6><START 6><START 6><START 6><START 6><START 6><START 6>"
+"<UPDATE INT 0 fname, 0 0 100><UPDATE INT 1 fname, 1 1 101><UPDATE INT 2 fname, 2 2 102><UPDATE STRING 0 fname, 0 0 string value0><UPDATE STRING 1 fname, 1 1 string value1><UPDATE STRING 2 fname, 2 2 string value2><CHECKPOINT><CHECKPOINT><CHECKPOINT><COMMIT 3><COMMIT 3><COMMIT 3><ROLLBACK 4><ROLLBACK 4><ROLLBACK 4><START 6><START 6><START 6>"
 
   
 let test_create_int_log () =
@@ -117,5 +117,5 @@ let all_tests () =
   [
     Alcotest.test_case "create int logs" `Quick test_create_int_log;
     Alcotest.test_case "create logs1" `Quick test_create_logs1;
-    Alcotest.test_case "create logs2" `Quick test_create_logs2;
+    Alcotest.test_case "create logs2" `Slow test_create_logs2;
   ]

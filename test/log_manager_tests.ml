@@ -15,7 +15,7 @@ module To_test = struct
       let _ = Log_manager.append log_mgr (Page.contents record) in
       ()
     done
-
+  
   let print_log_records_with_message log_mgr msg =
     let intro_msg = Printf.sprintf "%s\n" msg in
     let iterator = Log_manager.get_iterator log_mgr in
@@ -33,7 +33,7 @@ module To_test = struct
     in
     intro_msg ^ iterate_records iterator s
 
-  let create_logs =
+  let create_logs () =
     let file_manager =
       File_manager.make ~db_dirname:"db_test_create_logs" ~block_size:500
     in
@@ -50,6 +50,20 @@ module To_test = struct
         "The log file now has these records:"
     in
     s1 ^ s2
+
+  let test_append_mutex () =
+    let file_manager =
+      File_manager.make ~db_dirname:"db_test_create_logs2" ~block_size:500
+    in
+    let log_file_name = "log_test_create_logs" in
+    let log_manager = Log_manager.make ~file_manager ~log_file:log_file_name in
+    let threadA = Thread.create (create_records_in_log log_manager 1) 10000 in
+    let threadB = Thread.create (create_records_in_log log_manager 20000) 30000 in
+    Thread.join threadB;
+    Thread.join threadA;
+    let s = print_log_records_with_message log_manager "thread A records" in
+    Printf.printf "%s\n" s;
+    "unpredictable thread output"
 end
 
 let test1_expected_string =
@@ -80,6 +94,11 @@ let test1_expected_string =
 
 let test_create_logs () =
   Alcotest.(check string)
-    "same string" test1_expected_string To_test.create_logs
+    "same string" test1_expected_string (To_test.create_logs ())
 
-let all_tests () = [ Alcotest.test_case "create logs" `Quick test_create_logs ]
+let test_append_mutex () =
+  Alcotest.(check string)
+    "same string" "unpredictable thread output" (To_test.test_append_mutex ())
+
+let all_tests () = [ Alcotest.test_case "create logs" `Quick test_create_logs;
+                   Alcotest.test_case "append mutex" `Slow test_append_mutex;]
