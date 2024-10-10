@@ -12,4 +12,11 @@
  (flags
   (-w -69)
   (-w -26))
- (libraries threads file log_manager transaction buffer_manager log_record alcotest))
+ (libraries
+  threads
+  file
+  log_manager
+  transaction
+  buffer_manager
+  log_record
+  alcotest))

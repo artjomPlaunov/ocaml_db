@@ -23,7 +23,7 @@ type t = {
 
 let make ~file_manager ~log_manager ~buffer_manager =
   let tx_num = get_next_tx_num () in
-  let _ = Log_record.write_start_log_record log_manager tx_num in 
+  let _ = Log_record.write_start_log_record log_manager tx_num in
   {
     eof = -1;
     buffer_manager;
@@ -42,7 +42,6 @@ let append ~tx ~filename =
   File.File_manager.append tx.file_manager filename
 
 let block_size ~tx = File.File_manager.get_blocksize tx.file_manager
-
 let pin ~tx ~block = Transaction__Buffer_list.pin ~buf_list:tx.buffers ~block
 
 let unpin ~tx ~block =
