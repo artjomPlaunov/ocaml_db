@@ -1,7 +1,7 @@
 module To_test = struct
   open File
 
-  let single_buffer_update =
+  let single_buffer_update () =
     let file_manager =
       File_manager.make ~db_dirname:"buffertest1" ~block_size:512
     in
@@ -22,7 +22,7 @@ module To_test = struct
     let buf2 = Buffer_manager.pin buffer_manager block2 in
     Test_utils.no_diff "buffertest1/testfile" "buffer_manager_output/test1.txt"
 
-  let multiple_buffer_update =
+  let multiple_buffer_update () =
     let file_manager =
       File.File_manager.make ~db_dirname:"buffertest2" ~block_size:512
     in
@@ -56,7 +56,7 @@ module To_test = struct
     Test_utils.no_diff "buffertest2/testfile" "buffer_manager_output/test2.txt"
 
   (* Buffer_manager test. *)
-  let pin_unpin =
+  let pin_unpin () =
     let file_manager =
       File.File_manager.make ~db_dirname:"buffertest3" ~block_size:512
     in
@@ -96,7 +96,7 @@ module To_test = struct
     s1 ^ s2
 
   (* Check that pinning twice on same block requires unpinning two times before pin. *)
-  let double_pin =
+  let double_pin () =
     let file_manager =
       File.File_manager.make ~db_dirname:"buffertest4" ~block_size:1024
     in
@@ -130,23 +130,23 @@ module To_test = struct
 end
 
 let test_single_buffer_update () =
-  Alcotest.(check bool) "bool equality" true To_test.single_buffer_update
+  Alcotest.(check bool) "bool equality" true (To_test.single_buffer_update ())
 
 let test_multiple_buffer_update () =
-  Alcotest.(check bool) "bool equality" true To_test.multiple_buffer_update
+  Alcotest.(check bool) "bool equality" true (To_test.multiple_buffer_update ())
 
 let test_pin_unpin () =
   Alcotest.(check string)
     "same string"
     "Attempting to pin block 3...\nException: No available Buffers"
-    To_test.pin_unpin
+    (To_test.pin_unpin ())
 
 let test_double_pin () =
   Alcotest.(check string)
     "same string"
     "Attempting to pin block 1...Exception: No available \
      Buffers...Successfully pinned..."
-    To_test.double_pin
+    (To_test.double_pin ())
 
 let all_tests () =
   [

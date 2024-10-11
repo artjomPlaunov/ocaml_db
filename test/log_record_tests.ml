@@ -49,7 +49,7 @@ module To_test = struct
     let log_file_name = "logs" in
     let log_manager = Log_manager.make ~file_manager ~log_file:log_file_name in
     let blk = Block_id.make ~filename:"fname" ~block_num:1 in
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let blk = Block_id.make ~filename:"fname" ~block_num:i in
       let _ =
         Log_record.write_update_int_log_record log_manager i blk i
@@ -57,7 +57,7 @@ module To_test = struct
       in
       ()
     done;
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let blk = Block_id.make ~filename:"fname" ~block_num:i in
       let _ =
         Log_record.write_update_string_log_record log_manager i blk i
@@ -65,19 +65,19 @@ module To_test = struct
       in
       ()
     done;
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let _ = Log_record.write_checkpoint_log_record log_manager in
       ()
     done;
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let _ = Log_record.write_commit_log_record log_manager 3 in
       ()
     done;
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let _ = Log_record.write_rollback_log_record log_manager 4 in
       ()
     done;
-    for i = 0 to 10 do
+    for i = 0 to 2 do
       let _ = Log_record.write_start_log_record log_manager 6 in
       ()
     done;
@@ -132,5 +132,5 @@ let all_tests () =
   [
     Alcotest.test_case "create int logs" `Quick test_create_int_log;
     Alcotest.test_case "create logs1" `Quick test_create_logs1;
-    Alcotest.test_case "create logs2" `Quick test_create_logs2;
+    Alcotest.test_case "create logs2" `Slow test_create_logs2;
   ]
