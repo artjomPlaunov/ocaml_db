@@ -1,6 +1,6 @@
 type t
 
-val make: unit -> t
+val make : unit -> t
 val add_field : t -> string -> Type.t -> int -> unit
 val add_int_field : t -> string -> unit
 val add_string_field : t -> string -> int -> unit
