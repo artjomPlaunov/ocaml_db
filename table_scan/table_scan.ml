@@ -59,3 +59,67 @@ let move_to_rid ~tbl_scan ~rid =
       ~block_num:(Record_id.get_block_num ~rid) in
   tbl_scan.rec_page <- Record_page.make tbl_scan.tx block tbl_scan.layout;
   tbl_scan.cur_slot <- Record_id.get_slot ~rid
+
+let delete ~tbl_scan =
+  Record_page.delete tbl_scan.rec_page tbl_scan.cur_slot
+
+let insert ~tbl_scan =
+  tbl_scan.cur_slot <-
+    (Record_page.insert_after tbl_scan.rec_page tbl_scan.cur_slot);
+  while (tbl_scan.cur_slot < 0) do
+    if at_last_block ~tbl_scan
+    then
+      move_to_new_block ~tbl_scan
+    else (
+      move_to_block ~tbl_scan ~block_num:((get_block_num ~tbl_scan)+1)
+    );
+    tbl_scan.cur_slot <-
+      Record_page.insert_after tbl_scan.rec_page tbl_scan.cur_slot
+  done
+
+let set_string ~tbl_scan ~field_name ~value =
+  Record_page.set_string tbl_scan.rec_page tbl_scan.cur_slot field_name value
+
+let set_int32 ~tbl_scan ~field_name ~value =
+  Record_page.set_int32 tbl_scan.rec_page tbl_scan.cur_slot field_name value
+
+let set_val ~tbl_scan ~field_name ~value =
+  match value with
+  | Constant.Integer v -> set_int32 ~tbl_scan ~field_name ~value:v
+  | Constant.String v -> set_string ~tbl_scan ~field_name ~value:v
+
+let get_int32 ~tbl_scan ~field_name =
+  Record_page.get_int32 tbl_scan.rec_page tbl_scan.cur_slot field_name
+
+let get_string ~tbl_scan ~field_name =
+  Record_page.get_string tbl_scan.rec_page tbl_scan.cur_slot field_name
+
+let get_val ~tbl_scan ~field_name =
+  let schema = Layout.get_schema tbl_scan.layout in
+  match Schema.get_type schema field_name with
+  | Integer -> Constant.Integer (get_int32 ~tbl_scan ~field_name)
+  | Varchar -> Constant.String (get_string ~tbl_scan ~field_name)
+
+let next ~tbl_scan =
+  tbl_scan.cur_slot <-
+    Record_page.next_after tbl_scan.rec_page tbl_scan.cur_slot;
+  let rec f () =
+    if tbl_scan.cur_slot < 0
+    then (
+      if at_last_block ~tbl_scan
+      then
+        false
+      else
+        let block_num = get_block_num ~tbl_scan in 
+        move_to_block ~tbl_scan ~block_num:(block_num+1);
+        tbl_scan.cur_slot <-
+          Record_page.next_after tbl_scan.rec_page tbl_scan.cur_slot;
+        f ()
+    )
+    else
+      true
+  in
+  f ()
+  
+let before_first ~tbl_scan =
+  move_to_block ~tbl_scan ~block_num:0

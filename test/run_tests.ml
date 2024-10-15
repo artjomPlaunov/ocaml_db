@@ -9,4 +9,5 @@ let () =
       ("Transactions", Transaction_tests.all_tests ());
       ("Concurrency", Concurrency_tests.all_tests ());
       ("Record Page", Record_page_tests.all_tests ());
+      ("Table Scan", Table_scan_tests.all_tests ());
     ]
