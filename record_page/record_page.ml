@@ -40,7 +40,7 @@ let set_flag rec_page slot flag =
     ~to_log:true
 
 let is_valid_slot rec_page slot =
-  (offset rec_page.layout slot) <= Transaction.block_size ~tx:rec_page.tx
+  (offset rec_page.layout (slot+1)) <= Transaction.block_size ~tx:rec_page.tx
 
 let search_after rec_page slot flag =
   let rec f i =
@@ -83,3 +83,4 @@ let insert_after rec_page slot =
   then set_flag rec_page new_slot rec_page.used;
   new_slot
   
+let next_after rec_page slot = search_after rec_page slot rec_page.used

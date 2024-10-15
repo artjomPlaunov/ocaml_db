@@ -8,3 +8,5 @@ val set_string : t -> int -> string -> string -> unit
 val delete : t -> int -> unit
 val format : t -> unit
 val insert_after : t -> int -> int
+val next_after : t -> int -> int
+  
