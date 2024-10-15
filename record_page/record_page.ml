@@ -48,7 +48,7 @@ let search_after rec_page slot flag =
     then
       let cur_flag = Transaction.get_int32 ~tx:rec_page.tx
           ~block:rec_page.block ~offset:(offset rec_page.layout i) in
-      if cur_flag = flag then i else f (i+1)
+      if (Int32.to_int cur_flag = flag) then i else f (i+1)
     else
       -1
   in f (slot + 1)
@@ -76,3 +76,10 @@ let format rec_page =
     )
     else ()
   in f 0
+
+let insert_after rec_page slot =
+  let new_slot = search_after rec_page slot rec_page.empty in
+  if new_slot >= 0
+  then set_flag rec_page new_slot rec_page.used;
+  new_slot
+  

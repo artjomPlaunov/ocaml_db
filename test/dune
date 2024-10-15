@@ -8,6 +8,7 @@
   file_manager_tests
   log_record_tests
   transaction_tests
+  record_page_tests
   test_utils)
  (flags
   (-w -69)
@@ -16,6 +17,7 @@
   threads
   file
   log_manager
+  record_page
   transaction
   buffer_manager
   log_record

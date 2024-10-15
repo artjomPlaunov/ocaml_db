@@ -8,4 +8,5 @@ let () =
       ("Log Records", Log_record_tests.all_tests ());
       ("Transactions", Transaction_tests.all_tests ());
       ("Concurrency", Concurrency_tests.all_tests ());
+      ("Record Page", Record_page_tests.all_tests ());
     ]
