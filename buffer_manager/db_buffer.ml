@@ -29,7 +29,7 @@ let set_modified buffer tx_num lsn =
   if buffer.lsn >= 0 then buffer.lsn <- lsn
 
 let is_pinned buffer = buffer.pins > 0
-let is_unpinned buffer = buffer.pins == 0
+let is_unpinned buffer = buffer.pins = 0
 let modifying_tx buffer = buffer.tx_num
 let pin buffer = buffer.pins <- buffer.pins + 1
 
@@ -48,3 +48,5 @@ let assign_to_block buffer block =
   buffer.block <- block;
   File_manager.read buffer.file_manager block buffer.contents;
   buffer.pins <- 0
+
+let equal buffer1 buffer2 = Block_id.eq buffer1.block buffer2.block

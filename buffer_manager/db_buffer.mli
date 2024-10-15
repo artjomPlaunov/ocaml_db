@@ -13,3 +13,4 @@ val set_modified : t -> int -> int -> unit
 val modifying_tx : t -> int
 val flush : t -> unit
 val assign_to_block : t -> Block_id.t -> unit
+val equal : t -> t -> bool
