@@ -1,0 +1,1 @@
+type t = {block_num: int; slot: int}
