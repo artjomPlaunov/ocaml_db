@@ -34,7 +34,6 @@ let set_string rec_page slot field_name value =
   Transaction.set_string ~tx:rec_page.tx ~block:rec_page.block
     ~offset:field_pos ~value ~to_log:true
 
-(* Private methods. *)
 let set_flag rec_page slot flag =
   Transaction.set_int ~tx:rec_page.tx ~block:rec_page.block
     ~offset:(offset rec_page.layout slot) ~value:(Int32.of_int flag)
@@ -44,11 +43,36 @@ let is_valid_slot rec_page slot =
   (offset rec_page.layout slot) <= Transaction.block_size ~tx:rec_page.tx
 
 let search_after rec_page slot flag =
-  let slot = ref (slot + 1) in
-  ()
-  (*
-  while is_valid_slot rec_page !slot do
-    let cur_flag = Transaction.get_int32 ~tx:rec_page.tx ~block:rec_page.block
-        ~offset:(offset rec_page !slot) in
-    
-  done*)
+  let rec f i =
+    if is_valid_slot rec_page i
+    then
+      let cur_flag = Transaction.get_int32 ~tx:rec_page.tx
+          ~block:rec_page.block ~offset:(offset rec_page.layout i) in
+      if cur_flag = flag then i else f (i+1)
+    else
+      -1
+  in f (slot + 1)
+
+let delete rec_page slot = set_flag rec_page slot rec_page.empty
+
+let format rec_page =
+  let rec f i =
+    if is_valid_slot rec_page i
+    then (
+      Transaction.set_int ~tx:rec_page.tx ~block:rec_page.block
+        ~offset:i ~value:(Int32.of_int rec_page.empty) ~to_log:false;
+      let schema = Layout.get_schema rec_page.layout in 
+      let iter_f field_name =
+        let field_offset = Layout.get_offset rec_page.layout field_name in  
+        let field_pos = (offset rec_page.layout i) + field_offset in
+        match
+          Schema.get_type (Layout.get_schema rec_page.layout) field_name with
+        | Integer -> Transaction.set_int ~tx:rec_page.tx ~block:rec_page.block
+                       ~offset:field_pos ~value:(Int32.of_int 0) ~to_log:false
+        | Varchar -> Transaction.set_string ~tx:rec_page.tx
+                       ~block:rec_page.block ~offset:field_pos ~value:""
+                       ~to_log:false
+      in List.iter iter_f (Schema.fields schema)
+    )
+    else ()
+  in f 0
