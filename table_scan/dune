@@ -1,0 +1,7 @@
+(library
+ (name table_scan)
+ (public_name ocaml_db.table_scan)
+ (flags
+  (-w -69)
+  (-w -26))
+ (libraries transaction record_page record_id))

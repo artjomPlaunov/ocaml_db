@@ -1,0 +1,6 @@
+(library
+ (name record_id)
+ (public_name ocaml_db.record_id)
+ (flags
+  (-w -69)
+  (-w -26)))
