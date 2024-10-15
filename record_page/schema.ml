@@ -4,7 +4,7 @@ type t = { mutable fields : string list; info : (string, field_info) Hashtbl.t }
 let make () = { fields = []; info = Hashtbl.create 10 }
 
 let add_field schema field_name ty length =
-  schema.fields <- (List.rev (field_name :: (List.rev schema.fields)));
+  schema.fields <- List.rev (field_name :: List.rev schema.fields);
   Hashtbl.add schema.info field_name { ty; length }
 
 let add_int_field schema field_name = add_field schema field_name Integer 0

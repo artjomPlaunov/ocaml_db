@@ -60,4 +60,9 @@ let pop_right_exn ~list =
       list.size <- list.size - 1;
       node.value
 
+let peek_right_exn ~list =
+  match !(list.tail_ptr) with
+  | None -> failwith "can't pop from empty list"
+  | Some node -> node.value
+
 let length ~list = list.size

@@ -135,7 +135,7 @@ let rollback tx =
     | Start r -> ()
     | Commit r -> ()
     | UpdateInt r ->
-        if r.tx_num == tx.tx_num then (
+        if r.tx_num = tx.tx_num then (
           pin ~tx ~block:r.block;
           let buffer =
             Buffer_list.get_buffer ~buf_list:tx.buffers ~block:r.block
@@ -147,7 +147,7 @@ let rollback tx =
           unpin ~tx ~block:r.block)
         else ()
     | UpdateString r ->
-        if r.tx_num == tx.tx_num then (
+        if r.tx_num = tx.tx_num then (
           pin ~tx ~block:r.block;
           let buffer =
             Buffer_list.get_buffer ~buf_list:tx.buffers ~block:r.block

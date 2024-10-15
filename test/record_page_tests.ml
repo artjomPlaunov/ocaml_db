@@ -37,22 +37,21 @@ module To_test = struct
       slot := Record_page.insert_after rec_page !slot
     done;
     Printf.printf "Deleting these records with A vals < 25.\n";
-    let count = ref 0 in 
+    let count = ref 0 in
     let slot = ref (Record_page.next_after rec_page (-1)) in
     while !slot >= 0 do
-      let a = Int32.to_int(Record_page.get_int32 rec_page !slot "A") in
+      let a = Int32.to_int (Record_page.get_int32 rec_page !slot "A") in
       let b = Record_page.get_string rec_page !slot "B" in
       if a < 25 then (
-        count := !count +1;
+        count := !count + 1;
         Printf.printf "slot %d: {%d, %s}\n" !slot a b;
-        Record_page.delete rec_page !slot
-      );
+        Record_page.delete rec_page !slot);
       slot := Record_page.next_after rec_page !slot
     done;
     Printf.printf "Remaining records:\n";
     let slot = ref (Record_page.next_after rec_page (-1)) in
     while !slot >= 0 do
-      let a = Int32.to_int(Record_page.get_int32 rec_page !slot "A") in
+      let a = Int32.to_int (Record_page.get_int32 rec_page !slot "A") in
       let b = Record_page.get_string rec_page !slot "B" in
       Printf.printf "slot %d: {%d, %s}\n" !slot a b;
       slot := Record_page.next_after rec_page !slot
