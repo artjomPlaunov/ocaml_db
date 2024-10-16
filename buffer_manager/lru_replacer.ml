@@ -6,17 +6,15 @@ end)
 
 type t = {
   capacity_k : int;
-  mutable free : IntSet.t;
-  mutable used : IntSet.t;
-  mutable buffer_access : (int * float Deque.t) array;
+  mutable evictable_set : IntSet.t;
+  mutable buffer_access : (bool * float Deque.t) array;
 }
 
-let make ~capacity_k ~buffer_size =
+let make ~capacity_k ~num_buffers =
   {
     capacity_k;
-    free = IntSet.of_list (List.init buffer_size (fun i -> i));
-    used = IntSet.empty;
-    buffer_access = Array.init buffer_size (fun _ -> (0, Deque.init ()));
+    evictable_set = IntSet.of_list (List.init num_buffers (fun i -> i));
+    buffer_access = Array.init num_buffers (fun _ -> (false, Deque.init ()));
   }
 
 let evict cache =
@@ -48,7 +46,7 @@ let evict cache =
   in
   match min_element compare pinned_time_index_arr with
   | None -> None
-  | Some (pin, _, i) -> if pin <> 0 then None else Some i
+  | Some (is_pinned, _, frame_id) -> if is_pinned then Some frame_id else None
 
 let record_access cache frame_id =
   assert (frame_id < Array.length cache.buffer_access);
@@ -61,10 +59,22 @@ let record_access cache frame_id =
     let _ = Deque.pop_right_exn ~list:access_times in
     Deque.push_left ~list:access_times ~value:(Unix.time ())
 
-let remove cache index =
-  assert (index < Array.length cache.buffer_access);
-  cache.buffer_access.(index) <- (0, Deque.init ())
+let remove cache frame_id =
+  assert (frame_id < Array.length cache.buffer_access);
+  cache.buffer_access.(frame_id) <- (false, Deque.init ())
 
-let num_evictable () =
-  failwith
-    "todo: return the number of evictable frames that are in the replacer"
+let set_evictable ~cache ~frame_id ~to_evict =
+  let is_pinned, access_times = cache.buffer_access.(frame_id) in
+  (* TODO double negative: to_evict and is_pinned are opposites *)
+  if to_evict then (
+    (* sanity check ensuring that it pinned and going to be unpinned *)
+    assert (not (IntSet.mem frame_id cache.evictable_set));
+    cache.buffer_access.(frame_id) <- (false, access_times);
+    cache.evictable_set <- IntSet.add frame_id cache.evictable_set)
+  else (
+    (* sanity check ensuring the opposite *)
+    assert (IntSet.mem frame_id cache.evictable_set);
+    cache.buffer_access.(frame_id) <- (true, access_times);
+    cache.evictable_set <- IntSet.remove frame_id cache.evictable_set)
+
+let num_evictable cache = IntSet.cardinal cache.evictable_set
