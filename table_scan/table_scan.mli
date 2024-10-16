@@ -13,3 +13,5 @@ val get_int32 : tbl_scan:t -> field_name:string -> Int32.t
 val get_string : tbl_scan:t -> field_name:string -> string
 val get_val : tbl_scan:t -> field_name:string -> Constant.t
 val next : tbl_scan:t -> bool                                                   
+val before_first : tbl_scan:t -> unit
+val close : tbl_scan:t -> unit
