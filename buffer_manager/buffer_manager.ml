@@ -24,20 +24,6 @@ let flush_all buffer_manager tx_num =
       if Db_buffer.modifying_tx buffer == tx_num then Db_buffer.flush buffer)
     buffer_manager.bufferpool
 
-let get_frame_id buffer_mgr buffer =
-  let id_ref = ref None in
-  Array.iteri
-    (fun id buf -> if Db_buffer.equal buf buffer then id_ref := Some id)
-    buffer_mgr.bufferpool;
-  assert (Option.is_some !id_ref);
-  Option.get !id_ref
-
-let unpin buffer_mgr buffer =
-  Db_buffer.unpin buffer;
-  if Db_buffer.is_unpinned buffer then
-    let frame_id = get_frame_id buffer_mgr buffer in
-    Lru_replacer.set_evictable ~cache:buffer_mgr.cache ~frame_id ~to_evict:true
-
 let timedout { max_wait_time; _ } start_time =
   let time_now = Unix.time () in
   max_wait_time < int_of_float time_now - start_time
@@ -52,6 +38,20 @@ let choose_unpinned_buffer_opt buffer_mgr =
     (fun buffer -> Db_buffer.is_unpinned buffer)
     buffer_mgr.bufferpool
 
+let get_frame_id buffer_mgr buffer =
+  let id_ref = ref None in
+  Array.iteri
+    (fun id buf -> if Db_buffer.equal buf buffer then id_ref := Some id)
+    buffer_mgr.bufferpool;
+  assert (Option.is_some !id_ref);
+  Option.get !id_ref
+
+let unpin buffer_mgr buffer =
+  Db_buffer.unpin buffer;
+  if Db_buffer.is_unpinned buffer then
+    let frame_id = get_frame_id buffer_mgr buffer in
+    Lru_replacer.set_evictable ~cache:buffer_mgr.cache ~frame_id ~to_evict:true
+
 let try_pinning_opt buffer_mgr block : Db_buffer.t option =
   let find_buf_opt = find_buffer_opt buffer_mgr block in
   let unpinned_buf_opt = choose_unpinned_buffer_opt buffer_mgr in
@@ -59,17 +59,19 @@ let try_pinning_opt buffer_mgr block : Db_buffer.t option =
   | None, None -> None
   | None, Some unpinned_buf ->
       Db_buffer.assign_to_block unpinned_buf block;
-      (if Db_buffer.is_unpinned unpinned_buf then
-         let frame_id = get_frame_id buffer_mgr unpinned_buf in
-         Lru_replacer.set_evictable ~cache:buffer_mgr.cache ~frame_id
-           ~to_evict:false);
+      if Db_buffer.is_unpinned unpinned_buf then (
+        let frame_id = get_frame_id buffer_mgr unpinned_buf in
+        Lru_replacer.record_access buffer_mgr.cache frame_id;
+        Lru_replacer.set_evictable ~cache:buffer_mgr.cache ~frame_id
+          ~to_evict:false);
       Db_buffer.pin unpinned_buf;
       Some unpinned_buf
   | Some find_buf, _ ->
-      (if Db_buffer.is_unpinned find_buf then
-         let frame_id = get_frame_id buffer_mgr find_buf in
-         Lru_replacer.set_evictable ~cache:buffer_mgr.cache ~frame_id
-           ~to_evict:false);
+      if Db_buffer.is_unpinned find_buf then (
+        let frame_id = get_frame_id buffer_mgr find_buf in
+        Lru_replacer.record_access buffer_mgr.cache frame_id;
+        Lru_replacer.set_evictable ~cache:buffer_mgr.cache ~frame_id
+          ~to_evict:false);
       Db_buffer.pin find_buf;
       Some find_buf
 
