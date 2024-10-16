@@ -18,6 +18,7 @@
   threads
   file
   log_manager
+  table_scan
   record_page
   transaction
   buffer_manager
