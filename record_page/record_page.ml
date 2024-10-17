@@ -7,7 +7,6 @@ type t = {
 }
 
 let offset layout slot = slot * Layout.get_slot_size layout
-
 let block rec_page = rec_page.block
 
 let make tx block layout =

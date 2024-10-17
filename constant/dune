@@ -3,5 +3,4 @@
  (public_name ocaml_db.constant)
  (flags
   (-w -69)
-  (-w -26))
-)
+  (-w -26)))
