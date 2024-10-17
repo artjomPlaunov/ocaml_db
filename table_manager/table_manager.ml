@@ -62,8 +62,10 @@ let make ~is_new ~tx =
   Schema.add_int_field fld_catalog_schema "offset";
   table_mgr.field_catalog_layout <- Layout.make fld_catalog_schema;
   if is_new then (
-    create_table table_mgr "tablecatalog" tbl_catalog_schema tx;
-    create_table table_mgr "fieldcatalog" fld_catalog_schema tx);
+    create_table ~table_mgr ~tbl_name:"tablecatalog" ~schema:tbl_catalog_schema
+      ~tx;
+    create_table ~table_mgr ~tbl_name:"fieldcatalog" ~schema:fld_catalog_schema
+      ~tx);
   table_mgr
 
 let get_layout ~table_mgr ~tbl_name ~tx =
