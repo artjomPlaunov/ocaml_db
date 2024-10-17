@@ -1,4 +1,8 @@
-type t
+type t = {
+  schema : Schema.t;
+  offsets : (string, int) Hashtbl.t;
+  slot_size : int;
+}
 
 val make : Schema.t -> t
 val create : Schema.t -> (string, int) Hashtbl.t -> int -> t
