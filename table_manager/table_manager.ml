@@ -8,7 +8,7 @@ type t = {
   mutable field_catalog_layout : Layout.t;
 }
 
-let create_table table_mgr tbl_name schema tx =
+let create_table ~table_mgr ~tbl_name ~schema ~tx =
   let layout = Layout.make schema in
   (* insert record into table catalog *)
   let tbl_catalog =
