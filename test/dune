@@ -10,6 +10,7 @@
   table_scan_tests
   transaction_tests
   record_page_tests
+  lru_replacer_tests
   test_utils)
  (flags
   (-w -69)

@@ -25,7 +25,7 @@ let flush_all buffer_manager tx_num =
     buffer_manager.bufferpool
 
 let timedout { max_wait_time; _ } start_time =
-  let time_now = Unix.time () in
+  let time_now = Unix.gettimeofday () in
   max_wait_time < int_of_float time_now - start_time
 
 let find_buffer_opt buffer_mgr block =
