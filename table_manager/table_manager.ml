@@ -73,21 +73,19 @@ let get_layout table_mgr tbl_name tx =
       ~layout:table_mgr.table_catalog_layout
   in
   let size = ref None in
-  (* TODO get_slot_size may run forever *)
-  (* maybe throw an exception in Table_scan.next *)
   let rec get_slot_size () =
     let has_next = Table_scan.next ~tbl_scan:tbl_catalog in
     let next_matches_table_name =
       Table_scan.get_string ~tbl_scan:tbl_catalog ~field_name:"tablename"
       = tbl_name
     in
-    if has_next && next_matches_table_name then
+    if has_next && next_matches_table_name then (
       Table_scan.get_int32 ~tbl_scan:tbl_catalog ~field_name:"slotsize"
-      |> Int32.to_int
-    else get_slot_size ()
+      |> Int32.to_int;
+      get_slot_size ())
   in
   let slot_size = get_slot_size () in
-  Table_scan.close ~tbl_scan:tbl_catalog;
+  let _ = Table_scan.close ~tbl_scan:tbl_catalog in
 
   let schema = Schema.make () in
   let offsets : (string, int) Hashtbl.t = Hashtbl.create 10 in
@@ -95,7 +93,6 @@ let get_layout table_mgr tbl_name tx =
     Table_scan.make ~tx ~tbl_name:"fieldcatalog"
       ~layout:table_mgr.field_catalog_layout
   in
-  (* TODO may recur forever *)
   let rec populate_schema () =
     let has_next = Table_scan.next ~tbl_scan:fld_catalog in
     let next_matches_table_name =
@@ -119,8 +116,8 @@ let get_layout table_mgr tbl_name tx =
         |> Int32.to_int
       in
       Hashtbl.add offsets fld_name fld_offset;
-      Schema.add_field schema fld_name fld_type fld_len)
-    else populate_schema ()
+      Schema.add_field schema fld_name fld_type fld_len;
+      populate_schema ())
   in
   populate_schema ();
   Table_scan.close ~tbl_scan:fld_catalog;
