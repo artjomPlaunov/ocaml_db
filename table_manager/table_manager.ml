@@ -72,37 +72,31 @@ let get_layout table_mgr tbl_name tx =
     Table_scan.make ~tx ~tbl_name:"tablecatalog"
       ~layout:table_mgr.table_catalog_layout
   in
-  let size = ref None in
-  (* TODO get_slot_size may run forever *)
-  (* maybe throw an exception in Table_scan.next *)
-  let rec get_slot_size () =
-    let has_next = Table_scan.next ~tbl_scan:tbl_catalog in
-    let next_matches_table_name =
+  let slot_size_ref = ref None in
+  while Table_scan.next ~tbl_scan:tbl_catalog do
+    let matches_table_name =
       Table_scan.get_string ~tbl_scan:tbl_catalog ~field_name:"tablename"
       = tbl_name
     in
-    if has_next && next_matches_table_name then
-      Table_scan.get_int32 ~tbl_scan:tbl_catalog ~field_name:"slotsize"
-      |> Int32.to_int
-    else get_slot_size ()
-  in
-  let slot_size = get_slot_size () in
+    if matches_table_name then
+      slot_size_ref :=
+        Table_scan.get_int32 ~tbl_scan:tbl_catalog ~field_name:"slotsize"
+        |> Int32.to_int |> Option.some
+  done;
   Table_scan.close ~tbl_scan:tbl_catalog;
-
+  let slot_size = match !slot_size_ref with None -> 0 | Some size -> size in
   let schema = Schema.make () in
   let offsets : (string, int) Hashtbl.t = Hashtbl.create 10 in
   let fld_catalog =
     Table_scan.make ~tx ~tbl_name:"fieldcatalog"
       ~layout:table_mgr.field_catalog_layout
   in
-  (* TODO may recur forever *)
-  let rec populate_schema () =
-    let has_next = Table_scan.next ~tbl_scan:fld_catalog in
-    let next_matches_table_name =
+  while Table_scan.next ~tbl_scan:fld_catalog do
+    let matches_table_name =
       Table_scan.get_string ~tbl_scan:fld_catalog ~field_name:"tablename"
       = tbl_name
     in
-    if has_next && next_matches_table_name then (
+    if matches_table_name then (
       let fld_name =
         Table_scan.get_string ~tbl_scan:fld_catalog ~field_name:"fieldname"
       in
@@ -120,8 +114,6 @@ let get_layout table_mgr tbl_name tx =
       in
       Hashtbl.add offsets fld_name fld_offset;
       Schema.add_field schema fld_name fld_type fld_len)
-    else populate_schema ()
-  in
-  populate_schema ();
+  done;
   Table_scan.close ~tbl_scan:fld_catalog;
   Layout.{ schema; offsets; slot_size }
