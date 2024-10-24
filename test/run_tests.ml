@@ -10,4 +10,5 @@ let () =
       ("Concurrency", Concurrency_tests.all_tests ());
       ("Record Page", Record_page_tests.all_tests ());
       ("Table Scan", Table_scan_tests.all_tests ());
+      ("Table Manager", Table_manager_tests.all_tests ())
     ]

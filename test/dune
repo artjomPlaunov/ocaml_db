@@ -10,6 +10,7 @@
   table_scan_tests
   transaction_tests
   record_page_tests
+  table_manager_tests
   test_utils)
  (flags
   (-w -69)
@@ -21,6 +22,7 @@
   table_scan
   record_page
   transaction
+  table_manager
   buffer_manager
   log_record
   alcotest))

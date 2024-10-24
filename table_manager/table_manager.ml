@@ -52,7 +52,7 @@ let make ~is_new ~tx =
   in
   let tbl_catalog_schema = Schema.make () in
   Schema.add_string_field tbl_catalog_schema "tablename" table_mgr.max_name;
-  Schema.add_int_field tbl_catalog_schema "slot size";
+  Schema.add_int_field tbl_catalog_schema "slotsize";
   table_mgr.table_catalog_layout <- Layout.make tbl_catalog_schema;
   let fld_catalog_schema = Schema.make () in
   Schema.add_string_field fld_catalog_schema "tablename" table_mgr.max_name;
