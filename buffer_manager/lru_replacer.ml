@@ -56,11 +56,14 @@ let record_access cache frame_id =
   let access_times = Array.get cache.buffer_access frame_id in
   let length = Deque.length access_times in
   assert (0 <= length && length <= cache.capacity_k);
-  if length < cache.capacity_k then Deque.push_left access_times (Unix.time ())
+  if length < cache.capacity_k then
+    let time_now = Unix.gettimeofday () in
+    Deque.push_left access_times time_now
   else (
     assert (length = cache.capacity_k);
     let _ = Deque.pop_right_exn access_times in
-    Deque.push_left access_times (Unix.time ()))
+    let time_now = Unix.gettimeofday () in
+    Deque.push_left access_times time_now)
 
 let remove cache frame_id =
   assert (frame_id < Array.length cache.buffer_access);

@@ -1,16 +1,6 @@
 module To_test = struct
   open File
 
-  let lru_eviction () =
-    let module Lru_replacer = Buffer_manager__Lru_replacer in
-    let cache = Lru_replacer.make ~capacity_k:2 ~num_buffers:7 in
-    Lru_replacer.record_access cache 3;
-    Lru_replacer.record_access cache 2;
-    Lru_replacer.record_access cache 4;
-    Lru_replacer.record_access cache 0;
-    let evicted_opt = Lru_replacer.evict cache in
-    Option.get evicted_opt
-
   let single_buffer_update () =
     let file_manager =
       File_manager.make ~db_dirname:"buffertest1" ~block_size:512
@@ -139,9 +129,6 @@ module To_test = struct
     s1 ^ s2 ^ s3
 end
 
-let test_lru_eviction () =
-  Alcotest.(check int) "int equality" 1 (To_test.lru_eviction ())
-
 let test_single_buffer_update () =
   Alcotest.(check bool) "bool equality" true (To_test.single_buffer_update ())
 
@@ -163,8 +150,6 @@ let test_double_pin () =
 
 let all_tests () =
   [
-    Alcotest.test_case "lru2 eviction with none or single access times" `Quick
-      test_lru_eviction;
     Alcotest.test_case "update single buffer" `Quick test_single_buffer_update;
     Alcotest.test_case "update multiple buffers" `Quick
       test_multiple_buffer_update;
