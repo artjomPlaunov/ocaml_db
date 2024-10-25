@@ -10,11 +10,8 @@
   table_scan_tests
   transaction_tests
   record_page_tests
-<<<<<<< HEAD
   table_manager_tests
-=======
   lru_replacer_tests
->>>>>>> cd42a9d4c48fd3eac90d3732fd6737ff8579d884
   test_utils)
  (flags
   (-w -69)
