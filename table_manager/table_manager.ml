@@ -38,7 +38,7 @@ let create_table ~table_mgr ~tbl_name ~schema ~tx =
       Table_scan.set_int32 ~tbl_scan:fld_catalog ~field_name:"length"
         ~value:(Int32.of_int (Schema.get_length schema fld_name));
       Table_scan.set_int32 ~tbl_scan:fld_catalog ~field_name:"offset"
-        ~value:(Int32.of_int (Layout.get_offset layout fld_name)))
+        ~value:(Int32.of_int (Layout.get_offset layout fld_name));)
     (Schema.fields schema);
   Table_scan.close ~tbl_scan:fld_catalog
 
@@ -103,15 +103,15 @@ let get_layout ~table_mgr ~tbl_name ~tx =
         Table_scan.get_string ~tbl_scan:fld_catalog ~field_name:"fieldname"
       in
       let fld_type =
-        Table_scan.get_int32 ~tbl_scan:tbl_catalog ~field_name:"type"
+        Table_scan.get_int32 ~tbl_scan:fld_catalog ~field_name:"type"
         |> Int32.to_int |> Type.of_int
       in
       let fld_len =
-        Table_scan.get_int32 ~tbl_scan:tbl_catalog ~field_name:"length"
+        Table_scan.get_int32 ~tbl_scan:fld_catalog ~field_name:"length"
         |> Int32.to_int
       in
       let fld_offset =
-        Table_scan.get_int32 ~tbl_scan:tbl_catalog ~field_name:"offset"
+        Table_scan.get_int32 ~tbl_scan:fld_catalog ~field_name:"offset"
         |> Int32.to_int
       in
       Hashtbl.add offsets fld_name fld_offset;
