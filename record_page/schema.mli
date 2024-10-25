@@ -1,4 +1,5 @@
-type t
+type field_info
+type t = { mutable fields : string list; info : (string, field_info) Hashtbl.t }
 
 val make : unit -> t
 val add_field : t -> string -> Type.t -> int -> unit
