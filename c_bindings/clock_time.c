@@ -10,5 +10,5 @@ CAMLprim value clock_gettime_ocaml() {
     caml_failwith("clock_gettime failed");
   }
 
-  return Val_int(ts.tv_nsec);
+  return Val_long(ts.tv_nsec);
 }
