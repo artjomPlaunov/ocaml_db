@@ -5,4 +5,4 @@
   (-w -69)
   (-w -26))
  (modules db_buffer buffer_manager deque lru_replacer)
- (libraries file unix log_manager))
+ (libraries file unix log_manager clock_time))

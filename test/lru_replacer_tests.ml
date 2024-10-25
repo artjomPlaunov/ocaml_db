@@ -22,27 +22,18 @@ module To_test = struct
   let lru_eviction2 () =
     let cache = Lru_replacer.make ~capacity_k:3 ~num_buffers:2 in
     Lru_replacer.record_access cache 1;
-    Unix.sleepf 1e-9;
     Lru_replacer.record_access cache 1;
-    Unix.sleepf 1e-9;
     Lru_replacer.record_access cache 1;
-    Unix.sleepf 1e-9;
     Lru_replacer.record_access cache 0;
-    Unix.sleepf 1e-9;
     Lru_replacer.record_access cache 0;
-    Unix.sleepf 1e-9;
     assert (Lru_replacer.evict cache = Some 0);
     Lru_replacer.record_access cache 1;
-    Unix.sleepf 1e-9;
     assert (Lru_replacer.evict cache = Some 0);
     Lru_replacer.record_access cache 0;
-    Unix.sleepf 1e-9;
     assert (Lru_replacer.evict cache = Some 1);
     Lru_replacer.record_access cache 1;
-    Unix.sleepf 1e-9;
     assert (Lru_replacer.evict cache = Some 1);
     Lru_replacer.record_access cache 1;
-    Unix.sleepf 1e-9;
     assert (Lru_replacer.evict cache = Some 0)
 end
 

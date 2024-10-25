@@ -1,0 +1,7 @@
+(library
+ (name clock_time)
+ (public_name ocaml_db.clock_time)
+ (foreign_stubs
+  (language c)
+   (names clock_time))
+ (libraries unix))

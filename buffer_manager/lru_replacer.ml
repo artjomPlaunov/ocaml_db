@@ -4,13 +4,15 @@ module IntSet = Set.Make (struct
   let compare = compare
 end)
 
-type access_times = float Deque.t
+type access_times = int Deque.t
 
 type t = {
   capacity_k : int;
   mutable evictable_set : IntSet.t;
   mutable buffer_access : access_times array;
 }
+
+external clock_gettime_ns : int -> int = "clock_gettime_ocaml"
 
 let make ~capacity_k ~num_buffers =
   {
@@ -25,7 +27,7 @@ let evict cache =
       (fun frame_id access_times ->
         let length = Deque.length access_times in
         let time =
-          if length = 0 then 0. else Deque.peek_right_exn access_times
+          if length = 0 then 0 else Deque.peek_right_exn access_times
         in
         (length, time, frame_id))
       cache.buffer_access
@@ -57,12 +59,12 @@ let record_access cache frame_id =
   let length = Deque.length access_times in
   assert (0 <= length && length <= cache.capacity_k);
   if length < cache.capacity_k then
-    let time_now = Unix.gettimeofday () in
+    let time_now = clock_gettime_ns 0 in
     Deque.push_left access_times time_now
   else (
     assert (length = cache.capacity_k);
     let _ = Deque.pop_right_exn access_times in
-    let time_now = Unix.gettimeofday () in
+    let time_now = clock_gettime_ns 0 in
     Deque.push_left access_times time_now)
 
 let remove cache frame_id =

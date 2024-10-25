@@ -9,6 +9,8 @@ type t = {
 
 exception BufferAbortException
 
+external clock_gettime_ns : int -> int = "clock_gettime_ocaml"
+
 let make ?(max_wait_time = 10000) ~file_manager ~log_manager ~num_buffers () =
   let bufferpool =
     Array.init num_buffers (fun i -> Db_buffer.make ~file_manager ~log_manager)
@@ -25,8 +27,8 @@ let flush_all buffer_manager tx_num =
     buffer_manager.bufferpool
 
 let timedout { max_wait_time; _ } start_time =
-  let time_now = Unix.gettimeofday () in
-  max_wait_time < int_of_float time_now - start_time
+  let time_now = clock_gettime_ns 0 in
+  max_wait_time < time_now - start_time
 
 let find_buffer_opt buffer_mgr block =
   Array.find_opt
@@ -77,7 +79,7 @@ let try_pinning_opt buffer_mgr block : Db_buffer.t option =
 
 let waiting_too_long start_time max_time =
   (* system.currtime_ms - starttime > max_time*)
-  let cur_time = int_of_float (Unix.gettimeofday () *. 1000.0) in
+  let cur_time = clock_gettime_ns 0 in
   cur_time - start_time > max_time
 
 (* TODO: this code does not work in a multithreaded context,
