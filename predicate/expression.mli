@@ -1,6 +1,6 @@
 module Schema = Record_page__Schema
 
-type t
+type t = Const of Constant.t | FieldName of string
 
 exception NotConstExpr
 exception NotFieldNameExpr
@@ -11,5 +11,5 @@ val is_field_name : t -> bool
 val get_constant : t -> Constant.t
 val get_field_name : t -> string
 val eval : t -> Scan.t -> Constant.t
-val applies_to_schama : t -> Schema.t -> bool
+val applies_to_schema : t -> Schema.t -> bool
 val to_string : t -> string
