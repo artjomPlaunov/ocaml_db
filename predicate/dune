@@ -4,5 +4,5 @@
  (flags
   (-w -69)
   (-w -26))
-  (modules expression term)
+  (modules expression term predicate)
   (libraries scan record_page constant))
