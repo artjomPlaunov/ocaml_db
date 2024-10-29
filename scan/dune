@@ -4,5 +4,5 @@
  (flags
   (-w -69)
   (-w -26))
- (libraries constant)
+ (libraries constant record_id)
  (modules_without_implementation scan))
