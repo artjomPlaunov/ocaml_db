@@ -1,0 +1,8 @@
+(library
+ (name scans)
+ (public_name ocaml_db.scans)
+ (flags
+  (-w -69)
+  (-w -26))
+ (libraries scan)
+ (modules select_scan product_scan))

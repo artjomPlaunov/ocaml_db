@@ -16,7 +16,7 @@ let get_field_name expr =
 let eval expr scan =
   match expr with
   | Const _ -> raise NotConstExpr
-  | FieldName field_name -> Scan.get_val ~scan ~field_name
+  | FieldName field_name -> Scan_type.get_val ~scan ~field_name
 
 let applies_to_schema expr scan =
   match expr with
