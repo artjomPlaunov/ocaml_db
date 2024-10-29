@@ -1,0 +1,8 @@
+(library
+ (name update_scan)
+ (public_name ocaml_db.update_scan)
+ (flags
+  (-w -69)
+  (-w -26))
+ (libraries constant scan record_id)
+ (modules_without_implementation update_scan))

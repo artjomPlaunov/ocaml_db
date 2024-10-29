@@ -1,8 +1,0 @@
-(library
- (name record_page)
- (public_name ocaml_db.record_page)
- (modules schema type layout record_page)
- (flags
-  (-w -69)
-  (-w -26))
- (libraries file transaction))
