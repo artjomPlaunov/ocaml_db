@@ -12,7 +12,9 @@
   record_page_tests
   table_manager_tests
   lru_replacer_tests
-  test_utils)
+  test_utils
+  select_select_tests
+  select_scan_tests)
  (flags
   (-w -69)
   (-w -26))
@@ -26,4 +28,7 @@
   table_manager
   buffer_manager
   log_record
-  alcotest))
+  alcotest
+  select_scan
+  predicate
+  constant))

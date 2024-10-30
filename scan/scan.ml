@@ -1,4 +1,4 @@
-class virtual t : object
+class virtual t = object (self)
   method virtual get_rid : Record_id.t
   method virtual move_to_rid : rid:Record_id.t -> unit
   method virtual delete : unit
@@ -14,4 +14,3 @@ class virtual t : object
   method virtual has_field : field_name:string -> bool
   method virtual close : unit
 end
-

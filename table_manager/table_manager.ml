@@ -15,12 +15,11 @@ let create_table ~table_mgr ~tbl_name ~schema ~tx =
     Table_scan.make ~tx ~tbl_name:"tablecatalog"
       ~layout:table_mgr.table_catalog_layout
   in
-  Table_scan.insert ~tbl_scan:tbl_catalog;
-  Table_scan.set_string ~tbl_scan:tbl_catalog ~field_name:"tablename"
-    ~value:tbl_name;
-  Table_scan.set_int32 ~tbl_scan:tbl_catalog ~field_name:"slotsize"
+  tbl_catalog#insert;
+  tbl_catalog#set_string ~field_name:"tablename" ~value:tbl_name;
+  tbl_catalog#set_int32 ~field_name:"slotsize"
     ~value:(Int32.of_int layout.slot_size);
-  Table_scan.close ~tbl_scan:tbl_catalog;
+  tbl_catalog#close;
   (* insert record into field catalog for each field *)
   let fld_catalog =
     Table_scan.make ~tx ~tbl_name:"fieldcatalog"
@@ -28,19 +27,17 @@ let create_table ~table_mgr ~tbl_name ~schema ~tx =
   in
   List.iter
     (fun fld_name ->
-      Table_scan.insert ~tbl_scan:fld_catalog;
-      Table_scan.set_string ~tbl_scan:fld_catalog ~field_name:"tablename"
-        ~value:tbl_name;
-      Table_scan.set_string ~tbl_scan:fld_catalog ~field_name:"fieldname"
-        ~value:fld_name;
-      Table_scan.set_int32 ~tbl_scan:fld_catalog ~field_name:"type"
+      fld_catalog#insert;
+      fld_catalog#set_string ~field_name:"tablename" ~value:tbl_name;
+      fld_catalog#set_string ~field_name:"fieldname" ~value:fld_name;
+      fld_catalog#set_int32 ~field_name:"type"
         ~value:(Int32.of_int (Schema.get_type schema fld_name |> Type.to_int));
-      Table_scan.set_int32 ~tbl_scan:fld_catalog ~field_name:"length"
+      fld_catalog#set_int32 ~field_name:"length"
         ~value:(Int32.of_int (Schema.get_length schema fld_name));
-      Table_scan.set_int32 ~tbl_scan:fld_catalog ~field_name:"offset"
+      fld_catalog#set_int32 ~field_name:"offset"
         ~value:(Int32.of_int (Layout.get_offset layout fld_name));)
     (Schema.fields schema);
-  Table_scan.close ~tbl_scan:fld_catalog
+  fld_catalog#close
 
 let make ~is_new ~tx =
   let table_mgr =
@@ -75,17 +72,17 @@ let get_layout ~table_mgr ~tbl_name ~tx =
       ~layout:table_mgr.table_catalog_layout
   in
   let slot_size_ref = ref None in
-  while Table_scan.next ~tbl_scan:tbl_catalog do
+  while tbl_catalog#next do
     let matches_table_name =
-      Table_scan.get_string ~tbl_scan:tbl_catalog ~field_name:"tablename"
+      tbl_catalog#get_string ~field_name:"tablename"
       = tbl_name
     in
     if matches_table_name then
       slot_size_ref :=
-        Table_scan.get_int32 ~tbl_scan:tbl_catalog ~field_name:"slotsize"
+        tbl_catalog#get_int32 ~field_name:"slotsize"
         |> Int32.to_int |> Option.some
   done;
-  Table_scan.close ~tbl_scan:tbl_catalog;
+  tbl_catalog#close;
   let slot_size = match !slot_size_ref with None -> 0 | Some size -> size in
   let schema = Schema.make () in
   let offsets : (string, int) Hashtbl.t = Hashtbl.create 10 in
@@ -93,29 +90,29 @@ let get_layout ~table_mgr ~tbl_name ~tx =
     Table_scan.make ~tx ~tbl_name:"fieldcatalog"
       ~layout:table_mgr.field_catalog_layout
   in
-  while Table_scan.next ~tbl_scan:fld_catalog do
+  while fld_catalog#next do
     let matches_table_name =
-      Table_scan.get_string ~tbl_scan:fld_catalog ~field_name:"tablename"
+      fld_catalog#get_string ~field_name:"tablename"
       = tbl_name
     in
     if matches_table_name then (
       let fld_name =
-        Table_scan.get_string ~tbl_scan:fld_catalog ~field_name:"fieldname"
+        fld_catalog#get_string ~field_name:"fieldname"
       in
       let fld_type =
-        Table_scan.get_int32 ~tbl_scan:fld_catalog ~field_name:"type"
+        fld_catalog#get_int32 ~field_name:"type"
         |> Int32.to_int |> Type.of_int
       in
       let fld_len =
-        Table_scan.get_int32 ~tbl_scan:fld_catalog ~field_name:"length"
+        fld_catalog#get_int32 ~field_name:"length"
         |> Int32.to_int
       in
       let fld_offset =
-        Table_scan.get_int32 ~tbl_scan:fld_catalog ~field_name:"offset"
+        fld_catalog#get_int32 ~field_name:"offset"
         |> Int32.to_int
       in
       Hashtbl.add offsets fld_name fld_offset;
       Schema.add_field schema fld_name fld_type fld_len)
   done;
-  Table_scan.close ~tbl_scan:fld_catalog;
+  fld_catalog#close;
   Layout.{ schema; offsets; slot_size }

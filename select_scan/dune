@@ -1,0 +1,7 @@
+(library
+ (name select_scan)
+ (public_name ocaml_db.select_scan)
+ (flags
+  (-w -69)
+  (-w -26))
+ (libraries scan predicate constant record_id)) 

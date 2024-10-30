@@ -23,35 +23,33 @@ module To_test = struct
     List.iter iter_f (Schema.fields (Layout.get_schema layout));
     let tbl_scan = Table_scan.make ~tx ~tbl_name:"T" ~layout in
     Printf.printf "filling the table with 50 random records.\n";
-    Table_scan.before_first ~tbl_scan;
+    tbl_scan#before_first;
     for i = 1 to 50 do
-      Table_scan.insert ~tbl_scan;
-      Table_scan.set_int32 ~tbl_scan ~field_name:"A"
-        ~value:(Int32.of_int (i - 1));
-      Table_scan.set_string ~tbl_scan ~field_name:"B"
-        ~value:(Printf.sprintf "rec %d" i);
-      let rid_str = Record_id.to_string ~rid:(Table_scan.get_rid ~tbl_scan) in
+      tbl_scan#insert;
+      tbl_scan#set_int32 ~field_name:"A" ~value:(Int32.of_int (i - 1));
+      tbl_scan#set_string ~field_name:"B" ~value:(Printf.sprintf "rec %d" i);
+      let rid_str = Record_id.to_string ~rid:(tbl_scan#get_rid) in
       Printf.printf "inserting into slot %s: {%d, rec %d}\n" rid_str i i
     done;
     Printf.printf "Deleting records with A-vals < 25.\n";
-    Table_scan.before_first ~tbl_scan;
-    while Table_scan.next ~tbl_scan do
-      let a = Int32.to_int (Table_scan.get_int32 ~tbl_scan ~field_name:"A") in
-      let b = Table_scan.get_string ~tbl_scan ~field_name:"B" in
+    tbl_scan#before_first;
+    while tbl_scan#next do
+      let a = Int32.to_int (tbl_scan#get_int32 ~field_name:"A") in
+      let b = tbl_scan#get_string ~field_name:"B" in
       if a < 25 then (
-        let rid_str = Record_id.to_string ~rid:(Table_scan.get_rid ~tbl_scan) in
+        let rid_str = Record_id.to_string ~rid:(tbl_scan#get_rid) in
         Printf.printf "Deleting slot %s: {%d, %s}\n" rid_str a b;
-        Table_scan.delete ~tbl_scan)
+        tbl_scan#delete)
     done;
     Printf.printf "Here are the remaining records:\n";
-    Table_scan.before_first ~tbl_scan;
-    while Table_scan.next ~tbl_scan do
-      let a = Int32.to_int (Table_scan.get_int32 ~tbl_scan ~field_name:"A") in
-      let b = Table_scan.get_string ~tbl_scan ~field_name:"B" in
-      let rid_str = Record_id.to_string ~rid:(Table_scan.get_rid ~tbl_scan) in
+    tbl_scan#before_first;
+    while tbl_scan#next do
+      let a = Int32.to_int (tbl_scan#get_int32 ~field_name:"A") in
+      let b = tbl_scan#get_string ~field_name:"B" in
+      let rid_str = Record_id.to_string ~rid:(tbl_scan#get_rid) in
       Printf.printf "slot %s: {%d, %s}\n" rid_str a b
     done;
-    Table_scan.close ~tbl_scan;
+    tbl_scan#close;
     Transaction.commit tx;
     ""
 end

@@ -15,13 +15,13 @@ let get_field_name expr =
 
 let eval expr scan =
   match expr with
-  | Const _ -> raise NotConstExpr
-  | FieldName field_name -> Scan.get_val ~scan ~field_name
+  | Const c -> c
+  | FieldName field_name -> scan#get_val ~field_name:field_name
 
-let applies_to_schema expr scan =
+let applies_to_schema expr schema =
   match expr with
   | Const _ -> true
-  | FieldName field_name -> Schema.has_field scan field_name
+  | FieldName field_name -> Schema.has_field schema field_name
 
 let to_string expr =
   match expr with Const c -> Constant.to_string c | FieldName f -> f
