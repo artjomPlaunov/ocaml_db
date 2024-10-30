@@ -4,6 +4,5 @@
  (flags
   (-w -69)
   (-w -26))
- (libraries constant record_id record_page)
- (modules_without_implementation scan_type)
+ (libraries constant record_id record_page transaction file)
  (modules scan_type predicate expression term))

@@ -1,11 +1,15 @@
 type t
+
+val make :
+  tx:Transaction.t -> tbl_name:string -> layout:Record_page__Layout.t -> t
+
 (* Scan methods *)
 val before_first : scan:t -> unit
 val next : scan:t -> bool
-val get_int32 : scan:t -> string -> int32
-val get_string : scan:t -> string -> string
+val get_int32 : scan:t -> field_name:string -> Int32.t
+val get_string : scan:t -> field_name:string -> string
 val get_val : scan:t -> field_name:string -> Constant.t
-val has_field : scan:t -> string -> bool
+val has_field : scan:t -> field_name:string -> bool
 val close : scan:t -> unit
 val get_rid : scan:t -> Record_id.t
 val move_to_rid : scan:t -> rid:Record_id.t -> unit

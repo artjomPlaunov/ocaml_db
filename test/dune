@@ -8,6 +8,7 @@
   file_manager_tests
   log_record_tests
   table_scan_tests
+  select_scan_tests
   transaction_tests
   record_page_tests
   table_manager_tests
@@ -19,6 +20,9 @@
  (libraries
   threads
   file
+  scan
+  scans
+  constant
   log_manager
   table_scan
   record_page

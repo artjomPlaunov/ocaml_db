@@ -4,4 +4,4 @@
  (flags
   (-w -69)
   (-w -26))
- (libraries constant transaction record_page record_id))
+ (libraries constant transaction record_page record_id scan))
