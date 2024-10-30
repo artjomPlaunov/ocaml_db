@@ -26,8 +26,7 @@ module To_test = struct
     Table_scan.before_first ~scan;
     for i = 1 to 50 do
       Table_scan.insert ~scan;
-      Table_scan.set_int32 ~scan ~field_name:"A"
-        ~value:(Int32.of_int (i - 1));
+      Table_scan.set_int32 ~scan ~field_name:"A" ~value:(Int32.of_int (i - 1));
       Table_scan.set_string ~scan ~field_name:"B"
         ~value:(Printf.sprintf "rec %d" i);
       let rid_str = Record_id.to_string ~rid:(Table_scan.get_rid ~scan) in

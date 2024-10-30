@@ -63,13 +63,11 @@ let move_to_rid ~scan ~rid =
 let delete ~scan = Record_page.delete scan.rec_page scan.cur_slot
 
 let insert ~scan =
-  scan.cur_slot <-
-    Record_page.insert_after scan.rec_page scan.cur_slot;
+  scan.cur_slot <- Record_page.insert_after scan.rec_page scan.cur_slot;
   while scan.cur_slot < 0 do
     if at_last_block ~scan then move_to_new_block ~scan
     else move_to_block ~scan ~block_num:(get_block_num ~scan + 1);
-    scan.cur_slot <-
-      Record_page.insert_after scan.rec_page scan.cur_slot
+    scan.cur_slot <- Record_page.insert_after scan.rec_page scan.cur_slot
   done
 
 let set_string ~scan ~field_name ~value =
@@ -96,16 +94,14 @@ let get_val ~scan ~field_name =
   | Varchar -> Constant.String (get_string ~scan ~field_name)
 
 let next ~scan =
-  scan.cur_slot <-
-    Record_page.next_after scan.rec_page scan.cur_slot;
+  scan.cur_slot <- Record_page.next_after scan.rec_page scan.cur_slot;
   let rec f () =
     if scan.cur_slot < 0 then (
       if at_last_block ~scan then false
       else
         let block_num = get_block_num ~scan in
         move_to_block ~scan ~block_num:(block_num + 1);
-        scan.cur_slot <-
-          Record_page.next_after scan.rec_page scan.cur_slot;
+        scan.cur_slot <- Record_page.next_after scan.rec_page scan.cur_slot;
         f ())
     else true
   in
@@ -113,5 +109,5 @@ let next ~scan =
 
 let before_first ~scan = move_to_block ~scan ~block_num:0
 
-let has_field ~scan ~field_name = 
+let has_field ~scan ~field_name =
   Schema.has_field (Layout.get_schema scan.layout) field_name

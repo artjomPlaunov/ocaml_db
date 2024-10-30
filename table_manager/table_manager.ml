@@ -38,7 +38,7 @@ let create_table ~table_mgr ~tbl_name ~schema ~tx =
       Table_scan.set_int32 ~scan:fld_catalog ~field_name:"length"
         ~value:(Int32.of_int (Schema.get_length schema fld_name));
       Table_scan.set_int32 ~scan:fld_catalog ~field_name:"offset"
-        ~value:(Int32.of_int (Layout.get_offset layout fld_name));)
+        ~value:(Int32.of_int (Layout.get_offset layout fld_name)))
     (Schema.fields schema);
   Table_scan.close ~scan:fld_catalog
 
@@ -77,8 +77,7 @@ let get_layout ~table_mgr ~tbl_name ~tx =
   let slot_size_ref = ref None in
   while Table_scan.next ~scan:tbl_catalog do
     let matches_table_name =
-      Table_scan.get_string ~scan:tbl_catalog ~field_name:"tablename"
-      = tbl_name
+      Table_scan.get_string ~scan:tbl_catalog ~field_name:"tablename" = tbl_name
     in
     if matches_table_name then
       slot_size_ref :=
@@ -95,8 +94,7 @@ let get_layout ~table_mgr ~tbl_name ~tx =
   in
   while Table_scan.next ~scan:fld_catalog do
     let matches_table_name =
-      Table_scan.get_string ~scan:fld_catalog ~field_name:"tablename"
-      = tbl_name
+      Table_scan.get_string ~scan:fld_catalog ~field_name:"tablename" = tbl_name
     in
     if matches_table_name then (
       let fld_name =
