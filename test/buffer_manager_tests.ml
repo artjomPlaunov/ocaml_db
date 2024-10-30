@@ -1,5 +1,6 @@
 module To_test = struct
   open File
+  open Test_utils
 
   let single_buffer_update () =
     let file_manager =
@@ -20,7 +21,9 @@ module To_test = struct
 
     Buffer_manager.unpin buffer_manager buf1;
     let buf2 = Buffer_manager.pin buffer_manager block2 in
-    Test_utils.no_diff "buffertest1/testfile" "buffer_manager_output/test1.txt"
+    
+    no_diff "buffertest1/testfile" "buffer_manager_output/test1.txt"
+    
 
   let multiple_buffer_update () =
     let file_manager =

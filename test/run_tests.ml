@@ -14,5 +14,7 @@ let () =
       ("Select Scan", Select_scan_tests.all_tests ());
       ("Select Select", Select_select_tests.all_tests ());
       ("Table Manager", Table_manager_tests.all_tests ());
-      ("Product Scan", Product_scan_tests.all_tests ())
+      ("Product Scan", Product_scan_tests.all_tests ());
+      ("Project Scan", Project_scan_tests.all_tests ());
+
     ]

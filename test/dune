@@ -12,6 +12,7 @@
   record_page_tests
   table_manager_tests
   lru_replacer_tests
+  project_scan_tests
   test_utils
   select_select_tests
   product_scan_tests
@@ -23,6 +24,7 @@
   threads
   file
   log_manager
+  project_scan
   table_scan
   record_page
   transaction

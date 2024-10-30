@@ -1,26 +1,20 @@
 module To_test = struct
   open File
+  open Test_utils
   module Schema = Record_page__Schema
   module Layout = Record_page__Layout
-  module Expression = Predicate__Expression
-  module Term = Predicate__Term
-  module Constant = Constant
 
   let test_select_scan0 () =
-    let fm = File_manager.make ~db_dirname:"tmp_selectscan_test0" ~block_size:400 in
-    let lm = Log_manager.make ~file_manager:fm ~log_file:"tmp_selectscan_logs" in
-    let bm = Buffer_manager.make ~file_manager:fm ~log_manager:lm ~num_buffers:8 () in
-    let tx = Transaction.make ~file_manager:fm ~log_manager:lm ~buffer_manager:bm in
+    let env = make_test_env ~db_name:"selectscan_test0" in
     
-    (* Create table and insert records *)
+    (* Create table *)
     let schema = Schema.make () in
     Schema.add_int_field schema "A";
     Schema.add_string_field schema "B" 9;
     let layout = Layout.make schema in
-    let tbl_scan = Table_scan.make ~tx ~tbl_name:"T" ~layout in
+    let tbl_scan = Table_scan.make ~tx:env.transaction ~tbl_name:"T" ~layout in
     
-    let output = Buffer.create 1024 in
-    Buffer.add_string output "Initial records:\n";
+    Buffer.add_string env.output "Initial records:\n";
     
     (* Insert records *)
     tbl_scan#before_first;
@@ -28,39 +22,27 @@ module To_test = struct
       tbl_scan#insert;
       tbl_scan#set_int32 ~field_name:"A" ~value:(Int32.of_int i);
       tbl_scan#set_string ~field_name:"B" ~value:(Printf.sprintf "rec%d" i);
-      Buffer.add_string output (Printf.sprintf "Inserted: {A=%d, B=rec%d}\n" i i)
+      Buffer.add_string env.output (Printf.sprintf "Inserted: {A=%d, B=rec%d}\n" i i)
     done;
 
-    (* Print all records before filtering *)
-    Buffer.add_string output "\nAll records before filtering:\n";
-    tbl_scan#before_first;
-    while tbl_scan#next do
-      let a = Int32.to_int (tbl_scan#get_int32 ~field_name:"A") in
-      let b = tbl_scan#get_string ~field_name:"B" in
-      Buffer.add_string output (Printf.sprintf "{A=%d, B=%s}\n" a b)
-    done;
+    (* Print all records *)
+    let get_fields scan =
+      let a = Int32.to_int (scan#get_int32 ~field_name:"A") in
+      let b = scan#get_string ~field_name:"B" in
+      Printf.sprintf "{A=%d, B=%s}\n" a b
+    in
+    print_table_contents ~output:env.output ~name:"All records before filtering" 
+      ~scan:tbl_scan ~get_fields;
 
-    (* Create predicate A = 3 *)
-    let lhs = Expression.make_field_name "A" in
-    let rhs = Expression.make_const (Constant.Integer (Int32.of_int 3)) in
-    let term = Term.make lhs rhs in
-    let pred = Predicate.make term in
+    (* Create and test selection *)
+    let pred = make_predicate "A" 3 in
+    let select = new Select_scan.t tbl_scan pred in
     
-    (* Create select scan *)
-    let select = new Select_scan.t (tbl_scan) pred in
+    print_table_contents ~output:env.output ~name:"Filtered records (A = 3)" 
+      ~scan:select ~get_fields;
     
-    (* Test the selection *)
-    Buffer.add_string output "\nFiltered records (A = 3):\n";
-    select#before_first;
-    while select#next do
-      let a = Int32.to_int (select#get_int32 ~field_name:"A") in
-      let b = select#get_string ~field_name:"B" in
-      Buffer.add_string output (Printf.sprintf "{A=%d, B=%s}\n" a b)
-    done;
-    
-    select#close;
-    Transaction.commit tx;
-    Buffer.contents output
+    cleanup_test_env select env;
+    Buffer.contents env.output
 end
 
 let expected_output = "Initial records:

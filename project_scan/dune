@@ -1,0 +1,7 @@
+(library
+ (name project_scan)
+ (public_name ocaml_db.project_scan)
+ (flags
+  (-w -69)
+  (-w -26))
+ (libraries scan predicate constant record_id)) 
