@@ -13,6 +13,7 @@
   table_manager_tests
   lru_replacer_tests
   project_scan_tests
+  product_project_select_tests
   test_utils
   select_select_tests
   product_scan_tests
