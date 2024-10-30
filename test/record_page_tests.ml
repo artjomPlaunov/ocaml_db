@@ -5,9 +5,9 @@ module To_test = struct
 
   let test_record_page0 () =
     let fm =
-      File_manager.make ~db_dirname:"record_page_test0" ~block_size:1024
+      File_manager.make ~db_dirname:"tmp_recordpage_test0" ~block_size:1024
     in
-    let lm = Log_manager.make ~file_manager:fm ~log_file:"recordpage_logs" in
+    let lm = Log_manager.make ~file_manager:fm ~log_file:"tmp_recordpage_logs" in
     let bm =
       Buffer_manager.make ~file_manager:fm ~log_manager:lm ~num_buffers:8 ()
     in

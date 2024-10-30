@@ -14,6 +14,7 @@
   lru_replacer_tests
   test_utils
   select_select_tests
+  product_scan_tests
   select_scan_tests)
  (flags
   (-w -69)
@@ -27,6 +28,7 @@
   transaction
   table_manager
   buffer_manager
+  product_scan
   log_record
   alcotest
   select_scan

@@ -5,9 +5,9 @@ module To_test = struct
 
   let tbl_mgr1 () =
     let file_manager =
-      File_manager.make ~db_dirname:"based_table_manager_test" ~block_size:1024
+      File_manager.make ~db_dirname:"tmp_tablemanager_test" ~block_size:1024
     in
-    let log_manager = Log_manager.make ~file_manager ~log_file:"based_logs" in
+    let log_manager = Log_manager.make ~file_manager ~log_file:"tmp_tablemanager_logs" in
     let buffer_manager =
       Buffer_manager.make ~file_manager ~log_manager ~num_buffers:8 ()
     in

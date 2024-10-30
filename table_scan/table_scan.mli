@@ -3,7 +3,6 @@ class t :
   string ->  (* table name *)
   Record_page__Layout.t -> 
   object
-    inherit Scan.t
     method get_rid : Record_id.t
     method move_to_rid : rid:Record_id.t -> unit
     method delete : unit

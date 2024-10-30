@@ -1,6 +1,6 @@
 class t :
   Scan.t ->
-  Predicate.t ->
+  Scan.t ->
   object
 
     method before_first : unit
@@ -18,3 +18,4 @@ class t :
     method set_string : field_name:string -> value:string -> unit
     method set_val : field_name:string -> value:Constant.t -> unit
   end
+
