@@ -84,3 +84,62 @@ let write_test_output ~test_name ~output ~db_name =
   let oc = open_out output_file in
   output_string oc output;
   close_out oc
+
+(* Buffer test environment type *)
+type buffer_test_env = {
+  file_manager: File_manager.t;
+  log_manager: Log_manager.t;
+  buffer_manager: Buffer_manager.t;
+}
+
+(* Basic setup for buffer/file tests *)
+let make_buffer_test_env ~db_name ~num_buffers = 
+  let file_manager = File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size:512 in
+  let log_manager = Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs") in
+  let buffer_manager = Buffer_manager.make ~file_manager ~log_manager ~num_buffers () in
+  { file_manager; log_manager; buffer_manager }
+
+(* Setup for table manager tests *)
+let make_table_test_env ~db_name = 
+  let env = make_test_env ~db_name in
+  let table_mgr = Table_manager.make ~is_new:true ~tx:env.transaction in
+  (env, table_mgr)
+
+(* Setup for parser tests *)
+let make_parser_test_env ~db_name =
+  let env = make_test_env ~db_name in
+  let table_mgr = Table_manager.make ~is_new:true ~tx:env.transaction in
+  (env, table_mgr)
+
+(* Cleanup functions *)
+let cleanup_buffer_test_env env =
+  Buffer_manager.flush_all env.buffer_manager 0
+
+let cleanup_table_test_env env table_mgr =
+  Transaction.commit env.transaction
+
+(* Log record test environment type *)
+type log_record_test_env = {
+  file_manager: File_manager.t;
+  log_manager: Log_manager.t;
+}
+
+(* Setup for log record tests *)
+let make_log_record_test_env ~db_name = 
+  let file_manager = File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size:500 in
+  let log_manager = Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs") in
+  { file_manager; log_manager }
+
+(* Helper to get logs as string *)
+let get_logs log_manager =
+  let iterator = Log_manager.get_iterator log_manager in
+  let rec iterate_records iterator acc =
+    if Log_manager__Log_iterator.has_next iterator then
+      let bytes = Log_manager__Log_iterator.next iterator in
+      let next_rec = Log_record.make ~bytes in
+      let log_str = Log_record.to_string next_rec ^ "\n" in
+      iterate_records iterator (acc ^ log_str)
+    else 
+      acc
+  in
+  iterate_records iterator ""

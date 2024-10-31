@@ -314,6 +314,67 @@ module To_test = struct
     let output = Buffer.contents env.output in
     write_test_output ~test_name:"product_project" ~output ~db_name:"productprojectscan_test0";
     output
+
+
+  (* Select Update Test *)
+  let test_select_update0 () =
+    let env = make_test_env ~db_name:"selectupdate_test0" in
+    
+    (* Create table *)
+    let schema = Schema.make () in
+    Schema.add_int_field schema "A";
+    Schema.add_string_field schema "B" 9;
+    Schema.add_int_field schema "C";
+    let layout = Layout.make schema in
+    let tbl_scan = Table_scan.make ~tx:env.transaction ~tbl_name:"T" ~layout in
+    
+    Buffer.add_string env.output "Initial records:\n";
+    
+    (* Insert initial records *)
+    tbl_scan#before_first;
+    for i = 1 to 5 do
+      tbl_scan#insert;
+      tbl_scan#set_int32 ~field_name:"A" ~value:(Int32.of_int i);
+      tbl_scan#set_string ~field_name:"B" ~value:(Printf.sprintf "rec%d" i);
+      tbl_scan#set_int32 ~field_name:"C" ~value:(Int32.of_int (i * 10));
+      Buffer.add_string env.output 
+        (Printf.sprintf "Inserted: {A=%d, B=rec%d, C=%d}\n" i i (i * 10))
+    done;
+
+    (* Create select scan for records where A = 3 *)
+    let lhs = Expression.make_field_name "A" in
+    let rhs = Expression.make_const (Constant.make_integer 3l) in
+    let term = Term.make lhs rhs in
+    let pred = Predicate.make term in
+    let select = new Select_scan.t tbl_scan pred in
+    
+    Buffer.add_string env.output "\nUpdating records where A = 3:\n";
+    
+    (* Update selected records *)
+    select#before_first;
+    while select#next do
+      let a = Int32.to_int (select#get_int32 ~field_name:"A") in
+      let new_c = a * 100 in
+      select#set_int32 ~field_name:"C" ~value:(Int32.of_int new_c);
+      Buffer.add_string env.output 
+        (Printf.sprintf "Updated record {A=%d} with C=%d\n" a new_c)
+    done;
+
+    (* Print final table contents *)
+    Buffer.add_string env.output "\nFinal table contents:\n";
+    tbl_scan#before_first;
+    while tbl_scan#next do
+      let a = Int32.to_int (tbl_scan#get_int32 ~field_name:"A") in
+      let b = tbl_scan#get_string ~field_name:"B" in
+      let c = Int32.to_int (tbl_scan#get_int32 ~field_name:"C") in
+      Buffer.add_string env.output 
+        (Printf.sprintf "{A=%d, B=%s, C=%d}\n" a b c)
+    done;
+
+    cleanup_test_env tbl_scan env;
+    let output = Buffer.contents env.output in
+    write_test_output ~test_name:"select_update" ~output ~db_name:"selectupdate_test0";
+    output
 end
 
 (* Expected outputs from original test files *)
@@ -328,6 +389,23 @@ let product_scan_expected = "Inserting records into T1:\nT1: Inserted {A=1, B=re
 let select_select_expected = "Initial records:\nInserted: {A=0, B=0, C=rec1}\nInserted: {A=1, B=1, C=rec2}\nInserted: {A=2, B=0, C=rec3}\nInserted: {A=0, B=1, C=rec4}\nInserted: {A=1, B=0, C=rec5}\nInserted: {A=2, B=1, C=rec6}\n\nFirst selection (A = 2):\n{A=2, B=0, C=rec3}\n{A=2, B=1, C=rec6}\n\nSecond selection (A = 2 AND B = 1):\n{A=2, B=1, C=rec6}\n"
 
 let product_project_expected = "Inserting records into T1:\nT1: {A=1, B=rec1, C=10}\nT1: {A=2, B=rec2, C=20}\nT1: {A=3, B=rec3, C=30}\n\nInserting records into T2:\nT2: {D=100, E=val1, F=1000}\nT2: {D=200, E=val2, F=2000}\n\nProjected records from T1 (A,C only):\n{A=1, C=10}\n{A=2, C=20}\n{A=3, C=30}\n\nProjected records from T2 (D,F only):\n{D=100, F=1000}\n{D=200, F=2000}\n\nProduct of projections (T1[A,C] × T2[D,F]):\n{A=1, C=10, D=100, F=1000}\n{A=1, C=10, D=200, F=2000}\n{A=2, C=20, D=100, F=1000}\n{A=2, C=20, D=200, F=2000}\n{A=3, C=30, D=100, F=1000}\n{A=3, C=30, D=200, F=2000}\n"
+
+let select_update_expected = "Initial records:\n\
+Inserted: {A=1, B=rec1, C=10}\n\
+Inserted: {A=2, B=rec2, C=20}\n\
+Inserted: {A=3, B=rec3, C=30}\n\
+Inserted: {A=4, B=rec4, C=40}\n\
+Inserted: {A=5, B=rec5, C=50}\n\
+\n\
+Updating records where A = 3:\n\
+Updated record {A=3} with C=300\n\
+\n\
+Final table contents:\n\
+{A=1, B=rec1, C=10}\n\
+{A=2, B=rec2, C=20}\n\
+{A=3, B=rec3, C=300}\n\
+{A=4, B=rec4, C=40}\n\
+{A=5, B=rec5, C=50}\n"
 
 (* Test drivers *)
 let test_table_scan () =
@@ -348,6 +426,10 @@ let test_select_select () =
 let test_product_project () =
   Alcotest.(check string) "product project" product_project_expected (To_test.test_product_project_scan0 ())
 
+
+let test_select_update () =
+  Alcotest.(check string) "select update" select_update_expected (To_test.test_select_update0 ())
+
 (* All tests *)
 let all_tests () =
   [
@@ -357,4 +439,5 @@ let all_tests () =
     Alcotest.test_case "product scan" `Quick test_product_scan;
     Alcotest.test_case "select select" `Quick test_select_select;
     Alcotest.test_case "product project" `Quick test_product_project;
+    Alcotest.test_case "select update" `Quick test_select_update;
   ]
