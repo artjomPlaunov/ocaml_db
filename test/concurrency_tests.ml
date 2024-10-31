@@ -19,7 +19,7 @@ module To_test = struct
     Transaction.pin ~tx ~block;
     let x = Int32.to_int (Transaction.get_int32 ~tx ~block ~offset:0) in
     let result = Printf.sprintf "transaction A initial val: %d\n" x in
-    Thread.delay 0.5;
+    Thread.delay 3.0;
     Transaction.set_int ~tx ~block ~offset:0
       ~value:(Int32.of_int (x + 1))
       ~to_log:true;
@@ -52,7 +52,7 @@ module To_test = struct
 
   let test_concurrency1 () =
     let fm =
-      File_manager.make ~db_dirname:"concurrency_tests" ~block_size:400
+      File_manager.make ~db_dirname:"tmp_concurrency_tests" ~block_size:400
     in
     let lm = Log_manager.make ~file_manager:fm ~log_file:"logfile" in
     let bm =
