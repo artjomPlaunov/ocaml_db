@@ -74,3 +74,13 @@ let make_predicate field_name value =
 let format_record fields =
   let field_strs = List.map (fun (name, value) -> Printf.sprintf "%s=%s" name value) fields in
   "{" ^ String.concat ", " field_strs ^ "}"
+
+let write_test_output ~test_name ~output ~db_name =
+  let base_dir = "tmp" in
+  let dir = Filename.concat base_dir db_name in
+  (try Unix.mkdir base_dir 0o777 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
+  (try Unix.mkdir dir 0o777 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
+  let output_file = Filename.concat dir (test_name ^ "_output.txt") in
+  let oc = open_out output_file in
+  output_string oc output;
+  close_out oc

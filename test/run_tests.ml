@@ -10,13 +10,7 @@ let () =
       ("Transactions", Transaction_tests.all_tests ());
       ("Concurrency", Concurrency_tests.all_tests ());
       ("Record Page", Record_page_tests.all_tests ());
-      ("Table Scan", Table_scan_tests.all_tests ());
-      ("Select Scan", Select_scan_tests.all_tests ());
-      ("Select Select", Select_select_tests.all_tests ());
+      ("Scan Tests", Scan_tests.all_tests ());
       ("Table Manager", Table_manager_tests.all_tests ());
-      ("Product Scan", Product_scan_tests.all_tests ());
-      ("Project Scan", Project_scan_tests.all_tests ());
-      ("Product Project", Product_project_select_tests.all_tests ());
       ("Parser Test", Parser_tests.all_tests ())
-
     ]
