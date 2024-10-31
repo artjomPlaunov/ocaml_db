@@ -12,3 +12,4 @@ val get_length : t -> string -> int
 val add : t -> string -> t -> unit
 val add_all : t -> t -> unit
 val length_in_bytes : t -> string -> int
+val to_string : t -> string

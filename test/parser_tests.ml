@@ -15,12 +15,12 @@ module To_test = struct
         Alcotest.fail "Expected Select query"
 
   let test_select_with_where () =
-    let query = "SELECT A, B FROM T1 WHERE A = 2" in
+    let query = "SELECT A, B, C FROM T1 WHERE A = 2" in
     let lexbuf = Lexing.from_string query in
     let result = Parser.Grammar.prog Lexer.token lexbuf in
     match result with
-    | Select { fields; tables; predicate = Some _ } ->
-        Alcotest.(check (list string)) "fields" ["A"; "B"] fields;
+    | Query_data.Select { fields; tables; predicate = Some _ } ->
+        Alcotest.(check (list string)) "fields" ["A"; "B"; "C"] fields;
         Alcotest.(check (list string)) "tables" ["T1"] tables;
         "SELECT WITH WHERE parsed successfully"
     | _ -> 
@@ -31,13 +31,84 @@ module To_test = struct
     let lexbuf = Lexing.from_string query in
     let result = Parser.Grammar.prog Lexer.token lexbuf in
     match result with
-    | CreateTable { table_name; fields } ->
-        Alcotest.(check string) "table name" "Students" table_name;
-        Alcotest.(check int) "field count" 2 (List.length fields);
-        Alcotest.(check string) "first field name" "id" (fst (List.hd fields));
+    | Query_data.CreateTable { tblname; sch } ->
+        Alcotest.(check string) "table name" "Students" tblname;
+        Alcotest.(check bool) "schema has field 'id'" true (Record_page__Schema.has_field sch "id");
+        Alcotest.(check bool) "schema has field 'name'" true (Record_page__Schema.has_field sch "name");
         "CREATE TABLE parsed successfully"
     | _ -> 
         Alcotest.fail "Expected CreateTable query"
+
+  let test_insert () =
+    let query = "INSERT INTO Students (id) VALUES (1)" in
+    let lexbuf = Lexing.from_string query in
+    try
+      let result = Parser.Grammar.prog Lexer.token lexbuf in
+      match result with
+      | Query_data.Insert { tblname; flds; vals } ->
+          Alcotest.(check string) "table name" "Students" tblname;
+          Alcotest.(check (list string)) "fields" ["id"] flds;
+          Alcotest.(check int) "values count" 1 (List.length vals);
+          "INSERT parsed successfully"
+      | _ -> 
+          Alcotest.fail "Expected Insert query"
+    with
+    | Lexer.Lexing_error msg ->
+        Printf.eprintf "Lexing error: %s\n" msg;
+        Alcotest.fail "Lexing error encountered"
+    | Parsing.Parse_error ->
+        Printf.eprintf "Parsing error at position: %d\n" (Lexing.lexeme_start lexbuf);
+        Alcotest.fail "Parsing error encountered"
+    | e ->
+        Printf.eprintf "Unexpected error: %s\n" (Printexc.to_string e);
+        Alcotest.fail "Unexpected error encountered"
+
+  let test_delete () =
+    let query = "DELETE FROM Students WHERE id = 1" in
+    let lexbuf = Lexing.from_string query in
+    let result = Parser.Grammar.prog Lexer.token lexbuf in
+    match result with
+    | Query_data.Delete { tblname; pred = _ } ->
+        Alcotest.(check string) "table name" "Students" tblname;
+        "DELETE parsed successfully"
+    | _ -> 
+        Alcotest.fail "Expected Delete query"
+
+  let test_modify () =
+    let query = "UPDATE Students SET name = \"Doe\" WHERE id = 1" in
+    let lexbuf = Lexing.from_string query in
+    let result = Parser.Grammar.prog Lexer.token lexbuf in
+    match result with
+    | Query_data.Modify { tblname; fldname; newval; pred = _ } ->
+        Alcotest.(check string) "table name" "Students" tblname;
+        Alcotest.(check string) "field name" "name" fldname;
+        "MODIFY parsed successfully"
+    | _ -> 
+        Alcotest.fail "Expected Modify query"
+
+  let test_create_view () =
+    let query = "CREATE VIEW StudentView AS SELECT id FROM Students" in
+    let lexbuf = Lexing.from_string query in
+    let result = Parser.Grammar.prog Lexer.token lexbuf in
+    match result with
+    | Query_data.CreateView { viewname; qrydata = Query_data.Select _ } ->
+        Alcotest.(check string) "view name" "StudentView" viewname;
+        "CREATE VIEW parsed successfully"
+    | _ -> 
+        Alcotest.fail "Expected CreateView query"
+
+  let test_create_index () =
+    let query = "CREATE INDEX idx_name ON table_name (field_name)" in
+    let lexbuf = Lexing.from_string query in
+    let result = Parser.Grammar.prog Lexer.token lexbuf in
+    match result with
+    | Query_data.CreateIndex { idxname; tblname; fldname } ->
+        Alcotest.(check string) "index name" "idx_name" idxname;
+        Alcotest.(check string) "table name" "table_name" tblname;
+        Alcotest.(check string) "field name" "field_name" fldname;
+        "CREATE INDEX parsed successfully"
+    | _ -> 
+        Alcotest.fail "Expected CreateIndex query"
 end
 
 let test_simple_select () =
@@ -52,9 +123,35 @@ let test_create_table () =
   Alcotest.(check string) "parse create table" "CREATE TABLE parsed successfully"
     (To_test.test_create_table ())
 
+let test_insert () =
+  Alcotest.(check string) "parse insert" "INSERT parsed successfully"
+    (To_test.test_insert ())
+
+let test_delete () =
+  Alcotest.(check string) "parse delete" "DELETE parsed successfully"
+    (To_test.test_delete ())
+
+let test_modify () =
+  Alcotest.(check string) "parse modify" "MODIFY parsed successfully"
+    (To_test.test_modify ())
+
+let test_create_view () =
+  Alcotest.(check string) "parse create view" "CREATE VIEW parsed successfully"
+    (To_test.test_create_view ())
+
+let test_create_index () =
+  Alcotest.(check string) "parse create index" "CREATE INDEX parsed successfully"
+    (To_test.test_create_index ())
+
 let all_tests () =
   [
     Alcotest.test_case "simple select" `Quick test_simple_select;
     Alcotest.test_case "select with where" `Quick test_select_with_where;
     Alcotest.test_case "create table" `Quick test_create_table;
+    
+    Alcotest.test_case "insert" `Quick test_insert;
+    Alcotest.test_case "delete" `Quick test_delete;
+    Alcotest.test_case "modify" `Quick test_modify;
+    Alcotest.test_case "create view" `Quick test_create_view;
+    Alcotest.test_case "create index" `Quick test_create_index;
   ]

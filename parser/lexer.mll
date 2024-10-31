@@ -17,6 +17,16 @@ rule token = parse
   | "FROM"        { FROM }
   | "WHERE"       { WHERE }
   | "AND"         { AND }
+  | "INSERT"      { INSERT }
+  | "INTO"        { INTO }
+  | "VALUES"      { VALUES }
+  | "DELETE"      { DELETE }
+  | "UPDATE"      { UPDATE }
+  | "SET"         { SET }
+  | "VIEW"        { VIEW }
+  | "AS"          { AS }
+  | "INDEX"       { INDEX }
+  | "ON"          { ON }
   | "INT"         { INT_TYPE }
   | "VARCHAR"     { VARCHAR }
   | "="          { EQUALS }

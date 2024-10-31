@@ -2,12 +2,16 @@
   open Query_data
   open Predicate
   open Constant
+
+  type local_type = 
+    | LocalInteger
+    | LocalVarchar of int
 %}
 
 %token <int> INTEGER
 %token <string> ID
 %token <string> STRING
-%token SELECT CREATE TABLE FROM WHERE AND
+%token SELECT CREATE TABLE FROM WHERE AND INSERT INTO VALUES DELETE UPDATE SET VIEW AS INDEX ON
 %token INT_TYPE VARCHAR
 %token EQUALS COMMA LPAREN RPAREN
 %token EOF
@@ -17,40 +21,124 @@
 %%
 
 prog:
-  | q = query EOF { q }
-
-query:
-  | select_query { $1 }
-  | create_table_query { $1 }
-
-select_query:
-  | SELECT fields = separated_list(COMMA, field) 
-    FROM tables = separated_list(COMMA, ID)
-    where_clause = option(preceded(WHERE, predicate))
-    { Select { fields; tables; predicate = where_clause } }
-
-create_table_query:
-  | CREATE TABLE name = ID 
-    LPAREN fields = separated_list(COMMA, field_def) RPAREN
-    { CreateTable { table_name = name; fields = fields } }
+    query EOF { $1 }
+  | create EOF { $1 }
+  ;
 
 field:
-  | id = ID { id }
+  | ID { $1 }
+  ;
 
-field_def:
-  | name = ID INT_TYPE { (name, `Int) }
-  | name = ID VARCHAR LPAREN size = INTEGER RPAREN { (name, `String size) }
+constant:
+  | STRING { Constant.make_string $1 }
+  | INTEGER { Constant.make_integer (Int32.of_int $1) }
+  ;
 
-predicate:
-  | t = term { Predicate.make t }
+expression:
+  | field { Predicate__Expression.make_field_name $1 }
+  | constant { Predicate__Expression.make_const $1 }
+  ;
 
 term:
-  | lhs = expr EQUALS rhs = expr 
-    { Predicate__Term.make lhs rhs }
+  | expression EQUALS expression { Predicate__Term.make $1 $3 }
+  ;
 
-expr:
-  | id = ID { Predicate__Expression.make_field_name id }
-  | i = INTEGER { Predicate__Expression.make_const (Constant.Integer (Int32.of_int i)) }
-  | s = STRING { Predicate__Expression.make_const (Constant.String s) }
+predicate:
+  | term { Predicate.make $1 }
+  (* | term AND predicate { Predicate.and_ $1 $3 } *)
+  ;
 
-%% 
+query:
+  | SELECT select_list FROM table_list WHERE predicate { 
+      Query_data.Select { fields = $2; tables = $4; predicate = Some $6 }
+    }
+  | SELECT select_list FROM table_list { 
+      Query_data.Select { fields = $2; tables = $4; predicate = None }
+    }
+  ;
+
+select_list:
+  | field { [$1] }
+  | field COMMA select_list { $1 :: $3 }
+  ;
+
+table_list:
+  | ID { [$1] }
+  | ID COMMA table_list { $1 :: $3 }
+  ;
+
+create:
+  | insert { $1 }
+  | delete { $1 }
+  | modify { $1 }
+  | create_table { $1 }
+  | create_view { $1 }
+  | create_index { $1 }
+  ;
+
+insert:
+  | INSERT INTO ID LPAREN field_list RPAREN VALUES LPAREN const_list RPAREN {
+      Insert (Insert_data.make_insert_data $3 $5 $9)
+    }
+  ;
+
+field_list:
+  | field { [$1] }
+  | field COMMA field_list { $1 :: $3 }
+  ;
+
+const_list:
+  | constant { [$1] }
+  | constant COMMA const_list { $1 :: $3 }
+  ;
+
+delete:
+  | DELETE FROM ID WHERE predicate {
+      Delete (Delete_data.make_delete_data $3 $5)
+    }
+  ;
+
+modify:
+  | UPDATE ID SET field EQUALS expression WHERE predicate {
+      Modify (Modify_data.make_modify_data $2 $4 $6 $8)
+    }
+  ;
+
+create_table:
+  | CREATE TABLE ID LPAREN field_defs RPAREN {
+      let schema = Record_page__Schema.make () in
+      List.iter (fun (field_name, field_type) ->
+        match field_type with
+        | LocalInteger -> Record_page__Schema.add_int_field schema field_name
+        | LocalVarchar length -> Record_page__Schema.add_string_field schema field_name length
+      ) $5;
+      CreateTable (Create_table_data.make_create_table_data $3 schema)
+    }
+  ;
+
+field_defs:
+  | field_def { [$1] }
+  | field_def COMMA field_defs { $1 :: $3 }
+  ;
+
+field_def:
+  | ID type_def { ($1, $2) }
+  ;
+
+type_def:
+  | INT_TYPE { LocalInteger }
+  | VARCHAR LPAREN INTEGER RPAREN { LocalVarchar $3 }
+  ;
+
+create_view:
+  | CREATE VIEW ID AS query {
+      CreateView (make_create_view_data $3 $5)
+    }
+  ;
+
+create_index:
+  | CREATE INDEX ID ON ID LPAREN field RPAREN {
+      CreateIndex (Create_index_data.make_create_index_data $3 $5 $7)
+    }
+  ;
+

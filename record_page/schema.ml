@@ -43,3 +43,14 @@ let length_in_bytes schema field_name =
   match ty with
   | Integer -> 4
   | Varchar -> File.Page.max_len (get_length schema field_name)
+
+let to_string schema =
+  let field_strings = List.map (fun field_name ->
+    let field_info = Hashtbl.find schema.info field_name in
+    let type_str = match field_info.ty with
+      | Integer -> "INT"
+      | Varchar -> Printf.sprintf "VARCHAR(%d)" field_info.length
+    in
+    Printf.sprintf "%s: %s" field_name type_str
+  ) schema.fields in
+  String.concat ", " field_strings
