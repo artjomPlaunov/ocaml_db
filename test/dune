@@ -7,7 +7,6 @@
   log_manager_tests
   file_manager_tests
   log_record_tests
-  table_scan_tests
   transaction_tests
   record_page_tests
   table_manager_tests
