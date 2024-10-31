@@ -15,6 +15,7 @@
   project_scan_tests
   product_project_select_tests
   test_utils
+  parser_tests
   select_select_tests
   product_scan_tests
   select_scan_tests)
@@ -32,6 +33,7 @@
   table_manager
   buffer_manager
   product_scan
+  parser
   log_record
   alcotest
   select_scan

@@ -1,0 +1,14 @@
+(library
+ (name parser)
+ (public_name ocaml_db.parser)
+ (libraries predicate constant)
+ (flags
+  (-w -69)
+  (-w -26))
+ (wrapped true)
+ (modules lexer grammar query_data))
+
+(ocamllex lexer)
+
+(menhir
+ (modules grammar)) 
