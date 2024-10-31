@@ -143,3 +143,9 @@ let get_logs log_manager =
       acc
   in
   iterate_records iterator ""
+
+let make_transaction_test_env ~db_name ~block_size ~num_buffers =
+  let file_manager = File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size in
+  let log_manager = Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs") in
+  let buffer_manager = Buffer_manager.make ~file_manager ~log_manager ~num_buffers () in
+  { file_manager; log_manager; buffer_manager }
