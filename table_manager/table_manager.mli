@@ -1,7 +1,11 @@
 module Schema = Record_page__Schema
 module Layout = Record_page__Layout
 
-type t
+type t = {
+  max_name : int;
+  mutable table_catalog_layout : Layout.t;
+  mutable field_catalog_layout : Layout.t;
+}
 
 val create_table :
   table_mgr:t -> tbl_name:string -> schema:Schema.t -> tx:Transaction.t -> unit
