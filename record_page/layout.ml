@@ -19,3 +19,12 @@ let create schema offsets slot_size = { schema; offsets; slot_size }
 let get_schema layout = layout.schema
 let get_offset layout field_name = Hashtbl.find layout.offsets field_name
 let get_slot_size layout = layout.slot_size
+
+let to_string layout =
+  let schema_str = Schema.to_string layout.schema in
+  let offsets_str = 
+    Hashtbl.fold (fun key value acc -> 
+      acc ^ Printf.sprintf "%s: %d; " key value
+    ) layout.offsets ""
+  in
+  Printf.sprintf "Schema: %s\nOffsets: {%s}\nSlot Size: %d" schema_str offsets_str layout.slot_size

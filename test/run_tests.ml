@@ -12,5 +12,6 @@ let () =
       ("Record Page", Record_page_tests.all_tests ());
       ("Scan Tests", Scan_tests.all_tests ());
       ("Table Manager", Table_manager_tests.all_tests ());
-      ("Parser Test", Parser_tests.all_tests ())
+      ("Parser Test", Parser_tests.all_tests ());
+      ("Execute Query Test", Execute_query_tests.all_tests ())
     ]

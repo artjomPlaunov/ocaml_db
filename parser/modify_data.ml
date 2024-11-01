@@ -14,7 +14,7 @@ let make tblname fldname newval pred = {
 
 let table_name data = data.tblname
 
-let target_field data = data.fldname
+let field_name data = data.fldname
 
 let new_value data = data.newval
 

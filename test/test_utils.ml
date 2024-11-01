@@ -149,3 +149,31 @@ let make_transaction_test_env ~db_name ~block_size ~num_buffers =
   let log_manager = Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs") in
   let buffer_manager = Buffer_manager.make ~file_manager ~log_manager ~num_buffers () in
   { file_manager; log_manager; buffer_manager }
+
+let capture_output f =
+  let buffer = Buffer.create 1024 in
+  let old_out = Unix.dup Unix.stdout in
+  let temp_out = Unix.openfile "temp_output" [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC] 0o640 in
+  Unix.dup2 temp_out Unix.stdout;
+  f ();
+  Unix.dup2 old_out Unix.stdout;
+  Unix.close temp_out;
+  let ic = open_in "temp_output" in
+  try
+    while true do
+      Buffer.add_channel buffer ic 1024
+    done;
+    assert false
+  with End_of_file ->
+    close_in ic;
+    Buffer.contents buffer
+
+let write_query_output ~db_name ~query_name ~output =
+  let dirname = "tmp_" ^ db_name in
+  let filename = Printf.sprintf "%s_%s_output.txt" db_name query_name in
+  (try Unix.mkdir dirname 0o777 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
+  let filepath = Filename.concat dirname filename in
+  let channel = open_out filepath in
+  output_string channel output;
+  close_out channel;
+  filepath

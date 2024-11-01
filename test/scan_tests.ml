@@ -375,6 +375,49 @@ module To_test = struct
     let output = Buffer.contents env.output in
     write_test_output ~test_name:"select_update" ~output ~db_name:"selectupdate_test0";
     output
+
+  (* Project of Select Scan Test *)
+  let test_project_of_select_scan () =
+    let env = make_test_env ~db_name:"project_of_select_scan_test" in
+    let schema = Schema.make () in
+    Schema.add_int_field schema "A";
+    Schema.add_string_field schema "B" 9;
+    Schema.add_int_field schema "C";
+    let layout = Layout.make schema in
+    let tbl_scan = Table_scan.make ~tx:env.transaction ~tbl_name:"T" ~layout in
+    
+    Buffer.add_string env.output "Initial records:\n";
+    
+    tbl_scan#before_first;
+    for i = 1 to 5 do
+      tbl_scan#insert;
+      tbl_scan#set_int32 ~field_name:"A" ~value:(Int32.of_int i);
+      tbl_scan#set_string ~field_name:"B" ~value:(Printf.sprintf "rec%d" i);
+      tbl_scan#set_int32 ~field_name:"C" ~value:(Int32.of_int (i * 10));
+      Buffer.add_string env.output 
+        (Printf.sprintf "Inserted: {A=%d, B=rec%d, C=%d}\n" i i (i * 10))
+    done;
+
+    (* Perform a select scan to filter records where A = 3 *)
+    let pred = make_predicate "A" 3 in
+    let select_scan = new Select_scan.t tbl_scan pred in
+
+    (* Perform a project scan on the result of the select scan to select fields A and C *)
+    let project_scan = new Project_scan.t select_scan ["A"; "C"] in
+
+    Buffer.add_string env.output "\nProjected records (A,C only) after select (A=3):\n";
+    project_scan#before_first;
+    while project_scan#next do
+      let a = Int32.to_int (project_scan#get_int32 ~field_name:"A") in
+      let c = Int32.to_int (project_scan#get_int32 ~field_name:"C") in
+      Buffer.add_string env.output 
+        (Printf.sprintf "{A=%d, C=%d}\n" a c)
+    done;
+
+    cleanup_test_env project_scan env;
+    let output = Buffer.contents env.output in
+    write_test_output ~test_name:"project_of_select_scan" ~output ~db_name:"project_of_select_scan_test";
+    output
 end
 
 (* Expected outputs from original test files *)
@@ -407,6 +450,16 @@ Final table contents:\n\
 {A=4, B=rec4, C=40}\n\
 {A=5, B=rec5, C=50}\n"
 
+let project_of_select_scan_expected = "Initial records:\n\
+Inserted: {A=1, B=rec1, C=10}\n\
+Inserted: {A=2, B=rec2, C=20}\n\
+Inserted: {A=3, B=rec3, C=30}\n\
+Inserted: {A=4, B=rec4, C=40}\n\
+Inserted: {A=5, B=rec5, C=50}\n\
+\n\
+Projected records (A,C only) after select (A=3):\n\
+{A=3, C=30}\n"
+
 (* Test drivers *)
 let test_table_scan () =
   Alcotest.(check string) "table scan" table_scan_expected (To_test.test_table_scan0 ())
@@ -430,6 +483,9 @@ let test_product_project () =
 let test_select_update () =
   Alcotest.(check string) "select update" select_update_expected (To_test.test_select_update0 ())
 
+let test_project_of_select_scan () =
+  Alcotest.(check string) "project of select scan" project_of_select_scan_expected (To_test.test_project_of_select_scan ())
+
 (* All tests *)
 let all_tests () =
   [
@@ -440,4 +496,5 @@ let all_tests () =
     Alcotest.test_case "select select" `Quick test_select_select;
     Alcotest.test_case "product project" `Quick test_product_project;
     Alcotest.test_case "select update" `Quick test_select_update;
+    Alcotest.test_case "project of select scan" `Quick test_project_of_select_scan;
   ]
