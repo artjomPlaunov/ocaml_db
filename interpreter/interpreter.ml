@@ -89,6 +89,15 @@ class sql_interpreter env = object(self)
     done;
     select#close
 
+  method private execute_create_table data =
+    let table_mgr = Table_manager.make ~is_new:false ~tx in
+    Table_manager.create_table 
+      ~table_mgr 
+      ~tbl_name:(Create_table_data.table_name data)
+      ~schema:(Create_table_data.new_schema data) 
+      ~tx;
+    Transaction.commit tx
+
   method execute ?(output=Buffer.create 256) query =
     match query with
     | Query_data.Select data -> 
@@ -103,7 +112,11 @@ class sql_interpreter env = object(self)
     | Query_data.Modify data -> 
         self#execute_modify data;
         output
-    | Query_data.CreateView _ -> failwith "View creation not yet implemented"
-    | Query_data.CreateIndex _ -> failwith "Index creation not yet implemented"
-    | Query_data.CreateTable _ -> failwith "Table creation not yet implemented"
+    | Query_data.CreateView _ -> 
+        failwith "View creation not yet implemented"
+    | Query_data.CreateIndex _ -> 
+        failwith "Index creation not yet implemented"
+    | Query_data.CreateTable data -> 
+        self#execute_create_table data;
+        output
 end

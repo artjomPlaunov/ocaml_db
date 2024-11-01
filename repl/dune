@@ -1,0 +1,17 @@
+(executable
+ (name repl)
+ (public_name ocaml_db_repl)
+ (modules repl)
+ (libraries
+  interpreter
+  parser
+  table_scan
+  select_scan
+  project_scan
+  table_manager
+  product_scan
+  predicate
+  constant
+  record_page
+  transaction
+  file)) 
