@@ -1,0 +1,8 @@
+(library
+ (name stat_manager)
+ (public_name ocaml_db.stat_manager)
+ (flags
+  (-w -69)
+  (-w -26))
+ (modules stat_manager)
+ (libraries transaction record_page table_scan table_manager))
