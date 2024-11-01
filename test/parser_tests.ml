@@ -164,6 +164,30 @@ let test_create_table_large () =
         "CREATE INDEX parsed successfully"
     | _ -> 
         Alcotest.fail "Expected CreateIndex query"
+
+  let test_insert_multiple_fields () =
+    let query = "INSERT INTO Students (id, name, age) VALUES (1, \"John Doe\", 20)" in
+    let lexbuf = Lexing.from_string query in
+    try
+      let result = Parser.Grammar.prog Lexer.token lexbuf in
+      match result with
+      | Query_data.Insert { tblname; flds; vals } ->
+          Alcotest.(check string) "table name" "Students" tblname;
+          Alcotest.(check (list string)) "fields" ["id"; "name"; "age"] flds;
+          Alcotest.(check int) "values count" 3 (List.length vals);
+          "INSERT with multiple fields parsed successfully"
+      | _ -> 
+          Alcotest.fail "Expected Insert query"
+    with
+    | Lexer.Lexing_error msg ->
+        Printf.eprintf "Lexing error: %s\n" msg;
+        Alcotest.fail "Lexing error encountered"
+    | Parsing.Parse_error ->
+        Printf.eprintf "Parsing error at position: %d\n" (Lexing.lexeme_start lexbuf);
+        Alcotest.fail "Parsing error encountered"
+    | e ->
+        Printf.eprintf "Unexpected error: %s\n" (Printexc.to_string e);
+        Alcotest.fail "Unexpected error encountered"
 end
 
 let test_simple_select () =
@@ -202,6 +226,10 @@ let test_create_index () =
   Alcotest.(check string) "parse create index" "CREATE INDEX parsed successfully"
     (To_test.test_create_index ())
 
+let test_insert_multiple_fields () =
+  Alcotest.(check string) "parse insert with multiple fields" "INSERT with multiple fields parsed successfully"
+    (To_test.test_insert_multiple_fields ())
+
 let all_tests () =
   [
     Alcotest.test_case "simple select" `Quick test_simple_select;
@@ -213,4 +241,5 @@ let all_tests () =
     Alcotest.test_case "modify" `Quick test_modify;
     Alcotest.test_case "create view" `Quick test_create_view;
     Alcotest.test_case "create index" `Quick test_create_index;
+    Alcotest.test_case "insert with multiple fields" `Quick test_insert_multiple_fields;
   ]
