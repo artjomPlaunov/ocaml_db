@@ -1,10 +1,10 @@
-type create_index_data = {
+type t = {
   idxname: string;
   tblname: string;
   fldname: string;
 }
 
-let make_create_index_data idxname tblname fldname = {
+let make idxname tblname fldname = {
   idxname;
   tblname;
   fldname;

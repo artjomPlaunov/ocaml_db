@@ -1,9 +1,9 @@
-type delete_data = {
+type t = {
   tblname: string;
   pred: Predicate.t;
 }
 
-let make_delete_data tblname pred = {
+let make tblname pred = {
   tblname;
   pred;
 }

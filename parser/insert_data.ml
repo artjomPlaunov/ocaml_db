@@ -1,10 +1,10 @@
-type insert_data = {
+type t = {
   tblname: string;
   flds: string list;
   vals: Constant.t list;
 }
 
-let make_insert_data tblname flds vals = {
+let make tblname flds vals = {
   tblname;
   flds;
   vals;

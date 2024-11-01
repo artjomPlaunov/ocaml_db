@@ -35,9 +35,64 @@ module To_test = struct
         Alcotest.(check string) "table name" "Students" tblname;
         Alcotest.(check bool) "schema has field 'id'" true (Record_page__Schema.has_field sch "id");
         Alcotest.(check bool) "schema has field 'name'" true (Record_page__Schema.has_field sch "name");
+        Alcotest.(check bool) "field 'id' is INT" true 
+          (match Record_page__Schema.get_type sch "id" with
+           | Record_page__Type.Integer -> true
+           | _ -> false);
+        Alcotest.(check bool) "field 'name' is VARCHAR(50)" true 
+          (match Record_page__Schema.get_type sch "name" with
+           | Record_page__Type.Varchar -> Record_page__Schema.get_length sch "name" = 50
+           | _ -> false);
         "CREATE TABLE parsed successfully"
     | _ -> 
         Alcotest.fail "Expected CreateTable query"
+
+
+
+  let create_table_query tblname fields =
+  let fields_str = String.concat ", " fields in
+  Printf.sprintf "CREATE TABLE %s (%s)" tblname fields_str
+
+let check_field schema field_name expected_type expected_length =
+  Alcotest.(check bool) (Printf.sprintf "schema has field '%s'" field_name) true (Record_page__Schema.has_field schema field_name);
+  Alcotest.(check bool) (Printf.sprintf "field '%s' is %s" field_name expected_type) true 
+    (match Record_page__Schema.get_type schema field_name with
+     | Record_page__Type.Integer when expected_type = "INT" -> true
+     | Record_page__Type.Varchar when expected_type = "VARCHAR" -> Record_page__Schema.get_length schema field_name = expected_length
+     | _ -> false)
+
+let test_create_table_large () =
+  let fields = [
+    "id INT";
+    "name VARCHAR(50)";
+    "age INT";
+    "email VARCHAR(100)";
+    "phone VARCHAR(15)";
+    "address VARCHAR(200)";
+    "city VARCHAR(50)";
+    "state VARCHAR(20)";
+    "zip INT";
+    "country VARCHAR(50)"
+  ] in
+  let query = create_table_query "LargeTable" fields in
+  let lexbuf = Lexing.from_string query in
+  let result = Parser.Grammar.prog Lexer.token lexbuf in
+  match result with
+  | Query_data.CreateTable { tblname; sch } ->
+      Alcotest.(check string) "table name" "LargeTable" tblname;
+      check_field sch "id" "INT" 0;
+      check_field sch "name" "VARCHAR" 50;
+      check_field sch "age" "INT" 0;
+      check_field sch "email" "VARCHAR" 100;
+      check_field sch "phone" "VARCHAR" 15;
+      check_field sch "address" "VARCHAR" 200;
+      check_field sch "city" "VARCHAR" 50;
+      check_field sch "state" "VARCHAR" 20;
+      check_field sch "zip" "INT" 0;
+      check_field sch "country" "VARCHAR" 50;
+      "CREATE TABLE with many fields parsed successfully"
+  | _ -> 
+      Alcotest.fail "Expected CreateTable query"
 
   let test_insert () =
     let query = "INSERT INTO Students (id) VALUES (1)" in
@@ -123,6 +178,10 @@ let test_create_table () =
   Alcotest.(check string) "parse create table" "CREATE TABLE parsed successfully"
     (To_test.test_create_table ())
 
+let test_create_table_large () =
+  Alcotest.(check string) "parse create table with many fields" "CREATE TABLE with many fields parsed successfully"
+    (To_test.test_create_table_large ())
+
 let test_insert () =
   Alcotest.(check string) "parse insert" "INSERT parsed successfully"
     (To_test.test_insert ())
@@ -148,7 +207,7 @@ let all_tests () =
     Alcotest.test_case "simple select" `Quick test_simple_select;
     Alcotest.test_case "select with where" `Quick test_select_with_where;
     Alcotest.test_case "create table" `Quick test_create_table;
-    
+    Alcotest.test_case "create table with many fields" `Quick test_create_table_large;
     Alcotest.test_case "insert" `Quick test_insert;
     Alcotest.test_case "delete" `Quick test_delete;
     Alcotest.test_case "modify" `Quick test_modify;

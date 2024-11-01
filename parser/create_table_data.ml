@@ -1,9 +1,9 @@
-type create_table_data = {
+type t = {
   tblname: string;
   sch: Record_page__Schema.t;
 }
 
-let make_create_table_data tblname sch = {
+let make tblname sch = {
   tblname;
   sch;
 }

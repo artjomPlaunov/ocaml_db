@@ -2,10 +2,16 @@ type field = string
 
 type table = string
 
-type select_data = {
+type t = {
   fields: field list;
   tables: table list;
   predicate: Predicate.t option;
+}
+
+let make fields tables predicate = {
+  fields;
+  tables;
+  predicate;
 }
 
 let fields data = data.fields

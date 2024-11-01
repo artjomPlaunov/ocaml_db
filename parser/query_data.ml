@@ -1,18 +1,18 @@
-type query_data = 
-  | Select of Select_data.select_data   
-  | CreateTable of Create_table_data.create_table_data
-  | Insert of Insert_data.insert_data
-  | Delete of Delete_data.delete_data
-  | Modify of Modify_data.modify_data
-  | CreateView of create_view_data
-  | CreateIndex of Create_index_data.create_index_data 
+type t = 
+  | Select of Select_data.t   
+  | CreateTable of Create_table_data.t
+  | Insert of Insert_data.t
+  | Delete of Delete_data.t
+  | Modify of Modify_data.t
+  | CreateView of view_data
+  | CreateIndex of Create_index_data.t 
 
-and create_view_data = {
+and view_data = {
   viewname: string;
-  qrydata: query_data;
+  qrydata: t;
 }
 
-let make_create_view_data viewname qrydata = {
+let make_view_data viewname qrydata = {
   viewname;
   qrydata;
 }

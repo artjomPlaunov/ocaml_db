@@ -16,7 +16,7 @@
 %token EQUALS COMMA LPAREN RPAREN
 %token EOF
 
-%start <Query_data.query_data> prog
+%start <Query_data.t> prog
 
 %%
 
@@ -78,7 +78,7 @@ create:
 
 insert:
   | INSERT INTO ID LPAREN field_list RPAREN VALUES LPAREN const_list RPAREN {
-      Insert (Insert_data.make_insert_data $3 $5 $9)
+      Insert (Insert_data.make $3 $5 $9)
     }
   ;
 
@@ -94,13 +94,13 @@ const_list:
 
 delete:
   | DELETE FROM ID WHERE predicate {
-      Delete (Delete_data.make_delete_data $3 $5)
+      Delete (Delete_data.make $3 $5)
     }
   ;
 
 modify:
   | UPDATE ID SET field EQUALS expression WHERE predicate {
-      Modify (Modify_data.make_modify_data $2 $4 $6 $8)
+      Modify (Modify_data.make $2 $4 $6 $8)
     }
   ;
 
@@ -112,7 +112,7 @@ create_table:
         | LocalInteger -> Record_page__Schema.add_int_field schema field_name
         | LocalVarchar length -> Record_page__Schema.add_string_field schema field_name length
       ) $5;
-      CreateTable (Create_table_data.make_create_table_data $3 schema)
+      CreateTable (Create_table_data.make $3 schema)
     }
   ;
 
@@ -132,13 +132,13 @@ type_def:
 
 create_view:
   | CREATE VIEW ID AS query {
-      CreateView (make_create_view_data $3 $5)
+      CreateView (Query_data.make_view_data $3 $5)
     }
   ;
 
 create_index:
   | CREATE INDEX ID ON ID LPAREN field RPAREN {
-      CreateIndex (Create_index_data.make_create_index_data $3 $5 $7)
+      CreateIndex (Create_index_data.make $3 $5 $7)
     }
   ;
 

@@ -1,11 +1,11 @@
-type modify_data = {
+type t = {
   tblname: string;
   fldname: string;
   newval: Predicate__Expression.t;
   pred: Predicate.t;
 }
 
-let make_modify_data tblname fldname newval pred = {
+let make tblname fldname newval pred = {
   tblname;
   fldname;
   newval;
