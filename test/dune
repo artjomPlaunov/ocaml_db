@@ -22,17 +22,13 @@
   threads
   file
   log_manager
-  project_scan
-  table_scan
+  scans
   record_page
   transaction
   table_manager
   buffer_manager
   interpreter
-  product_scan
   parser
   log_record
   alcotest
-  select_scan
-  predicate
   constant))

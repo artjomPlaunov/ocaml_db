@@ -1,8 +1,0 @@
-(library
- (name predicate)
- (public_name ocaml_db.predicate)
- (flags
-  (-w -69)
-  (-w -26))
-  (modules expression term predicate)
-  (libraries scan record_page constant))

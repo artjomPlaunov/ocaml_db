@@ -5,13 +5,9 @@
  (libraries
   interpreter
   parser
-  table_scan
-  select_scan
-  project_scan
   table_manager
-  product_scan
-  predicate
+  scans
   constant
   record_page
   transaction
-  file)) 
+  file))

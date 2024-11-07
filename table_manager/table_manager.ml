@@ -1,6 +1,7 @@
 module Layout = Record_page__Layout
 module Schema = Record_page__Schema
 module Type = Record_page__Type
+module Table_scan = Scans__Table_scan
 
 type t = {
   max_name : int;
@@ -35,7 +36,7 @@ let create_table ~table_mgr ~tbl_name ~schema ~tx =
       fld_catalog#set_int32 ~field_name:"length"
         ~value:(Int32.of_int (Schema.get_length schema fld_name));
       fld_catalog#set_int32 ~field_name:"offset"
-        ~value:(Int32.of_int (Layout.get_offset layout fld_name));)
+        ~value:(Int32.of_int (Layout.get_offset layout fld_name)))
     (Schema.fields schema);
   fld_catalog#close
 
@@ -74,8 +75,7 @@ let get_layout ~table_mgr ~tbl_name ~tx =
   let slot_size_ref = ref None in
   while tbl_catalog#next do
     let matches_table_name =
-      tbl_catalog#get_string ~field_name:"tablename"
-      = tbl_name
+      tbl_catalog#get_string ~field_name:"tablename" = tbl_name
     in
     if matches_table_name then
       slot_size_ref :=
@@ -92,24 +92,18 @@ let get_layout ~table_mgr ~tbl_name ~tx =
   in
   while fld_catalog#next do
     let matches_table_name =
-      fld_catalog#get_string ~field_name:"tablename"
-      = tbl_name
+      fld_catalog#get_string ~field_name:"tablename" = tbl_name
     in
     if matches_table_name then (
-      let fld_name =
-        fld_catalog#get_string ~field_name:"fieldname"
-      in
+      let fld_name = fld_catalog#get_string ~field_name:"fieldname" in
       let fld_type =
-        fld_catalog#get_int32 ~field_name:"type"
-        |> Int32.to_int |> Type.of_int
+        fld_catalog#get_int32 ~field_name:"type" |> Int32.to_int |> Type.of_int
       in
       let fld_len =
-        fld_catalog#get_int32 ~field_name:"length"
-        |> Int32.to_int
+        fld_catalog#get_int32 ~field_name:"length" |> Int32.to_int
       in
       let fld_offset =
-        fld_catalog#get_int32 ~field_name:"offset"
-        |> Int32.to_int
+        fld_catalog#get_int32 ~field_name:"offset" |> Int32.to_int
       in
       Hashtbl.add offsets fld_name fld_offset;
       Schema.add_field schema fld_name fld_type fld_len)

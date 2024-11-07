@@ -3,9 +3,7 @@ open Log_manager
 open Log_record
 open Buffer_manager
 open Transaction
-open Predicate
-open Predicate__Expression
-open Predicate__Term
+open Scans
 open Constant
 
 (* Returns true if files have no diff.*)
@@ -36,18 +34,26 @@ let get_logs lm =
 
 (* Common test environment setup *)
 type test_env = {
-  file_manager: File_manager.t;
-  log_manager: Log_manager.t;
-  buffer_manager: Buffer_manager.t;
-  transaction: Transaction.t;
-  output: Buffer.t;
+  file_manager : File_manager.t;
+  log_manager : Log_manager.t;
+  buffer_manager : Buffer_manager.t;
+  transaction : Transaction.t;
+  output : Buffer.t;
 }
 
-let make_test_env ~db_name = 
-  let file_manager = File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size:400 in
-  let log_manager = Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs") in
-  let buffer_manager = Buffer_manager.make ~file_manager ~log_manager ~num_buffers:8 () in
-  let transaction = Transaction.make ~file_manager ~log_manager ~buffer_manager in
+let make_test_env ~db_name =
+  let file_manager =
+    File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size:400
+  in
+  let log_manager =
+    Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs")
+  in
+  let buffer_manager =
+    Buffer_manager.make ~file_manager ~log_manager ~num_buffers:8 ()
+  in
+  let transaction =
+    Transaction.make ~file_manager ~log_manager ~buffer_manager
+  in
   let output = Buffer.create 1024 in
   { file_manager; log_manager; buffer_manager; transaction; output }
 
@@ -65,21 +71,26 @@ let cleanup_test_env scan env =
 
 (* Helper for creating predicates *)
 let make_predicate field_name value =
-  let lhs = Predicate__Expression.make_field_name field_name in
-  let rhs = Predicate__Expression.make_const (Constant.Integer (Int32.of_int value)) in
-  let term = Predicate__Term.make lhs rhs in
+  let lhs = Scans__Expression.make_field_name field_name in
+  let rhs =
+    Scans__Expression.make_const (Constant.Integer (Int32.of_int value))
+  in
+  let term = Scans__Term.make lhs rhs in
   Predicate.make term
 
 (* Format record as string *)
 let format_record fields =
-  let field_strs = List.map (fun (name, value) -> Printf.sprintf "%s=%s" name value) fields in
+  let field_strs =
+    List.map (fun (name, value) -> Printf.sprintf "%s=%s" name value) fields
+  in
   "{" ^ String.concat ", " field_strs ^ "}"
 
 let write_test_output ~test_name ~output ~db_name =
   let base_dir = "tmp" in
   let dir = Filename.concat base_dir db_name in
-  (try Unix.mkdir base_dir 0o777 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
-  (try Unix.mkdir dir 0o777 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
+  (try Unix.mkdir base_dir 0o777
+   with Unix.Unix_error (Unix.EEXIST, _, _) -> ());
+  (try Unix.mkdir dir 0o777 with Unix.Unix_error (Unix.EEXIST, _, _) -> ());
   let output_file = Filename.concat dir (test_name ^ "_output.txt") in
   let oc = open_out output_file in
   output_string oc output;
@@ -87,20 +98,26 @@ let write_test_output ~test_name ~output ~db_name =
 
 (* Buffer test environment type *)
 type buffer_test_env = {
-  file_manager: File_manager.t;
-  log_manager: Log_manager.t;
-  buffer_manager: Buffer_manager.t;
+  file_manager : File_manager.t;
+  log_manager : Log_manager.t;
+  buffer_manager : Buffer_manager.t;
 }
 
 (* Basic setup for buffer/file tests *)
-let make_buffer_test_env ~db_name ~num_buffers = 
-  let file_manager = File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size:512 in
-  let log_manager = Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs") in
-  let buffer_manager = Buffer_manager.make ~file_manager ~log_manager ~num_buffers () in
+let make_buffer_test_env ~db_name ~num_buffers =
+  let file_manager =
+    File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size:512
+  in
+  let log_manager =
+    Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs")
+  in
+  let buffer_manager =
+    Buffer_manager.make ~file_manager ~log_manager ~num_buffers ()
+  in
   { file_manager; log_manager; buffer_manager }
 
 (* Setup for table manager tests *)
-let make_table_test_env ~db_name = 
+let make_table_test_env ~db_name =
   let env = make_test_env ~db_name in
   let table_mgr = Table_manager.make ~is_new:true ~tx:env.transaction in
   (env, table_mgr)
@@ -112,22 +129,23 @@ let make_parser_test_env ~db_name =
   (env, table_mgr)
 
 (* Cleanup functions *)
-let cleanup_buffer_test_env env =
-  Buffer_manager.flush_all env.buffer_manager 0
-
-let cleanup_table_test_env env table_mgr =
-  Transaction.commit env.transaction
+let cleanup_buffer_test_env env = Buffer_manager.flush_all env.buffer_manager 0
+let cleanup_table_test_env env table_mgr = Transaction.commit env.transaction
 
 (* Log record test environment type *)
 type log_record_test_env = {
-  file_manager: File_manager.t;
-  log_manager: Log_manager.t;
+  file_manager : File_manager.t;
+  log_manager : Log_manager.t;
 }
 
 (* Setup for log record tests *)
-let make_log_record_test_env ~db_name = 
-  let file_manager = File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size:500 in
-  let log_manager = Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs") in
+let make_log_record_test_env ~db_name =
+  let file_manager =
+    File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size:500
+  in
+  let log_manager =
+    Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs")
+  in
   { file_manager; log_manager }
 
 (* Helper to get logs as string *)
@@ -139,21 +157,30 @@ let get_logs log_manager =
       let next_rec = Log_record.make ~bytes in
       let log_str = Log_record.to_string next_rec ^ "\n" in
       iterate_records iterator (acc ^ log_str)
-    else 
-      acc
+    else acc
   in
   iterate_records iterator ""
 
 let make_transaction_test_env ~db_name ~block_size ~num_buffers =
-  let file_manager = File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size in
-  let log_manager = Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs") in
-  let buffer_manager = Buffer_manager.make ~file_manager ~log_manager ~num_buffers () in
+  let file_manager =
+    File_manager.make ~db_dirname:("tmp_" ^ db_name) ~block_size
+  in
+  let log_manager =
+    Log_manager.make ~file_manager ~log_file:("tmp_" ^ db_name ^ "_logs")
+  in
+  let buffer_manager =
+    Buffer_manager.make ~file_manager ~log_manager ~num_buffers ()
+  in
   { file_manager; log_manager; buffer_manager }
 
 let capture_output f =
   let buffer = Buffer.create 1024 in
   let old_out = Unix.dup Unix.stdout in
-  let temp_out = Unix.openfile "temp_output" [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC] 0o640 in
+  let temp_out =
+    Unix.openfile "temp_output"
+      [ Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC ]
+      0o640
+  in
   Unix.dup2 temp_out Unix.stdout;
   f ();
   Unix.dup2 old_out Unix.stdout;
@@ -171,7 +198,7 @@ let capture_output f =
 let write_query_output ~db_name ~query_name ~output =
   let dirname = "tmp_" ^ db_name in
   let filename = Printf.sprintf "%s_%s_output.txt" db_name query_name in
-  (try Unix.mkdir dirname 0o777 with Unix.Unix_error(Unix.EEXIST, _, _) -> ());
+  (try Unix.mkdir dirname 0o777 with Unix.Unix_error (Unix.EEXIST, _, _) -> ());
   let filepath = Filename.concat dirname filename in
   let channel = open_out filepath in
   output_string channel output;

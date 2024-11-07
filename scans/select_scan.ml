@@ -1,38 +1,23 @@
-module type Scan_type = module type of Scan__Scan_type
-
-module type Predicate_arg = sig
-  val predicate : Scan__Predicate.t
-end
-
-let create_predicate_arg predicate_val =
-  let module PredArg : Predicate_arg = struct
-    let predicate = predicate_val
-  end in
-  (module PredArg : Predicate_arg)
-
-module rec Select_scanF : functor
-  (S : module type of Scan.Scan_type)
-  (P : Predicate_arg)
-  -> sig
-    type t = Scan.Scan_type.t
-    include module type of Scan.Scan_type with type t := t
-  end =
-functor
-  (S : module type of Scan.Scan_type)
-  (P : Predicate_arg)
-  ->
-  struct
-    type t = Scan.Scan_type.t
-    include S
-    let next ~scan:t =
-      let rec loop () =
-        if S.next ~scan:t then
-          if Scan__Predicate.is_satisfied P.predicate t then true else loop ()
-        else false
-      in
-      loop ()
-  end
-
-let instantiate_select_scan predicate_arg =
-  let module P = (val predicate_arg : Predicate_arg) in
-  (module Select_scanF (Scan.Scan_type) (P) : Scan_type)
+class t (scan : #Scan.t) (pred : Predicate.t) = object(self)
+  method get_rid = scan#get_rid
+  method move_to_rid ~rid = scan#move_to_rid ~rid
+  method delete = scan#delete
+  method insert = scan#insert
+  method set_string ~field_name ~value = scan#set_string ~field_name ~value
+  method set_int32 ~field_name ~value = scan#set_int32 ~field_name ~value
+  method set_val ~field_name ~value = scan#set_val ~field_name ~value
+  method before_first = scan#before_first
+  method next =
+    let rec try_next () =
+      if scan#next then
+        if Predicate.is_satisfied pred scan then true
+        else try_next ()
+      else false
+    in
+    try_next ()
+  method get_int32 ~field_name = scan#get_int32 ~field_name
+  method get_string ~field_name = scan#get_string ~field_name
+  method get_val ~field_name = scan#get_val ~field_name
+  method has_field ~field_name = scan#has_field ~field_name
+  method close = scan#close
+end 

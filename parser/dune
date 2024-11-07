@@ -1,7 +1,7 @@
 (library
  (name parser)
  (public_name ocaml_db.parser)
- (libraries predicate constant record_page)
+ (libraries scans constant record_page)
  (flags
   (-w -69)
   (-w -26))
@@ -11,4 +11,4 @@
 (ocamllex lexer)
 
 (menhir
- (modules grammar)) 
+ (modules grammar))

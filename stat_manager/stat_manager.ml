@@ -1,3 +1,5 @@
+module Table_scan = Scans__Table_scan
+
 module StatInfo = struct
   type t = { mutable num_blocks : int; mutable num_records : int }
 

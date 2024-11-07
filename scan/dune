@@ -1,7 +1,0 @@
-(library
- (name scan)
- (public_name ocaml_db.scan)
- (flags
-  (-w -69)
-  (-w -26))
- (libraries constant record_id))

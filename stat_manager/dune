@@ -5,4 +5,4 @@
   (-w -69)
   (-w -26))
  (modules stat_manager)
- (libraries transaction record_page table_scan table_manager))
+ (libraries transaction record_page scans table_manager))

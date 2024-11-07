@@ -1,6 +1,6 @@
 %{
   open Query_data
-  open Predicate
+  open Scans
   open Constant
 
   type local_type = 
@@ -35,16 +35,16 @@ constant:
   ;
 
 expression:
-  | field { Predicate__Expression.make_field_name $1 }
-  | constant { Predicate__Expression.make_const $1 }
+  | field { Scans__Expression.make_field_name $1 }
+  | constant { Scans__Expression.make_const $1 }
   ;
 
 term:
-  | expression EQUALS expression { Predicate__Term.make $1 $3 }
+  | expression EQUALS expression { Scans__Term.make $1 $3 }
   ;
 
 predicate:
-  | term { Predicate.make $1 }
+  | term { Scans__Predicate.make $1 }
   (* | term AND predicate { Predicate.and_ $1 $3 } *)
   ;
 
