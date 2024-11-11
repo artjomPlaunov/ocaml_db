@@ -94,6 +94,14 @@ module To_test = struct
     Buffer.add_string output (print_storage_contents storage_manager);
     Buffer.add_string output (print_free_list storage_manager);
     
+    Buffer.add_string output "\nUpdating block 3 with value 999:\n";
+    let update_page = Page.make ~block_size:8 in
+    Page.set_int32 update_page 0 (Int32.of_int 999);
+    let block2 = Block_id.make ~filename:"test_storage" ~block_num:3 in
+    Storage_manager.update ~storage_manager ~block:block2 ~page:update_page;
+    Buffer.add_string output (print_storage_contents storage_manager);
+    Buffer.add_string output (print_free_list storage_manager);
+
     let final_output = Buffer.contents output in
     write_output_to_file final_output;
     final_output

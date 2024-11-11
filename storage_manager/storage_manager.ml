@@ -70,6 +70,12 @@ let delete ~storage_manager ~block =
   File_manager.write fm head_ptr head_page;
   File_manager.write fm block page
 
+let update ~storage_manager ~block ~page = 
+  let fm = storage_manager.file_manager in 
+  let block_size = File_manager.get_blocksize fm in 
+  let sfile = storage_manager.storage_file in 
+  File_manager.write fm block page
+
 
   
 
