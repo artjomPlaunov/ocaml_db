@@ -10,6 +10,7 @@
   execute_query_tests
   transaction_tests
   record_page_tests
+  storage_manager_tests
   table_manager_tests
   lru_replacer_tests
   test_utils
@@ -22,6 +23,7 @@
   threads
   file
   log_manager
+  storage_manager
   scans
   record_page
   transaction

@@ -1,0 +1,58 @@
+Index Manager, B-tree, and Storage Manager API's. 
+
+=============================
+Index Manager: 
+The index manager should be a higher level abstraction that allows the user to create an index on an existing table. 
+The underlying implementation should be hidden; even though initially it is using b+trees, in principle the underlying
+implementation can change to be, for example, a hash table, or some further optimized b-tree implementation. 
+
+init() 
+  - initialize the index manager and metadata; this should only be done once for each DB instance. 
+
+create_index (table, key) 
+- create an index on a key. This should add the index to the metadata, and construct the underlying index. 
+
+lookup (table, key)
+- see if we have an index on the key, return NoIndex if we don't 
+- if the index exists on that key for the table, do a search- return either the value or NotFound. 
+
+
+================================
+
+b+tree + index management specs.
+
+B+tree nodes:
+- is_leaf
+- number of keys in tree.
+- N pointers (block_id's)
+- N-1 keys. 
+
+Each node should fit in a block defined by the DB instance.
+- 4 bytes: is_leaf flag. 
+- Pointer fields are block id's.
+  - Pointer size: max(index file name, original table name) + 8,
+    where 8 is to encode the int offset for the file in question (4),
+    as well as the length of the filename string in the string portion of
+    the block_id.
+- Key node/size:
+  - Size of the index key. For example, key=varchar(16) => size=16,
+    key=varchar(16)+int => size = 20.
+
+Index file:
+- Each index file is a sequence of blocks, where each block stores a node
+  as described above.
+
+Global Index metadata:
+- (table name, field name) pairs - for each table, store if there is an
+  index on it.
+
+Local Index metadata:
+(we are at a specific table name, field name instance, perhaps a separate
+table)
+- is_empty flag.
+- Root node pointer.
+- Size of N.
+- Size of key.
+- Size of pointer.
+- free list? 
+

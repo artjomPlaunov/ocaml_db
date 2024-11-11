@@ -1,0 +1,8 @@
+(library
+ (name storage_manager)
+ (public_name ocaml_db.storage_manager)
+ (modules storage_manager)
+ (flags
+  (-w -69)
+  (-w -26))
+ (libraries file))
