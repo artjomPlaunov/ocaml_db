@@ -2,13 +2,7 @@ open File
 
 (* Note on block layout: 
   
-  Block 0 is special in that it is the head pointer of the free list.
-  It either contains a block offset (pointer) to the first element
-  in the free list, i.e. a block that has been deleted but can now 
-  be used, or it is 0 denoting that we don't have any elements in 
-  the free list. 
-
-  This block is stored in head.
+  Block 0 contains metadata. 
 
   All the other blocks not currently in the free list are being 
   used.
