@@ -3,6 +3,8 @@ open File
 (* Note on block layout: 
   
   Block 0 contains metadata. 
+  It only modifies the first 4 bytes, for the free list, and keeps other data consistent. 
+  Programs using the storage manager can modify the remaining block space as necessary. 
 
   All the other blocks not currently in the free list are being 
   used.
@@ -12,6 +14,8 @@ type t = {
   storage_file: string; 
   head_page: Page.t;
 }
+
+let get_head_page ~storage_manager = storage_manager.head_page
 
 let make ~file_manager ~storage_file = 
   let block_size = File_manager.get_blocksize file_manager in 
@@ -69,6 +73,18 @@ let update ~storage_manager ~block ~page =
   let block_size = File_manager.get_blocksize fm in 
   let sfile = storage_manager.storage_file in 
   File_manager.write fm block page
+
+let update_block_num ~storage_manager ~block_num ~page = 
+  let block = Block_id.make ~filename:storage_manager.storage_file ~block_num in  
+  update ~storage_manager ~block ~page
+
+let get_block ~storage_manager ~block_num = 
+  let block_size = File_manager.get_blocksize storage_manager.file_manager in 
+  let page = Page.make ~block_size in 
+  let block = Block_id.make ~filename:storage_manager.storage_file ~block_num in 
+  File_manager.read storage_manager.file_manager block page;
+  page
+    
 
 
   

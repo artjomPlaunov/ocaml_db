@@ -1,7 +1,7 @@
 (library
  (name btree)
  (public_name ocaml_db.btree)
- (modules btree key)
+ (modules btree)
  (flags
   (-w -69)
   (-w -26))

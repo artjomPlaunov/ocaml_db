@@ -9,6 +9,7 @@
   log_record_tests
   execute_query_tests
   transaction_tests
+  btree_tests
   record_page_tests
   storage_manager_tests
   table_manager_tests
@@ -26,6 +27,7 @@
   storage_manager
   scans
   record_page
+  btree
   transaction
   table_manager
   buffer_manager

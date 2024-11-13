@@ -3,7 +3,6 @@ open File
 
 
 (*
-
 Both leaf and internal nodes have the same layout, but the pointer fields can have 
 different meanings. The Btree just works on block numbers, for internal operations 
 it can use the storage manager to turn that block number into a block id and work 
@@ -64,17 +63,33 @@ Byte offset    Leaf Node Layout
  40  +------------------------+
 *)
 
-type key_type = Varchar of int | Integer
+type key_type = TVarchar of int | TInteger
+type key_val = Varchar of string | Integer of Int32.t
+
+let leaf_constant = Int32.of_int 2863311530  (* 0xAAAAAAAA *)
+let internal_constant = Int32.of_int 3149642683  (* 0xBBBBBBBB *)
 
 let sizeof_key key_type = match key_type with 
-  | Varchar n -> n
-  | Integer -> 4
+  | TVarchar n -> n
+  | TInteger -> 4
+
+let empty_key key_type = match key_type with 
+  | TVarchar n -> Varchar (String.make n '"')   (* 0x22222222 *)
+  | TInteger -> Integer (Int32.max_int)
 
 type node_type = Leaf | Internal
+
+let serialize_node_type node_ty = match node_ty with 
+    Leaf -> leaf_constant | Internal -> internal_constant
 
 type node = {
   node_type: node_type;
   parent: int;
+  cur_size: int;
+  keys: key_val array;
+  pointers: int array;
+  capacity: int;
+  key_type: key_type
 }
 
 type t = {
@@ -84,15 +99,93 @@ type t = {
   root_num: int;
 }
 
+let get_num_keys block_size key_ty = 
+    (block_size-16)/(4+(sizeof_key key_ty))
+
+let deserialize page key_ty = 
+    let node_type = if Page.get_int32 page 0 = leaf_constant then Leaf else Internal in
+    let parent = Int32.to_int (Page.get_int32 page 4) in 
+    let cur_size = Int32.to_int (Page.get_int32 page 8) in 
+    let capacity = Int32.to_int (Page.get_int32 page 12) in 
+    let keys = Array.init capacity (fun _ -> empty_key key_ty) in 
+    let pointers = Array.init (capacity + 1) (fun _ -> 3722304989 (* 0xDDDDDDDD *)) in 
+    let pair_size = 4 + (sizeof_key key_ty) in
+    
+    (* Read keys and pointers *)
+    for i = 0 to (cur_size - 1) do
+        (* Read pointer i *)
+        pointers.(i) <- Int32.to_int (Page.get_int32 page (12 + (i*pair_size)));
+        
+        (* Read key i *)
+        match key_ty with
+        | TVarchar n -> 
+            let s = Page.get_string page (12 + (i*pair_size) + 4) in
+            keys.(i) <- Varchar s
+        | TInteger ->
+            let n = Page.get_int32 page (12 + (i*pair_size) + 4) in
+            keys.(i) <- Integer n
+    done;
+    
+    (* Read final pointer *)
+    pointers.(cur_size) <- Int32.to_int (Page.get_int32 page (12 + (cur_size*pair_size)));
+
+    {
+        node_type;
+        parent;
+        cur_size;
+        keys;
+        pointers;
+        capacity;
+        key_type = key_ty
+    }
+
+
+let serialize node block_size = 
+    let page = Page.make ~block_size in 
+    Page.set_int32 page 0 (serialize_node_type node.node_type);
+    Page.set_int32 page 4 (Int32.of_int node.parent);
+    Page.set_int32 page 8 (Int32.of_int node.cur_size);
+    Page.set_int32 page 12 (Int32.of_int node.capacity);
+    let pair_size = 4 + (sizeof_key node.key_type) in 
+    for i = 0 to (node.capacity - 1) do 
+        match node.keys.(i) with 
+        | Varchar s -> Page.set_string_raw page (12 + (i*pair_size) + 4) s
+        | Integer n -> Page.set_int32 page (12 + (i*pair_size) + 4) n
+    done;
+    for i = 0 to node.capacity do 
+        Page.set_int32 page (12 + (i*pair_size)) (Int32.of_int node.pointers.(i))
+    done;
+    page
+
 (*  Create an empty b-tree, initialize on disk, and return 
 in memory data structure.
 
 Params:
-- storage_manager
+- storage_manager - assumed to be fresh with 'make'. 
 - key type.
    *)
+let empty sm key_ty = 
+    let block_size = File_manager.get_blocksize sm.file_manager in 
+    let metadata = Storage_manager.get_head_page ~storage_manager:sm in 
+    Page.set_int32 metadata 4 (Int32.of_int 1); 
+    Storage_manager.update_block_num ~storage_manager:sm ~block_num:0 ~page:metadata;
+    let capacity = get_num_keys block_size key_ty in 
+    let root_node = {
+        node_type=Leaf;
+        parent = 0;
+        cur_size = 0;
+        keys = Array.init capacity (fun _ -> empty_key key_ty);
+        pointers = Array.init (capacity+1) (fun _ -> 3722304989 (* 0xDDDDDDDD *));
+        capacity;
+        key_type = key_ty;
+    } in 
+    let root_page = serialize root_node block_size in 
+    let _ = Storage_manager.append ~storage_manager:sm ~page:root_page in 
+    {sm; key=key_ty; root=root_node; root_num=1}
 
-(*
-let empty sm key = 
-  let n = File_manager.get_blocksize sm.file_manager in 
-*)
+let insert_in_leaf btree block key pointer = 
+    let sm = btree.sm in 
+    let block_size = File_manager.get_blocksize sm.file_manager in 
+    let leaf = Storage_manager.get_block ~storage_manager:sm ~block_num:block in 
+    let node = deserialize leaf btree.key in 
+    node
