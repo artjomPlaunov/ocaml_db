@@ -66,8 +66,11 @@ Byte offset    Leaf Node Layout
 type key_type = TVarchar of int | TInteger
 type key_val = Varchar of string | Integer of Int32.t
 
+(* Constants used in disk layout for unused fields -- for debugging purposes when 
+   analyzing a hexdump. *)
 let leaf_constant = Int32.of_int 2863311530  (* 0xAAAAAAAA *)
 let internal_constant = Int32.of_int 3149642683  (* 0xBBBBBBBB *)
+let unused_pointer_constant = 3722304989 (*0xDDDDDDDD *)
 
 let sizeof_key key_type = match key_type with 
   | TVarchar n -> n
@@ -99,16 +102,34 @@ type t = {
   root_num: int;
 }
 
+(*  Calculate N number of keys for the B tree node. This corresponds to an N+1
+    branching factor (each branch is a pointer). 
+
+    Each key/pointer pair is 4 + (key_size) bytes, since a pointer is 4 bytes. 
+    Substract out 16 bytes being used to store the first 12 bytes of metadata, 
+    and the last pointer (the N+1 pointer), that leaves us the space we have 
+    for the remaining N key/pointer pairs.  
+    *)
 let get_num_keys block_size key_ty = 
     (block_size-16)/(4+(sizeof_key key_ty))
 
-let deserialize page key_ty = 
+let print_node node = 
+    let _ = match node.node_type with 
+    | Leaf -> Printf.printf "Leaf Node:\n"
+    | Internal -> Printf.printf "Internal Node:\n" in 
+    Printf.printf "Parent: %d\n" node.parent;
+    ()
+    
+
+
+
+let deserialize page key_ty block_size = 
     let node_type = if Page.get_int32 page 0 = leaf_constant then Leaf else Internal in
     let parent = Int32.to_int (Page.get_int32 page 4) in 
     let cur_size = Int32.to_int (Page.get_int32 page 8) in 
-    let capacity = Int32.to_int (Page.get_int32 page 12) in 
+    let capacity = get_num_keys block_size key_ty in 
     let keys = Array.init capacity (fun _ -> empty_key key_ty) in 
-    let pointers = Array.init (capacity + 1) (fun _ -> 3722304989 (* 0xDDDDDDDD *)) in 
+    let pointers = Array.init (capacity + 1) (fun _ -> unused_pointer_constant (* 0xDDDDDDDD *)) in 
     let pair_size = 4 + (sizeof_key key_ty) in
     
     (* Read keys and pointers *)
@@ -145,7 +166,6 @@ let serialize node block_size =
     Page.set_int32 page 0 (serialize_node_type node.node_type);
     Page.set_int32 page 4 (Int32.of_int node.parent);
     Page.set_int32 page 8 (Int32.of_int node.cur_size);
-    Page.set_int32 page 12 (Int32.of_int node.capacity);
     let pair_size = 4 + (sizeof_key node.key_type) in 
     for i = 0 to (node.capacity - 1) do 
         match node.keys.(i) with 
@@ -175,7 +195,7 @@ let empty sm key_ty =
         parent = 0;
         cur_size = 0;
         keys = Array.init capacity (fun _ -> empty_key key_ty);
-        pointers = Array.init (capacity+1) (fun _ -> 3722304989 (* 0xDDDDDDDD *));
+        pointers = Array.init (capacity+1) (fun _ -> unused_pointer_constant);
         capacity;
         key_type = key_ty;
     } in 
@@ -186,6 +206,9 @@ let empty sm key_ty =
 let insert_in_leaf btree block key pointer = 
     let sm = btree.sm in 
     let block_size = File_manager.get_blocksize sm.file_manager in 
-    let leaf = Storage_manager.get_block ~storage_manager:sm ~block_num:block in 
-    let node = deserialize leaf btree.key in 
+    let leaf_block = Storage_manager.get_block ~storage_manager:sm ~block_num:block in 
+    let node = deserialize leaf_block btree.key block_size in
+    let () = assert (node.node_type = Leaf) in 
+    print_node node;
     node
+

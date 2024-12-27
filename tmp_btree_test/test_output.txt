@@ -1,0 +1,16 @@
+Initial storage state:
+Storage contents:
+Block 0: 0
+Block 1: -1431655766
+Block 2: -1431655766
+Block 3: -1431655766
+Block 4: -1431655766
+
+After creating empty btree:
+Storage contents:
+Block 0: 0
+Block 1: -1431655766
+Block 2: -1431655766
+Block 3: -1431655766
+Block 4: -1431655766
+Block 5: -1431655766
