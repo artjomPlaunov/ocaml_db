@@ -1,3 +1,11 @@
+(** Schema 
+
+    Logical layout of a table with typed fields. 
+    Each field has a type and 
+
+
+*)
+
 type field_info
 type t = { mutable fields : string list; info : (string, field_info) Hashtbl.t }
 

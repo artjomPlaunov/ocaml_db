@@ -1,3 +1,6 @@
+(** Record_Page *)
+
+
 type t
 
 val make : Transaction.t -> File.Block_id.t -> Layout.t -> t

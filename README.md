@@ -11,3 +11,5 @@ Todo List:
 - (1) clean up code base, solidify tests, try to cook up any fundamental design refactorings before growing the DB further.   
 - (2) generate DB docs with odoc. 
 - JDBC-like API for network and embedded connection. Test on separate nodes. 
+- Transaction + Recovery Manager testing -- shutdown DB instance and test recovery log algo. 
+- DB wrapper 
