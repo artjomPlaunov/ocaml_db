@@ -1,4 +1,4 @@
-module Schema = Record_page__Schema
+module Schema = Record_page.Schema
 
 type t = Term.t list
 

@@ -1,6 +1,6 @@
-module Layout = Record_page__Layout
-module Schema = Record_page__Schema
-module Type = Record_page__Type
+module Schema = Record_page.Schema
+module Layout = Record_page.Layout
+module Type = Record_page.Type
 module Table_scan = Scans__Table_scan
 
 type t = {

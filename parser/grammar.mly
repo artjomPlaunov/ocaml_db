@@ -106,11 +106,11 @@ modify:
 
 create_table:
   | CREATE TABLE ID LPAREN field_defs RPAREN {
-      let schema = Record_page__Schema.make () in
+      let schema = Record_page.Schema.make () in
       List.iter (fun (field_name, field_type) ->
         match field_type with
-        | LocalInteger -> Record_page__Schema.add_int_field schema field_name
-        | LocalVarchar length -> Record_page__Schema.add_string_field schema field_name length
+        | LocalInteger -> Record_page.Schema.add_int_field schema field_name
+        | LocalVarchar length -> Record_page.Schema.add_string_field schema field_name length
       ) $5;
       CreateTable (Create_table_data.make $3 schema)
     }

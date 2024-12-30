@@ -1,5 +1,5 @@
-module Schema = Record_page__Schema
-module Layout = Record_page__Layout
+module Schema = Record_page.Schema
+module Layout = Record_page.Layout
 
 type t
 

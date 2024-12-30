@@ -1,7 +1,7 @@
 class t : 
   Transaction.t -> 
   string ->  (* table name *)
-  Record_page__Layout.t -> 
+  Record_page.Layout.t -> 
   object
     method get_rid : Record_id.t
     method move_to_rid : rid:Record_id.t -> unit
@@ -19,4 +19,4 @@ class t :
     method close : unit
   end
 
-val make : tx:Transaction.t -> tbl_name:string -> layout:Record_page__Layout.t -> t
+val make : tx:Transaction.t -> tbl_name:string -> layout:Record_page.Layout.t -> t

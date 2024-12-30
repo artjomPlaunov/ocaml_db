@@ -1,7 +1,7 @@
 module To_test = struct
   open File
-  module Schema = Record_page__Schema
-  module Layout = Record_page__Layout
+  module Schema = Record_page.Schema
+  module Layout = Record_page.Layout
 
   type record_page_test_env = {
     file_manager: File_manager.t;

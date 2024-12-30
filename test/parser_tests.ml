@@ -33,15 +33,15 @@ module To_test = struct
     match result with
     | Query_data.CreateTable { tblname; sch } ->
         Alcotest.(check string) "table name" "Students" tblname;
-        Alcotest.(check bool) "schema has field 'id'" true (Record_page__Schema.has_field sch "id");
-        Alcotest.(check bool) "schema has field 'name'" true (Record_page__Schema.has_field sch "name");
+        Alcotest.(check bool) "schema has field 'id'" true (Record_page.Schema.has_field sch "id");
+        Alcotest.(check bool) "schema has field 'name'" true (Record_page.Schema.has_field sch "name");
         Alcotest.(check bool) "field 'id' is INT" true 
-          (match Record_page__Schema.get_type sch "id" with
-           | Record_page__Type.Integer -> true
+          (match Record_page.Schema.get_type sch "id" with
+           | Record_page.Type.Integer -> true
            | _ -> false);
         Alcotest.(check bool) "field 'name' is VARCHAR(50)" true 
-          (match Record_page__Schema.get_type sch "name" with
-           | Record_page__Type.Varchar -> Record_page__Schema.get_length sch "name" = 50
+          (match Record_page.Schema.get_type sch "name" with
+           | Record_page.Type.Varchar -> Record_page.Schema.get_length sch "name" = 50
            | _ -> false);
         "CREATE TABLE parsed successfully"
     | _ -> 
@@ -54,11 +54,11 @@ module To_test = struct
   Printf.sprintf "CREATE TABLE %s (%s)" tblname fields_str
 
 let check_field schema field_name expected_type expected_length =
-  Alcotest.(check bool) (Printf.sprintf "schema has field '%s'" field_name) true (Record_page__Schema.has_field schema field_name);
+  Alcotest.(check bool) (Printf.sprintf "schema has field '%s'" field_name) true (Record_page.Schema.has_field schema field_name);
   Alcotest.(check bool) (Printf.sprintf "field '%s' is %s" field_name expected_type) true 
-    (match Record_page__Schema.get_type schema field_name with
-     | Record_page__Type.Integer when expected_type = "INT" -> true
-     | Record_page__Type.Varchar when expected_type = "VARCHAR" -> Record_page__Schema.get_length schema field_name = expected_length
+    (match Record_page.Schema.get_type schema field_name with
+     | Record_page.Type.Integer when expected_type = "INT" -> true
+     | Record_page.Type.Varchar when expected_type = "VARCHAR" -> Record_page.Schema.get_length schema field_name = expected_length
      | _ -> false)
 
 let test_create_table_large () =

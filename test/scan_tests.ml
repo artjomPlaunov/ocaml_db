@@ -1,8 +1,8 @@
 module To_test = struct
   open File
   open Test_utils
-  module Schema = Record_page__Schema
-  module Layout = Record_page__Layout
+  module Schema = Record_page.Schema
+  module Layout = Record_page.Layout
   module Constant = Constant
   module Predicate = Scans__Predicate
   module Expression = Scans__Expression

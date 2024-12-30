@@ -1,7 +1,7 @@
 module To_test = struct
   open File
-  module Schema = Record_page__Schema
-  module Layout = Record_page__Layout
+  module Schema = Record_page.Schema
+  module Layout = Record_page.Layout
 
   let tbl_mgr_create_and_verify () =
     let db_name = "tmp_tablemanager_test_create" in
@@ -30,8 +30,8 @@ module To_test = struct
         let typ = Schema.get_type schema_retrieved field_name in
         let typ_repr =
           match typ with
-          | Record_page__Type.Integer -> "int"
-          | Record_page__Type.Varchar ->
+          | Record_page.Type.Integer -> "int"
+          | Record_page.Type.Varchar ->
               let len = Schema.get_length schema_retrieved field_name in
               Printf.sprintf "VarChar(%d)" len
         in
@@ -72,8 +72,8 @@ module To_test = struct
           let typ = Schema.get_type schema_retrieved field_name in
           let typ_repr =
             match typ with
-            | Record_page__Type.Integer -> "int"
-            | Record_page__Type.Varchar ->
+            | Record_page.Type.Integer -> "int"
+            | Record_page.Type.Varchar ->
                 let len = Schema.get_length schema_retrieved field_name in
                 Printf.sprintf "VarChar(%d)" len
           in

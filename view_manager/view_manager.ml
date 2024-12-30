@@ -1,5 +1,5 @@
-module Schema = Record_page__Schema
-module Layout = Record_page__Layout
+module Schema = Record_page.Schema
+module Layout = Record_page.Layout
 module Table_scan = Scans__Table_scan
 
 type t = { max_view_defn : int; table_mgr : Table_manager.t }

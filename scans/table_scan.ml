@@ -1,5 +1,5 @@
-module Layout = Record_page__Layout
-module Schema = Record_page__Schema
+module Layout = Record_page.Layout
+module Schema = Record_page.Schema
 
 class t tx tbl_name layout = object (self)
   inherit Scan.t

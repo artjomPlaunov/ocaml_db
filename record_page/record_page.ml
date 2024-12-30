@@ -1,3 +1,7 @@
+module Type = Type
+module Schema = Schema
+module Layout = Layout
+
 type t = {
   empty : int;
   used : int;

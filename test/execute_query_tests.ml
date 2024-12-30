@@ -9,9 +9,9 @@ module To_test = struct
   let setup_simple_select_data () =
     let env = Test_utils.make_test_env ~db_name:"simple_select_test" in
     let table_mgr = Table_manager.make ~is_new:true ~tx:env.transaction in
-    let schema = Record_page__Schema.make () in
-    Record_page__Schema.add_int_field schema "A";
-    Record_page__Schema.add_string_field schema "B" 9;
+    let schema = Record_page.Schema.make () in
+    Record_page.Schema.add_int_field schema "A";
+    Record_page.Schema.add_string_field schema "B" 9;
     Table_manager.create_table ~table_mgr ~tbl_name:"T1" ~schema
       ~tx:env.transaction;
     let layout =
@@ -58,9 +58,9 @@ module To_test = struct
   let setup_insert_data () =
     let env = Test_utils.make_test_env ~db_name:"insert_select_test" in
     let table_mgr = Table_manager.make ~is_new:true ~tx:env.transaction in
-    let schema = Record_page__Schema.make () in
-    Record_page__Schema.add_int_field schema "A";
-    Record_page__Schema.add_string_field schema "B" 9;
+    let schema = Record_page.Schema.make () in
+    Record_page.Schema.add_int_field schema "A";
+    Record_page.Schema.add_string_field schema "B" 9;
     Table_manager.create_table ~table_mgr ~tbl_name:"T1" ~schema
       ~tx:env.transaction;
     let layout =
