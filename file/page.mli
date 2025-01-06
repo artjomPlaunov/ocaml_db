@@ -9,6 +9,7 @@ val get_bytes : t -> int -> bytes
 val set_bytes : t -> int -> bytes -> unit
 val get_string : t -> int -> string
 val set_string_raw : t -> int -> string -> unit
+val get_string_raw : t -> int -> int -> string
 val set_string : t -> int -> string -> unit
 val max_len : int -> int
 val ( = ) : t -> t -> bool

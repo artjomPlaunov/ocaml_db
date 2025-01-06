@@ -21,6 +21,8 @@ let set_string_raw page offset s =
   let len = Bytes.length b in 
   Bytes.blit b 0 page offset len
 
+let get_string_raw page offset n = Bytes.to_string (Bytes.sub page offset n)
+
 let get_string page offset = Bytes.to_string (get_bytes page offset)
 let set_string page offset s = set_bytes page offset (Bytes.of_string s)
 

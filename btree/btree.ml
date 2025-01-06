@@ -66,6 +66,18 @@ Byte offset    Leaf Node Layout
 type key_type = TVarchar of int | TInteger
 type key_val = Varchar of string | Integer of Int32.t
 
+
+let key_lt k1 k2 = match (k1,k2) with
+| (Varchar s1, Varchar s2) -> s1 < s2
+| (Integer n1, Integer n2) -> n1 < n2
+| _ -> failwith "incomparable keys"
+
+let string_of_key k = match k with 
+    | Varchar s -> Printf.sprintf "Varchar %s" s
+    | Integer d -> Printf.sprintf "Integer %d" (Int32.to_int d) 
+
+
+
 (* Constants used in disk layout for unused fields -- for debugging purposes when 
    analyzing a hexdump. *)
 let leaf_constant = Int32.of_int 2863311530  (* 0xAAAAAAAA *)
@@ -85,20 +97,41 @@ type node_type = Leaf | Internal
 let serialize_node_type node_ty = match node_ty with 
     Leaf -> leaf_constant | Internal -> internal_constant
 
+(* B TREE NODE ***************************************************************)
 type node = {
+(* Leaf | Internal *)
   node_type: node_type;
-  parent: int;
-  cur_size: int;
+
+(* Block offset pointer to parent.*)
+  mutable parent: int;
+
+(* current number of keys. *)
+  mutable cur_size: int;
+
+(*  The keys and pointers array represent the node
+    layout on disk shown above, although we use 
+    two separate arrays to store the interleaving. 
+    
+    Index i of pointers is the left pointer of 
+    index i in the keys array, except for the 
+    last element of pointers (since there are 
+    n+1 pointers). The last element corresponds 
+    to the right most pointer in the layout.     
+    *)
   keys: key_val array;
   pointers: int array;
+
+(* Max number of keys that can be stored.*)
   capacity: int;
+
   key_type: key_type
 }
 
+(* B TREE ********************************************************************)
 type t = {
   sm: Storage_manager.t;
   key: key_type;
-  root: node;
+  mutable root: node;
   root_num: int;
 }
 
@@ -115,9 +148,13 @@ let get_num_keys block_size key_ty =
 
 let print_node node = 
     let _ = match node.node_type with 
-    | Leaf -> Printf.printf "Leaf Node:\n"
-    | Internal -> Printf.printf "Internal Node:\n" in 
+    | Leaf -> Printf.printf "Leaf Node\n"
+    | Internal -> Printf.printf "Internal Node\n" in 
     Printf.printf "Parent: %d\n" node.parent;
+    for i = 0 to (node.cur_size - 1) do 
+        Printf.printf "P%d: %d\n" i node.pointers.(i); 
+        Printf.printf "K%d: %s\n" i (string_of_key node.keys.(i))
+    done;
     ()
     
 
@@ -140,7 +177,7 @@ let deserialize page key_ty block_size =
         (* Read key i *)
         match key_ty with
         | TVarchar n -> 
-            let s = Page.get_string page (12 + (i*pair_size) + 4) in
+            let s = Page.get_string_raw page (12 + (i*pair_size) + 4) n in
             keys.(i) <- Varchar s
         | TInteger ->
             let n = Page.get_int32 page (12 + (i*pair_size) + 4) in
@@ -203,12 +240,40 @@ let empty sm key_ty =
     let _ = Storage_manager.append ~storage_manager:sm ~page:root_page in 
     {sm; key=key_ty; root=root_node; root_num=1}
 
+let insert_key_pointer node key pointer idx = 
+    for i = node.capacity - 1 downto (idx + 1) do 
+        node.keys.(i) <- node.keys.(i-1);
+        node.pointers.(i) <- node.pointers.(i-1); 
+    done;
+    node.keys.(idx) <- key;
+    node.pointers.(idx) <- pointer
+
 let insert_in_leaf btree block key pointer = 
     let sm = btree.sm in 
     let block_size = File_manager.get_blocksize sm.file_manager in 
     let leaf_block = Storage_manager.get_block ~storage_manager:sm ~block_num:block in 
     let node = deserialize leaf_block btree.key block_size in
-    let () = assert (node.node_type = Leaf) in 
-    print_node node;
-    node
+    assert (node.node_type = Leaf);
 
+    if node.cur_size = 0 
+    then (
+        node.keys.(0) <- key;
+        node.pointers.(0) <- pointer;
+        node.cur_size <- 1;
+    )
+    else ( 
+        if node.cur_size > 0
+        then (
+            assert (node.cur_size <> node.capacity); 
+            if key_lt key node.keys.(0) 
+            then 
+                let _ = insert_key_pointer node key pointer 0 in 
+                node.cur_size <- node.cur_size + 1
+            else 
+                ()
+        ) else ()
+    );
+    if btree.root_num = block then btree.root <- node;
+    let page = serialize node block_size in 
+    Storage_manager.update_block_num ~storage_manager:sm ~block_num:block ~page;
+    node
