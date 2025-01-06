@@ -1,0 +1,73 @@
+Initial state:
+Storage contents:
+Block 0: 0
+Free list:
+End of free list
+
+Initial append of 5 blocks:
+Storage contents:
+Block 0: 0
+Block 1: 1
+Block 2: 2
+Block 3: 3
+Block 4: 4
+Block 5: 5
+Free list:
+End of free list
+
+Deleting blocks 2 and 4:
+Storage contents:
+Block 0: 4
+Block 1: 1
+Block 2: 0
+Block 3: 3
+Block 4: 2
+Block 5: 5
+Free list:
+Block 4 -> Block 2 -> End of free list
+
+Deleting remaining blocks (1, 3, and 5):
+Storage contents:
+Block 0: 5
+Block 1: 4
+Block 2: 0
+Block 3: 1
+Block 4: 2
+Block 5: 3
+Free list:
+Block 5 -> Block 3 -> Block 1 -> Block 4 -> Block 2 -> End of free list
+
+Appending two new blocks:
+
+After first append:
+Storage contents:
+Block 0: 3
+Block 1: 4
+Block 2: 0
+Block 3: 1
+Block 4: 2
+Block 5: 200
+Free list:
+Block 3 -> Block 1 -> Block 4 -> Block 2 -> End of free list
+
+After second append:
+Storage contents:
+Block 0: 1
+Block 1: 4
+Block 2: 0
+Block 3: 201
+Block 4: 2
+Block 5: 200
+Free list:
+Block 1 -> Block 4 -> Block 2 -> End of free list
+
+Updating block 3 with value 999:
+Storage contents:
+Block 0: 1
+Block 1: 4
+Block 2: 0
+Block 3: 999
+Block 4: 2
+Block 5: 200
+Free list:
+Block 1 -> Block 4 -> Block 2 -> End of free list

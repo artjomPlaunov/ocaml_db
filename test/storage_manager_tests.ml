@@ -107,39 +107,7 @@ module To_test = struct
     final_output
 end
 
-let expected_output = "Initial append of 5 blocks:
-Storage contents:
-Block 1: 1
-Block 2: 2
-Block 3: 3
-Block 4: 4
-Block 5: 5
-Free list:
-End of free list
-
-Deleting blocks 2 and 4:
-Storage contents:
-Block 1: 1
-Block 3: 3
-Block 5: 5
-Free list:
-Block 2 -> Block 4 -> End of free list
-
-Deleting remaining blocks (1, 3, and 5):
-Storage contents:
-Free list:
-End of free list
-
-Appending two new blocks:
-Storage contents:
-Block 1: 1
-Block 2: 100
-Block 3: 3
-Block 4: 101
-Block 5: 5
-Free list:
-End of free list
-"
+let expected_output = "Initial state:\nStorage contents:\nBlock 0: 0\nFree list:\nEnd of free list\n\nInitial append of 5 blocks:\nStorage contents:\nBlock 0: 0\nBlock 1: 1\nBlock 2: 2\nBlock 3: 3\nBlock 4: 4\nBlock 5: 5\nFree list:\nEnd of free list\n\nDeleting blocks 2 and 4:\nStorage contents:\nBlock 0: 4\nBlock 1: 1\nBlock 2: 0\nBlock 3: 3\nBlock 4: 2\nBlock 5: 5\nFree list:\nBlock 4 -> Block 2 -> End of free list\n\nDeleting remaining blocks (1, 3, and 5):\nStorage contents:\nBlock 0: 5\nBlock 1: 4\nBlock 2: 0\nBlock 3: 1\nBlock 4: 2\nBlock 5: 3\nFree list:\nBlock 5 -> Block 3 -> Block 1 -> Block 4 -> Block 2 -> End of free list\n\nAppending two new blocks:\n\nAfter first append:\nStorage contents:\nBlock 0: 3\nBlock 1: 4\nBlock 2: 0\nBlock 3: 1\nBlock 4: 2\nBlock 5: 200\nFree list:\nBlock 3 -> Block 1 -> Block 4 -> Block 2 -> End of free list\n\nAfter second append:\nStorage contents:\nBlock 0: 1\nBlock 1: 4\nBlock 2: 0\nBlock 3: 201\nBlock 4: 2\nBlock 5: 200\nFree list:\nBlock 1 -> Block 4 -> Block 2 -> End of free list\n\nUpdating block 3 with value 999:\nStorage contents:\nBlock 0: 1\nBlock 1: 4\nBlock 2: 0\nBlock 3: 999\nBlock 4: 2\nBlock 5: 200\nFree list:\nBlock 1 -> Block 4 -> Block 2 -> End of free list\n"
 
 let test_storage_manager () =
   Alcotest.(check string)
