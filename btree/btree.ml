@@ -72,6 +72,13 @@ let key_lt k1 k2 = match (k1,k2) with
 | (Integer n1, Integer n2) -> n1 < n2
 | _ -> failwith "incomparable keys"
 
+ let key_eq k1 k2 = match (k1,k2) with 
+ | (Varchar s1, Varchar s2) -> s1 = s2
+ | (Integer n1, Integer n2) -> n1 = n2
+ | _ -> failwith "incomparable keys"
+
+let key_lteq k1 k2 = (key_lt k1 k2) || (key_eq k1 k2) 
+
 let string_of_key k = match k with 
     | Varchar s -> Printf.sprintf "Varchar %s" s
     | Integer d -> Printf.sprintf "Integer %d" (Int32.to_int d) 
@@ -168,7 +175,7 @@ let deserialize page key_ty block_size =
     let keys = Array.init capacity (fun _ -> empty_key key_ty) in 
     let pointers = Array.init (capacity + 1) (fun _ -> unused_pointer_constant (* 0xDDDDDDDD *)) in 
     let pair_size = 4 + (sizeof_key key_ty) in
-    
+
     (* Read keys and pointers *)
     for i = 0 to (cur_size - 1) do
         (* Read pointer i *)
@@ -255,6 +262,7 @@ let insert_in_leaf btree block key pointer =
     let node = deserialize leaf_block btree.key block_size in
     assert (node.node_type = Leaf);
 
+    (* Empty node, add at the front. *)
     if node.cur_size = 0 
     then (
         node.keys.(0) <- key;
@@ -263,15 +271,35 @@ let insert_in_leaf btree block key pointer =
     )
     else ( 
         if node.cur_size > 0
-        then (
-            assert (node.cur_size <> node.capacity); 
+        then 
+            assert (node.cur_size <> node.capacity);
             if key_lt key node.keys.(0) 
+            (* Key is less than all keys*) 
             then 
                 let _ = insert_key_pointer node key pointer 0 in 
                 node.cur_size <- node.cur_size + 1
+            (*  Insert key after K_i, highest value lt or eq to K *)
             else 
-                ()
-        ) else ()
+                (* TODO: Binary Search here.*)
+                let i = ref 0 in
+                while !i < (node.cur_size) && key_lteq node.keys.(!i) key do 
+                    i := !i + 1;
+                done;
+                (*  Negation of while loop condition, i.e. the property at this location:
+                    i = cur_size || keys[i] > key 
+                    Either we iterated over all the elements (key is larger than all),
+                    or we are in the middle somewhere, and we found the first key greater 
+                    than our key. We slide all the keys/pointers forward from this index, 
+                    and insert at this location (or just insert directly if we are at the 
+                    end.) 
+                    *)
+                if !i = node.cur_size
+                then (
+                    node.keys.(!i) <- key;
+                    node.pointers.(!i) <- pointer;)
+                else 
+                    insert_key_pointer node key pointer (!(i));
+                node.cur_size <- node.cur_size + 1
     );
     if btree.root_num = block then btree.root <- node;
     let page = serialize node block_size in 

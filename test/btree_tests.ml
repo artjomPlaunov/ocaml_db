@@ -20,10 +20,10 @@ module Empty_btree_tests = struct
     let t = Btree.empty storage_manager key_type in
     (* Empty tree.*)
     Btree.print_node t.root;
-    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'D')) 4 in
-    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'C')) 3 in 
-    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'B')) 2 in 
-    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'A')) 1 in 
+    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'A')) 4 in
+    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'B')) 3 in 
+    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'C')) 2 in 
+    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'D')) 1 in 
     Btree.print_node t.root;
     ""
 
