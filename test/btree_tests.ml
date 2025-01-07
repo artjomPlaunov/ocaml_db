@@ -37,8 +37,8 @@ module Btree_tests = struct
     let storage_manager = setup_test_env dir in
     let key_type = TVarchar 4 in
     let t = Btree.empty storage_manager key_type in
-    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'J')) 127 in
-    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'A')) 1023 in 
+    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'J')) 7 in
+    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'A')) 9 in 
     (* create another node, so we can insert a new key, pointer pair into the root we created above*)
     let key_ty = t.key in
     let block_size = File.File_manager.get_blocksize t.sm.file_manager in
