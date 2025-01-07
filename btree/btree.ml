@@ -1,13 +1,30 @@
 open Storage_manager
 open File
 
-
 (*
 Both leaf and internal nodes have the same layout, but the pointer fields can have 
-different meanings. The Btree just works on block numbers, for internal operations 
-it can use the storage manager to turn that block number into a block id and work 
-on an actual block. The block numbers at the leaves can be used by the index 
-manager using the b tree.
+different meanings. 
+
+Initial design choice was to just store pointers as 4 byte offsets, denoting a block 
+offset location within a file. The actual file itself is implicitly defined; from the 
+B-tree's perspective, a block offset is an offset within the storage manager file that 
+is storing the B tree. These are the pointers within the internal nodes of the B tree, 
+as well as the sibling pointers in the leaf nodes.
+
+From the perspective of the index manager using the B-tree, a pointer stored in the 
+leaf node of the B-tree is a pointer within the original table. Hence there is no need
+to store file names, as there are really just two files: the file storing the b tree 
+on disk, and the file of the original table, where the end result record is stored. 
+
+Later on, this may be changed to create a more generic pointer interface which would 
+allow a user to supply their own pointer and dereferencing methods. However this would 
+also require distinguishing between pointers being used within the B tree (internal nodes,
+sibling pointers), from the pointer fields in the leaf nodes that point to the location 
+of the indexed records. For now, this would be too much overhead in terms of typing. 
+
+Here is a schema of the layout; 16 bytes are reserved; the first 12 bytes store metadata, 
+and 4 bytes for the M+1 pointer. Then as many (key, pointer) pairs are packed as space 
+allows, denoted by M (number of keys)
 
 N - size of key
 
@@ -35,7 +52,9 @@ Byte offset    Internal Node Layout
  36  +------------------------+
      | ptr_4        [4 bytes] |  → child block for keys >= key_3
  40  +------------------------+
-
+....
+Remaining Space (no more space in block to fit another (pointer, key) pair). 
+...
 
 Byte offset    Leaf Node Layout
      |    
@@ -83,8 +102,6 @@ let string_of_key k = match k with
     | Varchar s -> Printf.sprintf "Varchar %s" s
     | Integer d -> Printf.sprintf "Integer %d" (Int32.to_int d) 
 
-
-
 (* Constants used in disk layout for unused fields -- for debugging purposes when 
    analyzing a hexdump. *)
 let leaf_constant = Int32.of_int 2863311530  (* 0xAAAAAAAA *)
@@ -107,7 +124,7 @@ let serialize_node_type node_ty = match node_ty with
 (* B TREE NODE ***************************************************************)
 type node = {
 (* Leaf | Internal *)
-  node_type: node_type;
+  mutable  node_type: node_type;
 
 (* Block offset pointer to parent.*)
   mutable parent: int;
@@ -139,7 +156,7 @@ type t = {
   sm: Storage_manager.t;
   key: key_type;
   mutable root: node;
-  root_num: int;
+  mutable root_num: int;
 }
 
 (*  Calculate N number of keys for the B tree node. This corresponds to an N+1
@@ -167,6 +184,18 @@ let print_node node =
 
 
 
+let empty_node key_ty block_size = 
+    let capacity = get_num_keys block_size key_ty in 
+    {
+        node_type=Leaf;
+        parent = 0;
+        cur_size = 0;
+        keys = Array.init capacity (fun _ -> empty_key key_ty);
+        pointers = Array.init (capacity+1) (fun _ -> unused_pointer_constant);
+        capacity;
+        key_type = key_ty;
+    }
+    
 let deserialize page key_ty block_size = 
     let node_type = if Page.get_int32 page 0 = leaf_constant then Leaf else Internal in
     let parent = Int32.to_int (Page.get_int32 page 4) in 
@@ -247,7 +276,7 @@ let empty sm key_ty =
     let _ = Storage_manager.append ~storage_manager:sm ~page:root_page in 
     {sm; key=key_ty; root=root_node; root_num=1}
 
-let insert_key_pointer node key pointer idx = 
+let insert_key_pointer_pair node key pointer idx = 
     for i = node.capacity - 1 downto (idx + 1) do 
         node.keys.(i) <- node.keys.(i-1);
         node.pointers.(i) <- node.pointers.(i-1); 
@@ -270,38 +299,99 @@ let insert_in_leaf btree block key pointer =
         node.cur_size <- 1;
     )
     else ( 
-        if node.cur_size > 0
+        assert (node.cur_size <> node.capacity);
+        if key_lt key node.keys.(0) 
+        (* Key is less than all keys*) 
         then 
-            assert (node.cur_size <> node.capacity);
-            if key_lt key node.keys.(0) 
-            (* Key is less than all keys*) 
-            then 
-                let _ = insert_key_pointer node key pointer 0 in 
-                node.cur_size <- node.cur_size + 1
-            (*  Insert key after K_i, highest value lt or eq to K *)
+            let _ = insert_key_pointer_pair node key pointer 0 in 
+            node.cur_size <- node.cur_size + 1
+        (*  Insert key after K_i, highest value lt or eq to K *)
+        else 
+            (* TODO: Binary Search here.*)
+            let i = ref 0 in
+            while !i < (node.cur_size) && key_lteq node.keys.(!i) key do 
+                i := !i + 1;
+            done;
+            (*  Negation of while loop condition, i.e. the property at this location:
+                i = cur_size || keys[i] > key 
+                Either we iterated over all the elements (key is larger than all),
+                or we are in the middle somewhere, and we found the first key greater 
+                than our key. We slide all the keys/pointers forward from this index, 
+                and insert at this location (or just insert directly if we are at the 
+                end.) 
+                *)
+            if !i = node.cur_size
+            then (
+                node.keys.(!i) <- key;
+                node.pointers.(!i) <- pointer;)
             else 
-                (* TODO: Binary Search here.*)
-                let i = ref 0 in
-                while !i < (node.cur_size) && key_lteq node.keys.(!i) key do 
-                    i := !i + 1;
-                done;
-                (*  Negation of while loop condition, i.e. the property at this location:
-                    i = cur_size || keys[i] > key 
-                    Either we iterated over all the elements (key is larger than all),
-                    or we are in the middle somewhere, and we found the first key greater 
-                    than our key. We slide all the keys/pointers forward from this index, 
-                    and insert at this location (or just insert directly if we are at the 
-                    end.) 
-                    *)
-                if !i = node.cur_size
-                then (
-                    node.keys.(!i) <- key;
-                    node.pointers.(!i) <- pointer;)
-                else 
-                    insert_key_pointer node key pointer (!(i));
-                node.cur_size <- node.cur_size + 1
+                insert_key_pointer_pair node key pointer (!(i));
+            node.cur_size <- node.cur_size + 1
     );
     if btree.root_num = block then btree.root <- node;
     let page = serialize node block_size in 
     Storage_manager.update_block_num ~storage_manager:sm ~block_num:block ~page;
     node
+
+(* Insert (key,p2) pair in parent of p1. p1 and p2 are pointers. *)
+let insert_in_parent btree p1 key_v p2 = 
+    if btree.root_num = p1 
+    (* p1 is the root of the tree. Create a new root.*)
+    then 
+        let block_size = File_manager.get_blocksize (btree.sm.file_manager) in 
+        (* First, create in memory representation for the new root node: *)
+        let new_root = empty_node btree.key block_size in 
+        (* Root is internal since p1 and p2 are children. *)
+        new_root.node_type <- Internal;
+        new_root.keys.(0) <- key_v;
+        new_root.pointers.(0) <- p1;
+        new_root.pointers.(1) <- p2;
+        new_root.cur_size <- 1;
+        (*  Create new root page layout, and append it to disk in the storage manager. 
+            This gives us the block offset of the new root node in the b-tree file. *)
+        let new_root_page = serialize new_root block_size in  
+        let new_root_blockid = Storage_manager.append ~storage_manager:btree.sm ~page:new_root_page in
+        let new_root_block_offset = File.Block_id.block_num new_root_blockid in  
+        (* Fetch p2 node *)
+        let p2_block = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p2 in 
+        let p2_node = deserialize p2_block btree.key block_size in 
+
+        (* Make new_root the root of the tree.*)
+        (* Save old root in p1_node *)
+        let p1_node = btree.root in
+        p1_node.parent <- new_root_block_offset; 
+        p2_node.parent <- new_root_block_offset;
+        btree.root <- new_root;
+        btree.root_num <- new_root_block_offset;
+        let p1_page = serialize p1_node block_size in 
+        let p2_page = serialize p2_node block_size in 
+        Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p1 ~page:p1_page;
+        Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p2 ~page:p2_page;
+        (* Update root node offset in storage manager metadata. *)
+        let sm_head_page = Storage_manager.get_head_page ~storage_manager:btree.sm in
+        Page.set_int32 sm_head_page 4 (Int32.of_int btree.root_num);
+        Storage_manager.set_head_page ~storage_manager:btree.sm sm_head_page; 
+        ()
+    else 
+        let block_size = File_manager.get_blocksize (btree.sm.file_manager) in 
+        let p1_block = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p1 in
+        let p1_node = deserialize p1_block btree.key block_size in
+        let p0 = p1_node.parent in
+        let p0_block = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p0 in
+        let p0_node = deserialize p0_block btree.key block_size in
+
+        if p0_node.cur_size < p0_node.capacity 
+        (* insert the key, pointer pair after c*)
+        then 
+            let cur_size = p0_node.cur_size in 
+            (* last key is at index cur_size-1 so index cur_size is empty *)
+            let index_of_first_empty = cur_size in
+            p0_node.keys.(index_of_first_empty) <- key_v;
+            p0_node.pointers.(index_of_first_empty+1) <- p2;
+            p0_node.cur_size <- cur_size + 1;
+            let p0_page = serialize p0_node block_size in 
+            Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p0 ~page:p0_page; 
+            ()
+        (* No space in parent: split and keep propagating up.*)
+        else 
+            ()

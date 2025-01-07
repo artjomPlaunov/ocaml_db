@@ -12,10 +12,15 @@ open File
 type t = {
   file_manager: File_manager.t;
   storage_file: string; 
-  head_page: Page.t;
+  mutable head_page: Page.t;
 }
 
 let get_head_page ~storage_manager = storage_manager.head_page
+
+let set_head_page ~storage_manager page =
+  storage_manager.head_page <- page;
+  let block_id = Block_id.make ~filename:storage_manager.storage_file ~block_num:0 in 
+  File_manager.write storage_manager.file_manager block_id storage_manager.head_page
 
 let make ~file_manager ~storage_file = 
   let block_size = File_manager.get_blocksize file_manager in 
