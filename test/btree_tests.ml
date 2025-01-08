@@ -57,14 +57,14 @@ module Btree_tests = struct
     let p5 = File.Block_id.block_num e5 in 
 
 
-    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'J')) 8 in
-    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'A')) 9 in
-    Btree.insert_in_parent t t.root_num (Btree.Varchar (String.make 4 'K')) p1;
-    Btree.insert_in_parent t t.root_num (Btree.Varchar (String.make 4 'L')) p2;
-    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'O')) p3;
-    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'M')) p4;  
-
-    ""
+    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'Y')) 8 in
+    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'Z')) 9 in
+    Btree.insert_in_parent t t.root_num (Btree.Varchar (String.make 4 'A')) p1;
+    Btree.insert_in_parent t t.root_num (Btree.Varchar (String.make 4 'P')) p2;
+    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'B')) p3;
+    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'C')) p4;  
+    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'D')) p5;
+    " "
 
   let empty_btree_insert_leaf_test () =
     Alcotest.(check string)
