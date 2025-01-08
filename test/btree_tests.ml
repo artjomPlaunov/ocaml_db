@@ -52,6 +52,7 @@ module Btree_tests = struct
     
     Btree.insert_in_parent t t.root_num (Btree.Varchar (String.make 4 'K')) empty_page_ptr;
     Btree.insert_in_parent t  empty_page_ptr (Btree.Varchar (String.make 4 'C')) another_empty_page_ptr;
+    Btree.insert_in_parent t  empty_page_ptr (Btree.Varchar (String.make 4 'Z')) another_empty_page_ptr;
     ""
 
   let empty_btree_insert_leaf_test () =

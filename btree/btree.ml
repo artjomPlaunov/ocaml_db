@@ -281,15 +281,13 @@ let empty sm key_ty =
     Extra param "left" determines if we shift pointers from left of the key 
     or right of the key. This means shifting from index i or i+1 in the 
     pointers array.
-
-
 *)
-let shift_key_pointer_pair keys pointers n key pointer idx left = 
-    pointers.(n) <- pointers.(n-1);
-    for i = n - 1 downto (idx + 1) do 
+let shift_key_pointer_pair keys pointers capacity n key pointer idx left = 
+    pointers.(capacity) <- pointers.(capacity-1);
+    for i = capacity - 1 downto (idx + 1) do 
         keys.(i) <- keys.(i-1);
         (* If left, we can shift all the way down to idx. 
-           Otherwise (right), make sure i > idx+1. *)
+           Otherwise (not left), make sure i > idx+1. *)
         if left || i > idx + 1 
         then 
             pointers.(i) <- pointers.(i-1) 
@@ -297,7 +295,11 @@ let shift_key_pointer_pair keys pointers n key pointer idx left =
     keys.(idx) <- key;
     pointers.(idx) <- pointer
 
-let insert_key_pointer_pair keys pointers n key pointer left= 
+let insert_key_pointer_pair keys pointers capacity n key pointer left= 
+    if key_lt key keys.(0) 
+    (* Key is less than all keys*) 
+    then shift_key_pointer_pair keys pointers capacity n key pointer 0 true
+    else
     let i = ref 0 in
     while !i < (n) && key_lteq keys.(!i) key do 
         i := !i + 1;
@@ -315,7 +317,7 @@ let insert_key_pointer_pair keys pointers n key pointer left=
             keys.(!i) <- key;
             if left then pointers.(!i) <- pointer else pointers.(!i+1) <- pointer; )
         else 
-            shift_key_pointer_pair keys pointers n key pointer (!(i)) left
+            shift_key_pointer_pair keys pointers capacity n key pointer (!(i)) left
 
 
 let insert_in_leaf btree block key pointer = 
@@ -334,15 +336,8 @@ let insert_in_leaf btree block key pointer =
     )
     else ( 
         assert (node.cur_size <> node.capacity);
-        if key_lt key node.keys.(0) 
-        (* Key is less than all keys*) 
-        then 
-            let _ = shift_key_pointer_pair node.keys node.pointers node.capacity key pointer 0 true in 
-            node.cur_size <- node.cur_size + 1
-        (*  Insert key after K_i, highest value lt or eq to K *)
-        else 
-            insert_key_pointer_pair node.keys node.pointers node.capacity key pointer true; 
-            node.cur_size <- node.cur_size + 1
+        insert_key_pointer_pair node.keys node.pointers node.capacity node.cur_size key pointer true; 
+        node.cur_size <- node.cur_size + 1
     );
     if btree.root_num = block then btree.root <- node;
     let page = serialize node block_size in 
@@ -351,7 +346,7 @@ let insert_in_leaf btree block key pointer =
 
 (*  Insert (key,p2) pair in parent of p1. p1 and p2 are pointers.
      *)
-let insert_in_parent btree p1 key_v p2 = 
+let rec insert_in_parent btree p1 key_v p2 = 
     if btree.root_num = p1 
     (* p1 is the root of the tree. Create a new root.*)
     then 
@@ -399,10 +394,10 @@ let insert_in_parent btree p1 key_v p2 =
         let p0_node = deserialize p0_block btree.key block_size in
 
         if p0_node.cur_size < p0_node.capacity 
-        (* insert the key, pointer pair after c*)
+        (* insert the key, pointer pair *)
         then 
             let cur_size = p0_node.cur_size in
-            insert_key_pointer_pair p0_node.keys p0_node.pointers p0_node.capacity key_v p2 false; 
+            insert_key_pointer_pair p0_node.keys p0_node.pointers p0_node.capacity p0_node.cur_size key_v p2 false; 
             p0_node.cur_size <- cur_size + 1;
             let p0_page = serialize p0_node block_size in 
             (* Fetch p2 node, update parent link.*)
@@ -419,11 +414,49 @@ let insert_in_parent btree p1 key_v p2 =
             (*  We can be at a Leaf or Internal node/level. In either case, the split node will be the 
                 same as the parent's node type, as it is on the same level as the parent. *)
             new_node.node_type <- p0_node.node_type;
-            let n = p0_node.capacity+1 in  
+            
             (*  Key to split on at position 
                 ceil((n+1)/2)-1 *)
-            let mid = (if n+1 mod 2 = 0 then ((n+1)/2) else ((n+1)/2)+1) - 1 in 
+            let n = p0_node.capacity+1 in  
+            let mid = (if n+1 mod 2 = 0 then ((n+1)/2) else ((n+1)/2)+1)-1 in 
+            
             (* Create buffers with one extra space for keys and pointers. *)
             let keys_buf = Array.init n (fun i -> if i < n - 1 then p0_node.keys.(i) else empty_key btree.key) in 
             let ptrs_buf = Array.init (n+1) (fun i -> if i < n then p0_node.pointers.(i) else unused_pointer_constant) in 
-            ()
+            insert_key_pointer_pair keys_buf ptrs_buf (p0_node.capacity+1) (n) key_v p2 false;
+            
+            (*  Create an empty p0 node, populate it from 
+                K_0 to K_(mid-1) and P_0 to P_mid.  *) 
+            let new_p0_node = empty_node btree.key block_size in 
+            for i = 0 to mid do 
+                new_p0_node.pointers.(i) <- ptrs_buf.(i);
+            done;
+            for i = 0 to mid-1 do 
+                new_p0_node.keys.(i) <- keys_buf.(i);
+            done;
+            new_p0_node.cur_size <- mid;
+            new_p0_node.node_type <- p0_node.node_type;
+            let new_p0_page = serialize new_p0_node block_size in 
+            Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p0 ~page:new_p0_page;
+
+            (*  Create split node,  populate it from 
+                P_(mid+1) to P_(n+1) and K_(mid+1) to K_n. *)
+            let p2_node = empty_node btree.key block_size in
+            
+            p2_node.node_type <- p0_node.node_type;
+            for i = mid to (n) do 
+                p2_node.pointers.(i-mid) <- ptrs_buf.(i); 
+                ()
+            done;
+            for i = mid to n-1 do 
+                p2_node.keys.(i-mid) <- keys_buf.(i);
+                ()
+            done;
+            p2_node.cur_size <- n-mid;
+            let p2_page = serialize p2_node block_size in 
+            let p2_block_id = Storage_manager.append ~storage_manager:btree.sm ~page:p2_page in 
+            let p2 = Block_id.block_num p2_block_id in 
+            Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p2 ~page:p2_page;
+            let split_key = keys_buf.(mid) in 
+            insert_in_parent btree p0 split_key p2
+            
