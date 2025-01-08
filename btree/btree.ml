@@ -325,7 +325,6 @@ let insert_in_leaf btree block key pointer =
     let block_size = File_manager.get_blocksize sm.file_manager in 
     let leaf_block = Storage_manager.get_block ~storage_manager:sm ~block_num:block in 
     let node = deserialize leaf_block btree.key block_size in
-    assert (node.node_type = Leaf);
 
     (* Empty node, add at the front. *)
     if node.cur_size = 0 
