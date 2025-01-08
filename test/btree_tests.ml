@@ -52,9 +52,9 @@ module Btree_tests = struct
     let e3 = Storage_manager.append ~storage_manager ~page:empty_page in 
     let p3 = File.Block_id.block_num e3 in  
     let e4 = Storage_manager.append ~storage_manager ~page:empty_page in 
-    let p4 = File.Block_id.block_num e2 in  
+    let p4 = File.Block_id.block_num e4 in  
     let e5 = Storage_manager.append ~storage_manager ~page:empty_page in 
-    let p5 = File.Block_id.block_num e2 in 
+    let p5 = File.Block_id.block_num e5 in 
 
 
     let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'J')) 8 in
@@ -62,7 +62,7 @@ module Btree_tests = struct
     Btree.insert_in_parent t t.root_num (Btree.Varchar (String.make 4 'K')) p1;
     Btree.insert_in_parent t t.root_num (Btree.Varchar (String.make 4 'L')) p2;
     Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'O')) p3;
-    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'M')) p4;
+    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'M')) p4;  
 
     ""
 

@@ -293,7 +293,7 @@ let shift_key_pointer_pair keys pointers capacity n key pointer idx left =
             pointers.(i) <- pointers.(i-1) 
     done;
     keys.(idx) <- key;
-    pointers.(idx) <- pointer
+    if left then pointers.(idx) <- pointer else pointers.(idx+1) <- pointer
 
 let insert_key_pointer_pair keys pointers capacity n key pointer left= 
     if key_lt key keys.(0) 
