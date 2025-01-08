@@ -44,7 +44,7 @@ module Btree_tests = struct
     let block_size = File.File_manager.get_blocksize t.sm.file_manager in
     
     let empty = Btree.empty_node key_ty block_size in
-    let empty_page = Btree.serialize empty block_size in 
+    (* let empty_page = Btree.serialize empty block_size in 
     let e1 = Storage_manager.append ~storage_manager ~page:empty_page in 
     let p1 = File.Block_id.block_num e1 in  
     let e2 = Storage_manager.append ~storage_manager ~page:empty_page in 
@@ -57,13 +57,21 @@ module Btree_tests = struct
     let p5 = File.Block_id.block_num e5 in 
 
 
-    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'Y')) 8 in
-    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'Z')) 9 in
-    Btree.insert_in_parent t t.root_num (Btree.Varchar (String.make 4 'A')) p1;
+    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'C')) 8 in
+    let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'B')) 9 in
+    Btree.insert_in_parent t t.root_num (Btree.Varchar (String.make 4 'D')) p1;
     Btree.insert_in_parent t t.root_num (Btree.Varchar (String.make 4 'P')) p2;
-    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'B')) p3;
-    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'C')) p4;  
-    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'D')) p5;
+    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'F')) p3;
+    Btree.insert_in_parent t 1 (Btree.Varchar (String.make 4 'E')) p4;  
+    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'D')) 7;
+    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'G')) 7;
+    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'H')) 7; *)
+    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'A')) 3;
+    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'B')) 5;
+    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'C')) 7;
+    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'D')) 9;
+    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'E')) 9;
+    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'F')) 9;
     " "
 
   let empty_btree_insert_leaf_test () =

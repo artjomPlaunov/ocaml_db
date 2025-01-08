@@ -98,6 +98,7 @@ let key_lt k1 k2 = match (k1,k2) with
 
 let key_lteq k1 k2 = (key_lt k1 k2) || (key_eq k1 k2) 
 
+
 let string_of_key k = match k with 
     | Varchar s -> Printf.sprintf "Varchar %s" s
     | Integer d -> Printf.sprintf "Integer %d" (Int32.to_int d) 
@@ -379,6 +380,8 @@ let rec insert_in_parent btree p1 key_v p2 =
         let p2_block = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p2 in 
         let p2_node = deserialize p2_block btree.key block_size in 
 
+        
+
         (* Make new_root the root of the tree.*)
         (* Save old root in p1_node *)
         let p1_node = btree.root in
@@ -389,7 +392,9 @@ let rec insert_in_parent btree p1 key_v p2 =
         let p1_page = serialize p1_node block_size in 
         let p2_page = serialize p2_node block_size in 
         Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p1 ~page:p1_page;
+        
         Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p2 ~page:p2_page;
+        
         (* Update root node offset in storage manager metadata. *)
         let sm_head_page = Storage_manager.get_head_page ~storage_manager:btree.sm in
         Page.set_int32 sm_head_page 4 (Int32.of_int btree.root_num);
@@ -455,6 +460,8 @@ let rec insert_in_parent btree p1 key_v p2 =
                 P_(mid+1) to P_(n+1) and K_(mid) to K_n. *)
             let p2_node = empty_node btree.key block_size in
             
+            if btree.root_num = p1 then btree.root <- new_p0_node;
+
             p2_node.node_type <- p0_node.node_type;
             for i = mid to (n) do 
                 p2_node.pointers.(i-mid) <- ptrs_buf.(i); 
@@ -473,11 +480,92 @@ let rec insert_in_parent btree p1 key_v p2 =
             Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p2 ~page:p2_page;
             let split_key = keys_buf.(mid) in 
             insert_in_parent btree p0 split_key p2 
-            
-(* let rec insert_aux btree p1 k p2 = 
+        
+
+let rec insert_aux btree p1 k p2 = 
     let p1_page = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p1 in 
     let block_size = File_manager.get_blocksize (btree.sm.file_manager) in 
     let p1_node = deserialize p1_page btree.key block_size in 
-    match p1_node.key_type with 
-    | Internal -> ()
-    | Leaf -> () *)
+    match p1_node.node_type with 
+    | Internal -> 
+        let i = ref 0 in 
+        (* First check if we are searching at the very beginning. *)
+        if key_lt k p1_node.keys.(0) then insert_aux btree p1_node.pointers.(0) k p2 else ( 
+        while (!i < p1_node.cur_size) && not (key_lteq k p1_node.keys.(!i)) do 
+
+            i := !i + 1;
+        done;
+        let child = 
+            if !i = p1_node.cur_size
+            then p1_node.pointers.(!i) 
+            else (
+                if key_eq k p1_node.keys.(!i) 
+                then 
+                    p1_node.pointers.(!i+1)
+                else
+                    p1_node.pointers.(!i) 
+            ) in      
+        insert_aux btree child k p2 )
+    | Leaf -> 
+        if p1_node.cur_size < p1_node.capacity 
+        then 
+            let p1_node = insert_in_leaf btree p1 k p2 in 
+            let p1_page = serialize p1_node block_size in 
+            Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p1 ~page:p1_page;
+        else
+            let n = p1_node.capacity+1 in  
+            let mid = (if n mod 2 = 0 then n/2 else ((n)/2)+1) in 
+            (* Create buffers with one extra space for keys and pointers. *)
+            let keys_buf = Array.init (n) (fun i -> if i < p1_node.cur_size then p1_node.keys.(i) else empty_key btree.key) in 
+            let ptrs_buf = Array.init (n+1) (fun i -> if i < p1_node.cur_size+1 then p1_node.pointers.(i) else unused_pointer_constant) in 
+            let sibling_ptr = p1_node.pointers.(p1_node.capacity) in 
+            insert_key_pointer_pair keys_buf ptrs_buf (n) (n-1) k p2 true;
+            
+            print_keys_ptrs keys_buf ptrs_buf n;
+
+            let new_p1_node = empty_node btree.key block_size in 
+
+            for i = 0 to mid-1 do 
+                new_p1_node.pointers.(i) <- ptrs_buf.(i);
+            done;
+            for i = 0 to mid-1 do 
+                new_p1_node.keys.(i) <- keys_buf.(i);
+            done;
+            ();
+            new_p1_node.cur_size <- mid;
+            Printf.printf "\n";
+            print_keys_ptrs new_p1_node.keys new_p1_node.pointers (new_p1_node.cur_size);
+            
+            let p2_node = empty_node btree.key block_size in
+            p2_node.pointers.(p2_node.capacity) <- sibling_ptr;
+            
+            p2_node.node_type <- p1_node.node_type;
+            for i = mid to n-1 do 
+                p2_node.pointers.(i-mid) <- ptrs_buf.(i); 
+                p2_node.keys.(i-mid) <- keys_buf.(i);
+                ()
+            done;
+            (* for i = mid to n do 
+                
+                ()
+            done; *)
+            p2_node.cur_size <- n-mid;
+            Printf.printf "\n";
+            print_keys_ptrs p2_node.keys p2_node.pointers (p2_node.cur_size);
+            (* Write p2 to disk, call insert in parent with new split parent. *)
+            let p2_page = serialize p2_node block_size in 
+            let p2_block_id = Storage_manager.append ~storage_manager:btree.sm ~page:p2_page in 
+            let p2 = Block_id.block_num p2_block_id in 
+            Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p2 ~page:p2_page;
+            let split_key = p2_node.keys.(0) in 
+            
+
+            (* Write p0 to disk. *)
+            new_p1_node.pointers.(new_p1_node.capacity) <- p2;
+            new_p1_node.node_type <- p1_node.node_type;
+            new_p1_node.parent <- p1_node.parent;
+            if btree.root_num = p1 then btree.root <- new_p1_node;
+            let new_p1_page = serialize new_p1_node block_size in 
+            Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p1 ~page:new_p1_page;
+            insert_in_parent btree p1 split_key p2;
+        ()
