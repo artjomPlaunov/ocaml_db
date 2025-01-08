@@ -300,6 +300,7 @@ let insert_key_pointer_pair keys pointers capacity n key pointer left=
     (* Key is less than all keys*) 
     then shift_key_pointer_pair keys pointers capacity n key pointer 0 true
     else
+    (* TODO: This can be a binary search too. *)
     let i = ref 0 in
     while !i < (n) && key_lteq keys.(!i) key do 
         i := !i + 1;
@@ -404,7 +405,7 @@ let rec insert_in_parent btree p1 key_v p2 =
         let p0_node = deserialize p0_block btree.key block_size in
 
         if p0_node.cur_size < p0_node.capacity 
-        (* insert the key, pointer pair *)
+        (* Parent node has available space, so insert key,p2. *)
         then 
             let cur_size = p0_node.cur_size in
             insert_key_pointer_pair p0_node.keys p0_node.pointers p0_node.capacity p0_node.cur_size key_v p2 false; 
@@ -473,3 +474,10 @@ let rec insert_in_parent btree p1 key_v p2 =
             let split_key = keys_buf.(mid) in 
             insert_in_parent btree p0 split_key p2 
             
+(* let rec insert_aux btree p1 k p2 = 
+    let p1_page = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p1 in 
+    let block_size = File_manager.get_blocksize (btree.sm.file_manager) in 
+    let p1_node = deserialize p1_page btree.key block_size in 
+    match p1_node.key_type with 
+    | Internal -> ()
+    | Leaf -> () *)
