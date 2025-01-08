@@ -351,6 +351,10 @@ let print_keys_ptrs keys_buf ptrs_buf n =
     Printf.printf "P%d: %d\n" n ptrs_buf.(n)
 
 (*  Insert (key,p2) pair in parent of p1. p1 and p2 are pointers.
+    If p1 is root, a new root is created with p1, key, p2 as the initial values. 
+    If p1 is not a root but it is full, then it is split into two nodes with a 
+    recursive call (p0, key, p2), where p0 is the parent of the split node. 
+
      *)
 let rec insert_in_parent btree p1 key_v p2 = 
     if btree.root_num = p1 
