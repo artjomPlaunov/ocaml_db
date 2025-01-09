@@ -182,6 +182,10 @@ let print_node node =
     done;
     ()
     
+let get_node btree p = 
+    let file_name = btree.sm.storage_file in 
+    let block_id = Block_id.make file_name p in 
+
 
 
 
@@ -570,3 +574,6 @@ let rec insert_aux btree p1 k p2 =
 
 let insert btree k p = insert_aux btree btree.root_num k p
 
+let print_tree_aux btree p level = 
+    let node = get_node btree p in 
+    ()
