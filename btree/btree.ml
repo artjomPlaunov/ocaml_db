@@ -182,9 +182,8 @@ let print_node node =
     done;
     ()
     
-let get_node btree p = 
-    let file_name = btree.sm.storage_file in 
-    let block_id = Block_id.make file_name p in 
+
+
 
 
 
@@ -238,6 +237,11 @@ let deserialize page key_ty block_size =
         key_type = key_ty
     }
 
+(*  Fetch a block from the btree and deserialize it into a btree node. 
+    params: p is a pointer to a block in the btree. *)
+let get_node btree p = 
+    let page = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p in 
+    deserialize page btree.key (File_manager.get_blocksize btree.sm.file_manager)
 
 let serialize node block_size = 
     let page = Page.make ~block_size in 
@@ -574,6 +578,17 @@ let rec insert_aux btree p1 k p2 =
 
 let insert btree k p = insert_aux btree btree.root_num k p
 
-let print_tree_aux btree p level = 
+let rec print_tree_aux btree p level = 
     let node = get_node btree p in 
-    ()
+    let n = node.cur_size in 
+    let indent = String.make level ' ' in 
+    Printf.printf "%sBlock %d:" indent p;
+    for i = 0 to n - 1 do 
+        Printf.printf "%sP%d: %d" indent i node.pointers.(i);
+        Printf.printf "%sK%d: %s" indent i (string_of_key node.keys.(i))
+    done;
+    Printf.printf "%sP%d: %d" indent n node.pointers.(n);
+    for i = 0 to n do 
+        print_tree_aux btree node.pointers.(i) (level+2);
+        ()
+    done;
