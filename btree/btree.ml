@@ -529,8 +529,6 @@ let rec insert_aux btree p1 k p2 =
             let ptrs_buf = Array.init (n+1) (fun i -> if i < p1_node.cur_size+1 then p1_node.pointers.(i) else unused_pointer_constant) in 
             let sibling_ptr = p1_node.pointers.(p1_node.capacity) in 
             insert_key_pointer_pair keys_buf ptrs_buf (n) (n-1) k p2 true;
-            
-            print_keys_ptrs keys_buf ptrs_buf n;
 
             let new_p1_node = empty_node btree.key block_size in 
 
@@ -542,8 +540,6 @@ let rec insert_aux btree p1 k p2 =
             done;
             ();
             new_p1_node.cur_size <- mid;
-            Printf.printf "\n";
-            print_keys_ptrs new_p1_node.keys new_p1_node.pointers (new_p1_node.cur_size);
             
             let p2_node = empty_node btree.key block_size in
             p2_node.pointers.(p2_node.capacity) <- sibling_ptr;
@@ -556,8 +552,6 @@ let rec insert_aux btree p1 k p2 =
             done;
 
             p2_node.cur_size <- n-mid;
-            Printf.printf "\n";
-            print_keys_ptrs p2_node.keys p2_node.pointers (p2_node.cur_size);
             (* Write p2 to disk, call insert in parent with new split parent. *)
             let p2_page = serialize p2_node block_size in 
             let p2_block_id = Storage_manager.append ~storage_manager:btree.sm ~page:p2_page in 
