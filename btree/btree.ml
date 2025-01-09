@@ -482,6 +482,7 @@ let rec insert_in_parent btree p1 key_v p2 =
             insert_in_parent btree p0 split_key p2 
         
 
+
 let rec insert_aux btree p1 k p2 = 
     let p1_page = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p1 in 
     let block_size = File_manager.get_blocksize (btree.sm.file_manager) in 
@@ -545,10 +546,7 @@ let rec insert_aux btree p1 k p2 =
                 p2_node.keys.(i-mid) <- keys_buf.(i);
                 ()
             done;
-            (* for i = mid to n do 
-                
-                ()
-            done; *)
+
             p2_node.cur_size <- n-mid;
             Printf.printf "\n";
             print_keys_ptrs p2_node.keys p2_node.pointers (p2_node.cur_size);
@@ -569,3 +567,6 @@ let rec insert_aux btree p1 k p2 =
             Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p1 ~page:new_p1_page;
             insert_in_parent btree p1 split_key p2;
         ()
+
+let insert btree k p = insert_aux btree btree.root_num k p
+

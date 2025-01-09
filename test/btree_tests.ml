@@ -72,6 +72,7 @@ module Btree_tests = struct
     Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'D')) 9;
     Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'E')) 9;
     Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'F')) 9;
+    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'Z')) 9;
     " "
 
   let empty_btree_insert_leaf_test () =
