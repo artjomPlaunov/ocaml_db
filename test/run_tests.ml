@@ -13,5 +13,7 @@ let () =
       ("Scan Tests", Scan_tests.all_tests ());
       ("Table Manager", Table_manager_tests.all_tests ());
       ("Parser Test", Parser_tests.all_tests ());
-      ("Execute Query Test", Execute_query_tests.all_tests ())
+      ("Execute Query Test", Execute_query_tests.all_tests ());
+      ("Storage_manager", Storage_manager_tests.all_tests ());
+      ("Btree", Btree_tests.all_tests ())
     ]
