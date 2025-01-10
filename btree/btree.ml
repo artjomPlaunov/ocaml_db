@@ -228,7 +228,7 @@ let deserialize page key_ty block_size =
     pointers.(cur_size) <- Int32.to_int (Page.get_int32 page (12 + (cur_size*pair_size)));
     let _ = match node_type with
     | Internal -> ()
-    | Leaf -> pointers.(capacity) <- Int32.to_int (Page.get_int32 page (block_size-4))
+    | Leaf -> pointers.(capacity) <- Int32.to_int (Page.get_int32 page (12 + (capacity*pair_size)))
     in 
     {
         node_type;
@@ -262,8 +262,9 @@ let serialize node block_size =
     for i = 0 to node.capacity do 
         Page.set_int32 page (12 + (i*pair_size)) (Int32.of_int node.pointers.(i))
     done;
+    let final_ptr_pos = 12 + ((node.capacity)*pair_size) in 
     if node.node_type = Leaf then 
-        Page.set_int32 page (block_size-4) (Int32.of_int node.pointers.(node.capacity));
+        Page.set_int32 page final_ptr_pos (Int32.of_int node.pointers.(node.capacity));
     page
 
 let write_node btree node n =
