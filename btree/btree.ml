@@ -246,6 +246,8 @@ let get_node btree p =
     let page = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p in 
     deserialize page btree.key (File_manager.get_blocksize btree.sm.file_manager)
 
+
+
 let serialize node block_size = 
     let page = Page.make ~block_size in 
     Page.set_int32 page 0 (serialize_node_type node.node_type);
@@ -263,6 +265,11 @@ let serialize node block_size =
     if node.node_type = Leaf then 
         Page.set_int32 page (block_size-4) (Int32.of_int node.pointers.(node.capacity));
     page
+
+let write_node btree node n =
+    let page = serialize node (File_manager.get_blocksize btree.sm.file_manager)  in 
+    Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:n ~page:page
+
 
 (*  Create an empty b-tree, initialize on disk, and return 
 in memory data structure.
@@ -364,6 +371,17 @@ let print_keys_ptrs keys_buf ptrs_buf n =
         Printf.printf "K%d: %s\n" i (string_of_key keys_buf.(i))
     done;
     Printf.printf "P%d: %d\n" n ptrs_buf.(n)
+
+let children_update_parents btree parent n =
+    for i = 0 to parent.cur_size do 
+        let p = parent.pointers.(i) in 
+        let child = get_node btree p in 
+        child.parent <- n;
+        write_node btree child p 
+    done
+
+
+
 
 (*  Insert (key,p2) pair in parent of p1. p1 and p2 are pointers.
     If p1 is root, a new root is created with p1, key, p2 as the initial values. 
@@ -485,11 +503,12 @@ let rec insert_in_parent btree p1 key_v p2 =
                 ()
             done;
             p2_node.cur_size <- n-mid;
-            p2_node.parent <- p0_node.parent;
+            p2_node.parent <- p0;
             (* Write p2 to disk, call insert in parent with new split parent. *)
             let p2_page = serialize p2_node block_size in 
             let p2_block_id = Storage_manager.append ~storage_manager:btree.sm ~page:p2_page in 
             let p2 = Block_id.block_num p2_block_id in 
+            children_update_parents btree p2_node p2;
             Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p2 ~page:p2_page;
             let split_key = keys_buf.(mid-1) in 
             insert_in_parent btree p0 split_key p2 
@@ -562,6 +581,7 @@ let rec insert_aux btree p1 k p2 =
             let p2_page = serialize p2_node block_size in 
             let p2_block_id = Storage_manager.append ~storage_manager:btree.sm ~page:p2_page in 
             let p2 = Block_id.block_num p2_block_id in 
+            (* children_update_parents btree p2_node p2; *)
             Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p2 ~page:p2_page;
             let split_key = p2_node.keys.(0) in 
             
