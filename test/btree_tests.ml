@@ -3,7 +3,7 @@ module Test_utils = struct
   open Storage_manager
 
   let setup_test_env dir =
-    let file_manager = File_manager.make ~db_dirname:dir ~block_size:40 in
+    let file_manager = File_manager.make ~db_dirname:dir ~block_size:35 in
     let storage_manager = Storage_manager.make ~file_manager ~storage_file:"test_btree" in
     storage_manager
 end
@@ -19,6 +19,7 @@ module Btree_tests = struct
     let key_type = TVarchar 4 in
     let t = Btree.empty storage_manager key_type in
     (* Empty tree.*)
+    Btree.print_node t.root;
     let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'J')) 4 in
     let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'A')) 3 in 
     let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'V')) 2 in 
@@ -27,7 +28,7 @@ module Btree_tests = struct
     let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'Z')) 6 in 
     let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'C')) 7 in 
     let _ = Btree.insert_in_leaf t 1 (Btree.Varchar (String.make 4 'P')) 8 in 
-    Btree.print_tree_aux t (t.root_num) 0;
+    Btree.print_node t.root;
     ""
 
   
@@ -65,14 +66,17 @@ module Btree_tests = struct
     Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'D')) 7;
     Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'G')) 7;
     Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'H')) 7; *)
-    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'A')) 3;
-    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'B')) 5;
-    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'C')) 7;
-    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'D')) 9;
-    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'E')) 9;
-    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'F')) 9;
-    Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'Z')) 9;
+    Btree.insert t  (Btree.Varchar (String.make 4 'A')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'K')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'D')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'P')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'L')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'M')) 9999;  
+    (* Btree.insert t  (Btree.Varchar (String.make 4 'Z')) 9999; *)
+    (* Btree.insert t  (Btree.Varchar (String.make 4 'Q')) 9999; *)
 
+    Btree.print_tree_aux t t.root_num 0;
+    
     " "
 
   let empty_btree_insert_leaf_test () =

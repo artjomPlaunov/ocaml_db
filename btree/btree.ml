@@ -226,7 +226,10 @@ let deserialize page key_ty block_size =
     
     (* Read final pointer *)
     pointers.(cur_size) <- Int32.to_int (Page.get_int32 page (12 + (cur_size*pair_size)));
-
+    let _ = match node_type with
+    | Internal -> ()
+    | Leaf -> pointers.(capacity) <- Int32.to_int (Page.get_int32 page (block_size-4))
+    in 
     {
         node_type;
         parent;
@@ -257,6 +260,8 @@ let serialize node block_size =
     for i = 0 to node.capacity do 
         Page.set_int32 page (12 + (i*pair_size)) (Int32.of_int node.pointers.(i))
     done;
+    if node.node_type = Leaf then 
+        Page.set_int32 page (block_size-4) (Int32.of_int node.pointers.(node.capacity));
     page
 
 (*  Create an empty b-tree, initialize on disk, and return 
@@ -307,7 +312,7 @@ let shift_key_pointer_pair keys pointers capacity n key pointer idx left =
 let insert_key_pointer_pair keys pointers capacity n key pointer left= 
     if key_lt key keys.(0) 
     (* Key is less than all keys*) 
-    then shift_key_pointer_pair keys pointers capacity n key pointer 0 true
+    then shift_key_pointer_pair keys pointers capacity n key pointer 0 false
     else
     (* TODO: This can be a binary search too. *)
     let i = ref 0 in
@@ -449,16 +454,16 @@ let rec insert_in_parent btree p1 key_v p2 =
 
             (*  p0_node: first half of buffer.
                 K_1 to K_(mid-1) and P_1 to P_mid.  *) 
-            for i = 0 to mid do 
+            for i = 0 to mid-1 do 
                 new_p0_node.pointers.(i) <- ptrs_buf.(i);
             done;
-            for i = 0 to mid-1 do 
+            for i = 0 to mid-2 do 
                 new_p0_node.keys.(i) <- keys_buf.(i);
             done;
             ();
 
             (* Write p0 to disk. *)
-            new_p0_node.cur_size <- mid;
+            new_p0_node.cur_size <- mid-1;
             new_p0_node.node_type <- p0_node.node_type;
             new_p0_node.parent <- p0_node.parent;
             let new_p0_page = serialize new_p0_node block_size in 
@@ -475,18 +480,18 @@ let rec insert_in_parent btree p1 key_v p2 =
                 p2_node.pointers.(i-mid) <- ptrs_buf.(i); 
                 ()
             done;
-            for i = mid+1 to n-1 do 
-                p2_node.keys.(i-mid-1) <- keys_buf.(i);
+            for i = mid to n-1 do 
+                p2_node.keys.(i-mid) <- keys_buf.(i);
                 ()
             done;
-            p2_node.cur_size <- n-mid-1;
-
+            p2_node.cur_size <- n-mid;
+            p2_node.parent <- p0_node.parent;
             (* Write p2 to disk, call insert in parent with new split parent. *)
             let p2_page = serialize p2_node block_size in 
             let p2_block_id = Storage_manager.append ~storage_manager:btree.sm ~page:p2_page in 
             let p2 = Block_id.block_num p2_block_id in 
             Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p2 ~page:p2_page;
-            let split_key = keys_buf.(mid) in 
+            let split_key = keys_buf.(mid-1) in 
             insert_in_parent btree p0 split_key p2 
         
 
@@ -552,6 +557,7 @@ let rec insert_aux btree p1 k p2 =
             done;
 
             p2_node.cur_size <- n-mid;
+            p2_node.parent <- p1_node.parent;
             (* Write p2 to disk, call insert in parent with new split parent. *)
             let p2_page = serialize p2_node block_size in 
             let p2_block_id = Storage_manager.append ~storage_manager:btree.sm ~page:p2_page in 
@@ -559,7 +565,6 @@ let rec insert_aux btree p1 k p2 =
             Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p2 ~page:p2_page;
             let split_key = p2_node.keys.(0) in 
             
-
             (* Write p0 to disk. *)
             new_p1_node.pointers.(new_p1_node.capacity) <- p2;
             new_p1_node.node_type <- p1_node.node_type;
@@ -576,13 +581,19 @@ let rec print_tree_aux btree p level =
     let node = get_node btree p in 
     let n = node.cur_size in 
     let indent = String.make level ' ' in 
-    Printf.printf "%sBlock %d:" indent p;
+    Printf.printf "%sBlock %d:\n" indent p;
+    Printf.printf "%sParent: %d\n" indent node.parent;
     for i = 0 to n - 1 do 
-        Printf.printf "%sP%d: %d" indent i node.pointers.(i);
-        Printf.printf "%sK%d: %s" indent i (string_of_key node.keys.(i))
+        Printf.printf "%sP%d: %d\n" indent i node.pointers.(i);
+        Printf.printf "%sK%d: %s\n" indent i (string_of_key node.keys.(i))
     done;
-    Printf.printf "%sP%d: %d" indent n node.pointers.(n);
+    Printf.printf "%sP%d: %d\n" indent n node.pointers.(n);
+    if node.node_type = Leaf then 
+        Printf.printf "%sSibling Pointer: %d\n" indent node.pointers.(node.capacity);
+        ();
+    Printf.printf "\n";
+    if node.node_type = Internal then 
     for i = 0 to n do 
-        print_tree_aux btree node.pointers.(i) (level+2);
+        print_tree_aux btree node.pointers.(i) (level+4);
         ()
     done;
