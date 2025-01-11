@@ -484,6 +484,7 @@ let rec insert_in_parent btree p1 key_v p2 =
             (* Write p0 to disk. *)
             new_p0_node.cur_size <- mid-1;
             new_p0_node.node_type <- p0_node.node_type;
+            new_p0_node.parent <- p0_node.parent;
             let new_p0_page = serialize new_p0_node block_size in 
             Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p0 ~page:new_p0_page;
             if p0 = btree.root_num then btree.root <- new_p0_node;

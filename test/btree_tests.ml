@@ -71,7 +71,7 @@ module Btree_tests = struct
     Btree.insert t  (Btree.Varchar (String.make 4 'Q')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'B')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'C')) 9999;
-    (*Btree.insert t  (Btree.Varchar (String.make 4 'F')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'F')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'G')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'J')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'I')) 9999;
@@ -80,7 +80,7 @@ module Btree_tests = struct
     Btree.insert t  (Btree.Varchar (String.make 4 'N')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'O')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'R')) 9999;
-    Btree.insert t  (Btree.Varchar (String.make 4 'S')) 9999; *)
+    Btree.insert t  (Btree.Varchar (String.make 4 'S')) 9999;
     Btree.print_tree_aux t t.root_num 0;
     
     " "
