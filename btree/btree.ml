@@ -484,10 +484,11 @@ let rec insert_in_parent btree p1 key_v p2 =
             (* Write p0 to disk. *)
             new_p0_node.cur_size <- mid-1;
             new_p0_node.node_type <- p0_node.node_type;
-            new_p0_node.parent <- p0_node.parent;
             let new_p0_page = serialize new_p0_node block_size in 
             Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p0 ~page:new_p0_page;
+            if p0 = btree.root_num then btree.root <- new_p0_node;
             
+
             (*  Create split node: second half of buffer. 
                 P_(mid+1) to P_(n+1) and K_(mid) to K_n. *)
             let p2_node = empty_node btree.key block_size in
@@ -505,6 +506,7 @@ let rec insert_in_parent btree p1 key_v p2 =
             done;
             p2_node.cur_size <- n-mid;
             p2_node.parent <- p0;
+
             (* Write p2 to disk, call insert in parent with new split parent. *)
             let p2_page = serialize p2_node block_size in 
             let p2_block_id = Storage_manager.append ~storage_manager:btree.sm ~page:p2_page in 
@@ -586,10 +588,13 @@ let rec insert_aux btree p1 k p2 =
             Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p2 ~page:p2_page;
             let split_key = p2_node.keys.(0) in 
             
+
+
             (* Write p0 to disk. *)
             new_p1_node.pointers.(new_p1_node.capacity) <- p2;
             new_p1_node.node_type <- p1_node.node_type;
             new_p1_node.parent <- p1_node.parent;
+
             if btree.root_num = p1 then btree.root <- new_p1_node;
             let new_p1_page = serialize new_p1_node block_size in 
             Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:p1 ~page:new_p1_page;
