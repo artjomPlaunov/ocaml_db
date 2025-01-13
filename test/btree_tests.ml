@@ -3,7 +3,7 @@ module Test_utils = struct
   open Storage_manager
 
   let setup_test_env dir =
-    let file_manager = File_manager.make ~db_dirname:dir ~block_size:35 in
+    let file_manager = File_manager.make ~db_dirname:dir ~block_size:40 in
     let storage_manager = Storage_manager.make ~file_manager ~storage_file:"test_btree" in
     storage_manager
 end
@@ -43,7 +43,7 @@ module Btree_tests = struct
     let key_ty = t.key in
     let block_size = File.File_manager.get_blocksize t.sm.file_manager in
     
-    let empty = Btree.empty_node key_ty block_size in
+    let empty = Btree.empty_node t in
     (* let empty_page = Btree.serialize empty block_size in 
     let e1 = Storage_manager.append ~storage_manager ~page:empty_page in 
     let p1 = File.Block_id.block_num e1 in  
@@ -66,21 +66,44 @@ module Btree_tests = struct
     Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'D')) 7;
     Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'G')) 7;
     Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'H')) 7; *)
-    Btree.insert t  (Btree.Varchar (String.make 4 'M')) 9999;  
-    Btree.insert t  (Btree.Varchar (String.make 4 'Z')) 9999;
-    Btree.insert t  (Btree.Varchar (String.make 4 'Q')) 9999;
-    Btree.insert t  (Btree.Varchar (String.make 4 'B')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'A')) 9999;  
+
+    Btree.insert t  (Btree.Varchar (String.make 4 'U')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'C')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'D')) 9999;
+
+    Btree.insert t  (Btree.Varchar (String.make 4 'S')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'E')) 9999;
+
+    Btree.insert t  (Btree.Varchar (String.make 4 'Z')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'L')) 9999;  
     Btree.insert t  (Btree.Varchar (String.make 4 'F')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'G')) 9999;
-    Btree.insert t  (Btree.Varchar (String.make 4 'J')) 9999;
+
     Btree.insert t  (Btree.Varchar (String.make 4 'I')) 9999;
-    Btree.insert t  (Btree.Varchar (String.make 4 'H')) 9999;
-    Btree.insert t  (Btree.Varchar (String.make 4 'E')) 9999;  
+    Btree.insert t  (Btree.Varchar (String.make 4 'J')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'K')) 9999;
+
+    Btree.insert t  (Btree.Varchar (String.make 4 'M')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'W')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'X')) 9999;
+
+    Btree.insert t  (Btree.Varchar (String.make 4 'Q')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'B')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'N')) 9999;
     Btree.insert t  (Btree.Varchar (String.make 4 'O')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'P')) 9999;
+
     Btree.insert t  (Btree.Varchar (String.make 4 'R')) 9999;
-    Btree.insert t  (Btree.Varchar (String.make 4 'S')) 9999;
+
+    Btree.insert t  (Btree.Varchar (String.make 4 'T')) 9999;
+
+    Btree.insert t  (Btree.Varchar (String.make 4 'V')) 9999;
+
+    Btree.insert t  (Btree.Varchar (String.make 4 'Y')) 9999;
+    Btree.insert t  (Btree.Varchar (String.make 4 'H')) 9999;
+
+
     Btree.print_tree_aux t t.root_num 0;
     
     " "
