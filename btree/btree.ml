@@ -121,6 +121,11 @@ type node_type = Leaf | Internal
 let serialize_node_type node_ty =
   match node_ty with Leaf -> leaf_constant | Internal -> internal_constant
 
+let int32_to_node_type i32 =
+  if i32 = leaf_constant then Leaf
+  else if i32 = internal_constant then Internal
+  else failwith "invalid i32, can't convert to node type"
+
 (* B TREE NODE ***************************************************************)
 type node = {
   (* Leaf | Internal *)
@@ -174,8 +179,7 @@ let print_node node =
   for i = 0 to node.cur_size - 1 do
     Printf.printf "P%d: %d\n" i node.pointers.(i);
     Printf.printf "K%d: %s\n" i (string_of_key node.keys.(i))
-  done;
-  ()
+  done
 
 let empty_node btree =
   let block_size = File_manager.get_blocksize btree.sm.file_manager in
@@ -192,51 +196,46 @@ let empty_node btree =
   }
 
 let deserialize page key_ty block_size =
-  let node_type =
-    if Page.get_int32 page 0 = leaf_constant then Leaf else Internal
-  in
-  let parent = Int32.to_int (Page.get_int32 page 4) in
-  let cur_size = Int32.to_int (Page.get_int32 page 8) in
+  let node_type = Page.get_int32 page 0 |> int32_to_node_type in
+  let parent = Page.get_int32 page 4 |> Int32.to_int in
+  let cur_size = Page.get_int32 page 8 |> Int32.to_int in
   let capacity = get_num_keys block_size key_ty in
   let keys = Array.init capacity (fun _ -> empty_key key_ty) in
-  let pointers =
-    Array.init (capacity + 1) (fun _ ->
-        unused_pointer_constant (* 0xDDDDDDDD *))
-  in
+  (* all pointers have value 0xDDDDDDDD *)
+  let pointers = Array.init (capacity + 1) (fun _ -> unused_pointer_constant) in
   let pair_size = 4 + sizeof_key key_ty in
-
   (* Read keys and pointers *)
   for i = 0 to cur_size - 1 do
     (* Read pointer i *)
-    pointers.(i) <- Int32.to_int (Page.get_int32 page (12 + (i * pair_size)));
-
+    let pointer_offset = 12 + (i * pair_size) in
+    let key_offset = 12 + (i * pair_size) + 4 in
+    pointers.(i) <- Page.get_int32 page pointer_offset |> Int32.to_int;
     (* Read key i *)
     match key_ty with
     | TVarchar n ->
-        let s = Page.get_string_raw page (12 + (i * pair_size) + 4) n in
-        keys.(i) <- Varchar s
+        let str = Page.get_string_raw page key_offset n in
+        keys.(i) <- Varchar str
     | TInteger ->
-        let n = Page.get_int32 page (12 + (i * pair_size) + 4) in
-        keys.(i) <- Integer n
+        let num = Page.get_int32 page key_offset in
+        keys.(i) <- Integer num
   done;
 
   (* Read final pointer *)
-  pointers.(cur_size) <-
-    Int32.to_int (Page.get_int32 page (12 + (cur_size * pair_size)));
-  let _ =
-    match node_type with
-    | Internal -> ()
-    | Leaf ->
-        pointers.(capacity) <-
-          Int32.to_int (Page.get_int32 page (12 + (capacity * pair_size)))
-  in
+  let last_pointer_offset = 12 + (cur_size * pair_size) in
+  pointers.(cur_size) <- Page.get_int32 page last_pointer_offset |> Int32.to_int;
+  (* sister pointer is always the last pointer in our preset size array -- at index capacity *)
+  let sister_pointer_offset = 12 + (capacity * pair_size) in
+  if node_type = Leaf then
+    pointers.(capacity) <-
+      Page.get_int32 page sister_pointer_offset |> Int32.to_int;
   { node_type; parent; cur_size; keys; pointers; capacity; key_type = key_ty }
 
 (* Fetch a block from the btree and deserialize it into a btree node.
    params: p is a pointer to a block in the btree. *)
 let get_node btree p =
+  let block_size = File_manager.get_blocksize btree.sm.file_manager in
   let page = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p in
-  deserialize page btree.key (File_manager.get_blocksize btree.sm.file_manager)
+  deserialize page btree.key block_size
 
 let serialize node block_size =
   let page = Page.make ~block_size in
@@ -245,30 +244,31 @@ let serialize node block_size =
   Page.set_int32 page 8 (Int32.of_int node.cur_size);
   let pair_size = 4 + sizeof_key node.key_type in
   for i = 0 to node.capacity - 1 do
+    let key_offset = 12 + (i * pair_size) + 4 in
     match node.keys.(i) with
-    | Varchar s -> Page.set_string_raw page (12 + (i * pair_size) + 4) s
-    | Integer n -> Page.set_int32 page (12 + (i * pair_size) + 4) n
+    | Varchar s -> Page.set_string_raw page key_offset s
+    | Integer n -> Page.set_int32 page key_offset n
   done;
   for i = 0 to node.capacity do
-    Page.set_int32 page (12 + (i * pair_size)) (Int32.of_int node.pointers.(i))
+    let pointer_offset = 12 + (i * pair_size) in
+    Page.set_int32 page pointer_offset (Int32.of_int node.pointers.(i))
   done;
-  let final_ptr_pos = 12 + (node.capacity * pair_size) in
+  let final_pointer_offset = 12 + (node.capacity * pair_size) in
   if node.node_type = Leaf then
-    Page.set_int32 page final_ptr_pos
+    Page.set_int32 page final_pointer_offset
       (Int32.of_int node.pointers.(node.capacity));
   page
 
 let write_node btree node n =
-  let page =
-    serialize node (File_manager.get_blocksize btree.sm.file_manager)
-  in
+  let block_size = File_manager.get_blocksize btree.sm.file_manager in
+  let page = serialize node block_size in
   Storage_manager.update_block_num ~storage_manager:btree.sm ~block_num:n ~page
 
 let write_node_append btree node =
-  let page =
-    serialize node (File_manager.get_blocksize btree.sm.file_manager)
-  in
-  Block_id.block_num (Storage_manager.append ~storage_manager:btree.sm ~page)
+  let block_size = File_manager.get_blocksize btree.sm.file_manager in
+  let page = serialize node block_size in
+  let block = Storage_manager.append ~storage_manager:btree.sm ~page in
+  Block_id.block_num block
 
 (* Create an empty b-tree, initialize on disk, and return
    in memory data structure.
@@ -277,7 +277,7 @@ let write_node_append btree node =
    - storage_manager - assumed to be fresh with 'make'.
    - key type.
 *)
-let empty sm key_ty =
+let create sm key_ty =
   let block_size = File_manager.get_blocksize sm.file_manager in
   let metadata = Storage_manager.get_head_page ~storage_manager:sm in
   Page.set_int32 metadata 4 (Int32.of_int 1);
@@ -594,35 +594,35 @@ let rec print_tree_aux btree p level =
       ()
     done
 
-let rec print_structs btree p edge_map =
-  let node = get_node btree p in
-  let n = node.cur_size in
-  let struct_str = Printf.sprintf "struct%d" p in
-  Printf.printf "%s [label=\"" struct_str;
-  if node.node_type = Internal then (
-    for i = 0 to n - 1 do
-      let pointer_str = Printf.sprintf "<pointer%d>" i in
-      Printf.printf "%s %d|%s|" pointer_str node.pointers.(i)
-        (string_of_key node.keys.(i));
-      let src = Printf.sprintf "%s:%s" struct_str pointer_str in
-      let dst = Printf.sprintf "struct%d" node.pointers.(i) in
-      Hashtbl.add edge_map src dst
-    done;
-    let last_pointer_str = Printf.sprintf "<pointer%d>" n in
-    Printf.printf "%s %d\"];\n" last_pointer_str node.pointers.(n);
-    let src = Printf.sprintf "%s:%s" struct_str last_pointer_str in
-    let dst = Printf.sprintf "struct%d" node.pointers.(n) in
-    Hashtbl.add edge_map src dst;
-    for i = 0 to n do
-      print_structs btree node.pointers.(i) edge_map
-    done)
-  else
-    for i = 0 to n - 1 do
-      Printf.printf "%s" (string_of_key node.keys.(i));
-      if i <> n - 1 then Printf.printf "|" else Printf.printf "\"];\n"
-    done
-
-let rec print_dot btree p =
+let print_dot btree p =
+  let rec print_structs btree p edge_map =
+    let node = get_node btree p in
+    let n = node.cur_size in
+    let struct_str = Printf.sprintf "struct%d" p in
+    Printf.printf "%s [label=\"" struct_str;
+    if node.node_type = Internal then (
+      for i = 0 to n - 1 do
+        let pointer_str = Printf.sprintf "<pointer%d>" i in
+        Printf.printf "%s %d|%s|" pointer_str node.pointers.(i)
+          (string_of_key node.keys.(i));
+        let src = Printf.sprintf "%s:%s" struct_str pointer_str in
+        let dst = Printf.sprintf "struct%d" node.pointers.(i) in
+        Hashtbl.add edge_map src dst
+      done;
+      let last_pointer_str = Printf.sprintf "<pointer%d>" n in
+      Printf.printf "%s %d\"];\n" last_pointer_str node.pointers.(n);
+      let src = Printf.sprintf "%s:%s" struct_str last_pointer_str in
+      let dst = Printf.sprintf "struct%d" node.pointers.(n) in
+      Hashtbl.add edge_map src dst;
+      for i = 0 to n do
+        print_structs btree node.pointers.(i) edge_map
+      done)
+    else
+      for i = 0 to n - 1 do
+        Printf.printf "%s" (string_of_key node.keys.(i));
+        if i <> n - 1 then Printf.printf "|" else Printf.printf "\"];\n"
+      done
+  in
   let header = "digraph BTree {\nrankdir=TB;\nnode [shape=record];\n" in
   let footer = "}\n" in
   Printf.printf "%s" header;
