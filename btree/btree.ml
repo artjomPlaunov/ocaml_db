@@ -372,75 +372,65 @@ let children_update_parents btree parent n =
     write_node btree child p
   done
 
-(* Insert (key,p2) pair in parent of p1. p1 and p2 are pointers.
-   If p1 is root, a new root is created with p1, key, p2 as the initial values.
-   If p1 is not a root but it is full, then it is split into two nodes with a
-   recursive call (p0, key, p2), where p0 is the parent of the split node.
-*)
-let rec insert_in_parent btree p1 key_v p2 =
-  if btree.root_num = p1 (* p1 is the root of the tree. Create a new root.*)
-  then (
-    let block_size = File_manager.get_blocksize btree.sm.file_manager in
-    (* First, create in memory representation for the new root node: *)
-    let new_root = empty_node btree in
-    (* Root is internal since p1 and p2 are children. *)
-    new_root.node_type <- Internal;
-    new_root.keys.(0) <- key_v;
-    new_root.pointers.(0) <- p1;
-    new_root.pointers.(1) <- p2;
-    new_root.cur_size <- 1;
-    (* Create new root page layout, and append it to disk in the storage manager.
-       This gives us the block offset of the new root node in the b-tree file. *)
-    let new_root_block_offset = write_node_append btree new_root in
-    (* Fetch p2 node *)
-    let p2_node = get_node btree p2 in
+(*  Insert in root procedure. 
+    This is used in insert in parent where p1 is the root node, hence we 
+    don't have a parent node and we need an insert in root procedure. 
 
-    (* Make new_root the root of the tree.*)
-    (* Save old root in p1_node *)
-    let p1_node = btree.root in
-    p1_node.parent <- new_root_block_offset;
-    p2_node.parent <- new_root_block_offset;
-    btree.root <- new_root;
-    btree.root_num <- new_root_block_offset;
-    write_node btree p1_node p1;
-    write_node btree p2_node p2;
+    Insert in root creates a new root node with the key key_v, and 
+    sets p1 (old root) as the left pointer, p2 as the right pointer.
+    *)
+let insert_in_root btree p1 key_v p2 = 
+  let block_size = File_manager.get_blocksize btree.sm.file_manager in
+  (* First, create in memory representation for the new root node: *)
+  let new_root = empty_node btree in
+  (* Root is internal since p1 and p2 are children. *)
+  new_root.node_type <- Internal;
+  new_root.keys.(0) <- key_v;
+  new_root.pointers.(0) <- p1;
+  new_root.pointers.(1) <- p2;
+  new_root.cur_size <- 1;
+  (* Create new root page layout, and append it to disk in the storage manager.
+      This gives us the block offset of the new root node in the b-tree file. *)
+  let new_root_block_offset = write_node_append btree new_root in
+  (* Fetch p2 node *)
+  let p2_node = get_node btree p2 in
 
-    (* Update root node offset in storage manager metadata. *)
-    let sm_head_page =
-      Storage_manager.get_head_page ~storage_manager:btree.sm
-    in
-    Page.set_int32 sm_head_page 4 (Int32.of_int btree.root_num);
-    Storage_manager.set_head_page ~storage_manager:btree.sm sm_head_page;
-    ())
-  else (
-    (* fetch parent node into p0_node *)
-    let p1_node = get_node btree p1 in
-    let p0 = p1_node.parent in
-    let p0_node = get_node btree p0 in
+  (* Make new_root the root of the tree.*)
+  (* Save old root in p1_node *)
+  let p1_node = btree.root in
+  p1_node.parent <- new_root_block_offset;
+  p2_node.parent <- new_root_block_offset;
+  btree.root <- new_root;
+  btree.root_num <- new_root_block_offset;
+  write_node btree p1_node p1;
+  write_node btree p2_node p2;
 
-    if
-      p0_node.cur_size < p0_node.capacity
-      (* Parent node has available space, so insert key,p2. *)
-    then (
-      let cur_size = p0_node.cur_size in
-      insert_key_pointer_pair p0_node.keys p0_node.pointers p0_node.capacity
-        p0_node.cur_size key_v p2 false;
-      p0_node.cur_size <- cur_size + 1;
-      (* Fetch p2 node, update parent link.*)
-      let p2_node = get_node btree p2 in
-      p2_node.parent <- p0;
-      write_node btree p0_node p0;
-      write_node btree p2_node p2;
-      () (* No space in parent: split the parent and keep propagating up.*))
-    else (
-      let new_p0_node = empty_node btree in
+  (* Update root node offset in storage manager metadata. *)
+  let sm_head_page =
+    Storage_manager.get_head_page ~storage_manager:btree.sm
+  in
+  Page.set_int32 sm_head_page 4 (Int32.of_int btree.root_num);
+  Storage_manager.set_head_page ~storage_manager:btree.sm sm_head_page;
+  ()
+
+(* Insert in parent -- there is space in parent. *)
+let insert_in_parent_aux btree p1 key_v p2 p0 p0_node = 
+  let cur_size = p0_node.cur_size in
+  insert_key_pointer_pair p0_node.keys p0_node.pointers p0_node.capacity p0_node.cur_size key_v p2 false;
+  p0_node.cur_size <- cur_size + 1;
+  (* Fetch p2 node, update parent link.*)
+  let p2_node = get_node btree p2 in
+  p2_node.parent <- p0;
+  write_node btree p0_node p0;
+  write_node btree p2_node p2
+
+
+let rec split_parent btree p1 key_v p2 p0 p0_node = 
+  let new_p0_node = empty_node btree in
 
       new_p0_node.node_type <- p0_node.node_type;
 
       let n = p0_node.capacity + 1 in
-      let mid = if (n mod 2) = 0 then n/2 else (n/2)+1 in 
-      let mid = if mid = n-1 then mid - 1 else mid in 
-
       let keys_buf =
         Array.init n (fun i ->
             if i < n - 1 then p0_node.keys.(i) else empty_key btree.key)
@@ -451,6 +441,8 @@ let rec insert_in_parent btree p1 key_v p2 =
       in
       insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) key_v p2 false;
 
+      let mid = if (n mod 2) = 0 then n/2 else (n/2)+1 in 
+      let mid = if mid = n-1 then mid - 1 else mid in 
 
       for i = 0 to mid do
         new_p0_node.pointers.(i) <- ptrs_buf.(i)
@@ -489,7 +481,25 @@ let rec insert_in_parent btree p1 key_v p2 =
       write_node btree p2_node p2;
       let split_key = keys_buf.(mid) in
       insert_in_parent btree p0 split_key p2
-  ))
+
+and 
+insert_in_parent btree p1 key_v p2 =
+  if btree.root_num = p1 
+  then 
+    insert_in_root btree p1 key_v p2
+  else (
+    let p1_node = get_node btree p1 in
+    let p0 = p1_node.parent in
+    let p0_node = get_node btree p0 in
+    if
+      p0_node.cur_size < p0_node.capacity
+    then
+      insert_in_parent_aux btree p1 key_v p2 p0 p0_node
+    else 
+      split_parent btree p1 key_v p2 p0 p0_node
+  )
+
+
 let rec insert_aux btree p1 k p2 =
   let p1_node = get_node btree p1 in
   match p1_node.node_type with
