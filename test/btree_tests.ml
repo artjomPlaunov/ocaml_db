@@ -114,124 +114,125 @@ module Btree_tests = struct
     (* to create the visualization run the command: *)
     (* dot -Tpng <file.dot> -o <out.png> *)
     (* ex: dot -Tpng btree.dot -o btree.png *)
-    Btree.print_dot t t.root_num;
+    let graphviz_str = Btree.create_graphviz_str t t.root_num in
+    Printf.printf "%s" graphviz_str;
     ""
 
-    let insert_varchar2s () =
-      let dir = "tmp_btree_insert_varchar2s" in
-      let storage_manager = setup_test_env dir in
-      let key_type = TVarchar 2 in
-  
-      let t = Btree.create storage_manager key_type in
-  
-      (* create another node, so we can insert a new key, pointer pair into the root we created above*)
-      let key_ty = t.key in
-      let block_size = File.File_manager.get_blocksize t.sm.file_manager in
-  
-      let empty = Btree.empty_node t in
-      Btree.insert t (Btree.Varchar "AA") 9999;
-      Btree.insert t (Btree.Varchar "AB") 9999;
-      Btree.insert t (Btree.Varchar "AC") 9999;
-      Btree.insert t (Btree.Varchar "AD") 9999;
-      Btree.insert t (Btree.Varchar "AE") 9999;
-      Btree.insert t (Btree.Varchar "AF") 9999;
-      Btree.insert t (Btree.Varchar "AG") 9999;
-      Btree.insert t (Btree.Varchar "AH") 9999;
-      Btree.insert t (Btree.Varchar "AI") 9999;
-      Btree.insert t (Btree.Varchar "AJ") 9999;
-      Btree.insert t (Btree.Varchar "BA") 9999;
-      Btree.insert t (Btree.Varchar "BB") 9999;
-      Btree.insert t (Btree.Varchar "BC") 9999;
-      Btree.insert t (Btree.Varchar "BD") 9999;
-      Btree.insert t (Btree.Varchar "BE") 9999;
-      Btree.insert t (Btree.Varchar "BF") 9999;
-      Btree.insert t (Btree.Varchar "BG") 9999;
-      Btree.insert t (Btree.Varchar "BH") 9999;
-      Btree.insert t (Btree.Varchar "BI") 9999;
-      Btree.insert t (Btree.Varchar "BJ") 9999;
-      Btree.insert t (Btree.Varchar "CA") 9999;
-      Btree.insert t (Btree.Varchar "CB") 9999;
-      Btree.insert t (Btree.Varchar "CC") 9999;
-      Btree.insert t (Btree.Varchar "CD") 9999;
-      Btree.insert t (Btree.Varchar "CE") 9999;
-      Btree.insert t (Btree.Varchar "CF") 9999;
-      Btree.insert t (Btree.Varchar "CG") 9999;
-      Btree.insert t (Btree.Varchar "CH") 9999;
-      Btree.insert t (Btree.Varchar "CI") 9999;
-      Btree.insert t (Btree.Varchar "CJ") 9999;
-      Btree.insert t (Btree.Varchar "DA") 9999;
-      Btree.insert t (Btree.Varchar "DB") 9999;
-      Btree.insert t (Btree.Varchar "DC") 9999;
-      Btree.insert t (Btree.Varchar "DD") 9999;
-      Btree.insert t (Btree.Varchar "DE") 9999;
-      Btree.insert t (Btree.Varchar "DF") 9999;
-      Btree.insert t (Btree.Varchar "DG") 9999;
-      Btree.insert t (Btree.Varchar "DH") 9999;
-      Btree.insert t (Btree.Varchar "DI") 9999;
-      Btree.insert t (Btree.Varchar "DJ") 9999;
-      Btree.insert t (Btree.Varchar "EA") 9999;
-      Btree.insert t (Btree.Varchar "EB") 9999;
-      Btree.insert t (Btree.Varchar "EC") 9999;
-      Btree.insert t (Btree.Varchar "ED") 9999;
-      Btree.insert t (Btree.Varchar "EE") 9999;
-      Btree.insert t (Btree.Varchar "EF") 9999;
-      Btree.insert t (Btree.Varchar "EG") 9999;
-      Btree.insert t (Btree.Varchar "EH") 9999;
-      Btree.insert t (Btree.Varchar "EI") 9999;
-      Btree.insert t (Btree.Varchar "EJ") 9999;
-      Btree.insert t (Btree.Varchar "FA") 9999;
-      Btree.insert t (Btree.Varchar "FB") 9999;
-      Btree.insert t (Btree.Varchar "FC") 9999;
-      Btree.insert t (Btree.Varchar "FD") 9999;
-      Btree.insert t (Btree.Varchar "FE") 9999;
-      Btree.insert t (Btree.Varchar "FF") 9999;
-      Btree.insert t (Btree.Varchar "FG") 9999;
-      Btree.insert t (Btree.Varchar "FH") 9999;
-      Btree.insert t (Btree.Varchar "FI") 9999;
-      Btree.insert t (Btree.Varchar "FJ") 9999;
-      Btree.insert t (Btree.Varchar "GA") 9999;
-      Btree.insert t (Btree.Varchar "GB") 9999;
-      Btree.insert t (Btree.Varchar "GC") 9999;
-      Btree.insert t (Btree.Varchar "GD") 9999;
-      Btree.insert t (Btree.Varchar "GE") 9999;
-      Btree.insert t (Btree.Varchar "GF") 9999;
-      Btree.insert t (Btree.Varchar "GG") 9999;
-      Btree.insert t (Btree.Varchar "GH") 9999;
-      Btree.insert t (Btree.Varchar "GI") 9999;
-      Btree.insert t (Btree.Varchar "GJ") 9999;
-      Btree.insert t (Btree.Varchar "HA") 9999;
-      Btree.insert t (Btree.Varchar "HB") 9999;
-      Btree.insert t (Btree.Varchar "HC") 9999;
-      Btree.insert t (Btree.Varchar "HD") 9999;
-      Btree.insert t (Btree.Varchar "HE") 9999;
-      Btree.insert t (Btree.Varchar "HF") 9999;
-      Btree.insert t (Btree.Varchar "HG") 9999;
-      Btree.insert t (Btree.Varchar "HH") 9999;
-      Btree.insert t (Btree.Varchar "HI") 9999;
-      Btree.insert t (Btree.Varchar "HJ") 9999;
-      Btree.insert t (Btree.Varchar "IA") 9999;
-      Btree.insert t (Btree.Varchar "IB") 9999;
-      Btree.insert t (Btree.Varchar "IC") 9999;
-      Btree.insert t (Btree.Varchar "ID") 9999;
-      Btree.insert t (Btree.Varchar "IE") 9999;
-      Btree.insert t (Btree.Varchar "IF") 9999;
-      Btree.insert t (Btree.Varchar "IG") 9999;
-      Btree.insert t (Btree.Varchar "IH") 9999;
-      Btree.insert t (Btree.Varchar "II") 9999;
-      Btree.insert t (Btree.Varchar "IJ") 9999;
-      Btree.insert t (Btree.Varchar "JA") 9999;
-      Btree.insert t (Btree.Varchar "JB") 9999;
-      Btree.insert t (Btree.Varchar "JC") 9999;
-      Btree.insert t (Btree.Varchar "JD") 9999;
-      Btree.insert t (Btree.Varchar "JE") 9999;
-      Btree.insert t (Btree.Varchar "JF") 9999;
-      Btree.insert t (Btree.Varchar "JG") 9999;
-      Btree.insert t (Btree.Varchar "JH") 9999;
-      Btree.insert t (Btree.Varchar "JI") 9999;
-      Btree.insert t (Btree.Varchar "JJ") 9999;
-      Btree.print_dot t t.root_num;
-      ""
+  let insert_varchar2s () =
+    let dir = "tmp_btree_insert_varchar2s" in
+    let storage_manager = setup_test_env dir in
+    let key_type = TVarchar 2 in
 
+    let t = Btree.create storage_manager key_type in
+
+    (* create another node, so we can insert a new key, pointer pair into the root we created above*)
+    let key_ty = t.key in
+    let block_size = File.File_manager.get_blocksize t.sm.file_manager in
+
+    let empty = Btree.empty_node t in
+    Btree.insert t (Btree.Varchar "AA") 9999;
+    Btree.insert t (Btree.Varchar "AB") 9999;
+    Btree.insert t (Btree.Varchar "AC") 9999;
+    Btree.insert t (Btree.Varchar "AD") 9999;
+    Btree.insert t (Btree.Varchar "AE") 9999;
+    Btree.insert t (Btree.Varchar "AF") 9999;
+    Btree.insert t (Btree.Varchar "AG") 9999;
+    Btree.insert t (Btree.Varchar "AH") 9999;
+    Btree.insert t (Btree.Varchar "AI") 9999;
+    Btree.insert t (Btree.Varchar "AJ") 9999;
+    Btree.insert t (Btree.Varchar "BA") 9999;
+    Btree.insert t (Btree.Varchar "BB") 9999;
+    Btree.insert t (Btree.Varchar "BC") 9999;
+    Btree.insert t (Btree.Varchar "BD") 9999;
+    Btree.insert t (Btree.Varchar "BE") 9999;
+    Btree.insert t (Btree.Varchar "BF") 9999;
+    Btree.insert t (Btree.Varchar "BG") 9999;
+    Btree.insert t (Btree.Varchar "BH") 9999;
+    Btree.insert t (Btree.Varchar "BI") 9999;
+    Btree.insert t (Btree.Varchar "BJ") 9999;
+    Btree.insert t (Btree.Varchar "CA") 9999;
+    Btree.insert t (Btree.Varchar "CB") 9999;
+    Btree.insert t (Btree.Varchar "CC") 9999;
+    Btree.insert t (Btree.Varchar "CD") 9999;
+    Btree.insert t (Btree.Varchar "CE") 9999;
+    Btree.insert t (Btree.Varchar "CF") 9999;
+    Btree.insert t (Btree.Varchar "CG") 9999;
+    Btree.insert t (Btree.Varchar "CH") 9999;
+    Btree.insert t (Btree.Varchar "CI") 9999;
+    Btree.insert t (Btree.Varchar "CJ") 9999;
+    Btree.insert t (Btree.Varchar "DA") 9999;
+    Btree.insert t (Btree.Varchar "DB") 9999;
+    Btree.insert t (Btree.Varchar "DC") 9999;
+    Btree.insert t (Btree.Varchar "DD") 9999;
+    Btree.insert t (Btree.Varchar "DE") 9999;
+    Btree.insert t (Btree.Varchar "DF") 9999;
+    Btree.insert t (Btree.Varchar "DG") 9999;
+    Btree.insert t (Btree.Varchar "DH") 9999;
+    Btree.insert t (Btree.Varchar "DI") 9999;
+    Btree.insert t (Btree.Varchar "DJ") 9999;
+    Btree.insert t (Btree.Varchar "EA") 9999;
+    Btree.insert t (Btree.Varchar "EB") 9999;
+    Btree.insert t (Btree.Varchar "EC") 9999;
+    Btree.insert t (Btree.Varchar "ED") 9999;
+    Btree.insert t (Btree.Varchar "EE") 9999;
+    Btree.insert t (Btree.Varchar "EF") 9999;
+    Btree.insert t (Btree.Varchar "EG") 9999;
+    Btree.insert t (Btree.Varchar "EH") 9999;
+    Btree.insert t (Btree.Varchar "EI") 9999;
+    Btree.insert t (Btree.Varchar "EJ") 9999;
+    Btree.insert t (Btree.Varchar "FA") 9999;
+    Btree.insert t (Btree.Varchar "FB") 9999;
+    Btree.insert t (Btree.Varchar "FC") 9999;
+    Btree.insert t (Btree.Varchar "FD") 9999;
+    Btree.insert t (Btree.Varchar "FE") 9999;
+    Btree.insert t (Btree.Varchar "FF") 9999;
+    Btree.insert t (Btree.Varchar "FG") 9999;
+    Btree.insert t (Btree.Varchar "FH") 9999;
+    Btree.insert t (Btree.Varchar "FI") 9999;
+    Btree.insert t (Btree.Varchar "FJ") 9999;
+    Btree.insert t (Btree.Varchar "GA") 9999;
+    Btree.insert t (Btree.Varchar "GB") 9999;
+    Btree.insert t (Btree.Varchar "GC") 9999;
+    Btree.insert t (Btree.Varchar "GD") 9999;
+    Btree.insert t (Btree.Varchar "GE") 9999;
+    Btree.insert t (Btree.Varchar "GF") 9999;
+    Btree.insert t (Btree.Varchar "GG") 9999;
+    Btree.insert t (Btree.Varchar "GH") 9999;
+    Btree.insert t (Btree.Varchar "GI") 9999;
+    Btree.insert t (Btree.Varchar "GJ") 9999;
+    Btree.insert t (Btree.Varchar "HA") 9999;
+    Btree.insert t (Btree.Varchar "HB") 9999;
+    Btree.insert t (Btree.Varchar "HC") 9999;
+    Btree.insert t (Btree.Varchar "HD") 9999;
+    Btree.insert t (Btree.Varchar "HE") 9999;
+    Btree.insert t (Btree.Varchar "HF") 9999;
+    Btree.insert t (Btree.Varchar "HG") 9999;
+    Btree.insert t (Btree.Varchar "HH") 9999;
+    Btree.insert t (Btree.Varchar "HI") 9999;
+    Btree.insert t (Btree.Varchar "HJ") 9999;
+    Btree.insert t (Btree.Varchar "IA") 9999;
+    Btree.insert t (Btree.Varchar "IB") 9999;
+    Btree.insert t (Btree.Varchar "IC") 9999;
+    Btree.insert t (Btree.Varchar "ID") 9999;
+    Btree.insert t (Btree.Varchar "IE") 9999;
+    Btree.insert t (Btree.Varchar "IF") 9999;
+    Btree.insert t (Btree.Varchar "IG") 9999;
+    Btree.insert t (Btree.Varchar "IH") 9999;
+    Btree.insert t (Btree.Varchar "II") 9999;
+    Btree.insert t (Btree.Varchar "IJ") 9999;
+    Btree.insert t (Btree.Varchar "JA") 9999;
+    Btree.insert t (Btree.Varchar "JB") 9999;
+    Btree.insert t (Btree.Varchar "JC") 9999;
+    Btree.insert t (Btree.Varchar "JD") 9999;
+    Btree.insert t (Btree.Varchar "JE") 9999;
+    Btree.insert t (Btree.Varchar "JF") 9999;
+    Btree.insert t (Btree.Varchar "JG") 9999;
+    Btree.insert t (Btree.Varchar "JH") 9999;
+    Btree.insert t (Btree.Varchar "JI") 9999;
+    Btree.insert t (Btree.Varchar "JJ") 9999;
+    let graphviz_str = Btree.create_graphviz_str t t.root_num in
+    Printf.printf "%s" graphviz_str;
+    ""
 
   let empty_btree_insert_leaf_test () =
     Alcotest.(check string)
@@ -245,15 +246,13 @@ module Btree_tests = struct
 
   let insert_varchar2s_test () =
     Alcotest.(check string)
-      "verify empty btree creation" expected_output
-      (insert_varchar2s ())
-
+      "verify empty btree creation" expected_output (insert_varchar2s ())
 end
 
 let all_tests () =
   [
     Alcotest.test_case "empty btree creation + insert leaf." `Quick
       Btree_tests.insert_in_root_parent_test;
-      Alcotest.test_case "insert varchar2s test" `Quick
+    Alcotest.test_case "insert varchar2s test" `Quick
       Btree_tests.insert_varchar2s_test;
   ]

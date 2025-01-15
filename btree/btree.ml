@@ -595,39 +595,44 @@ let rec print_tree_aux btree p level =
       ()
     done
 
-let print_dot btree p =
-  let rec print_structs btree p edge_map =
-    let node = get_node btree p in
-    let n = node.cur_size in
-    let struct_str = Printf.sprintf "struct%d" p in
-    Printf.printf "%s [label=\"" struct_str;
-    if node.node_type = Internal then (
-      for i = 0 to n - 1 do
-        let pointer_str = Printf.sprintf "<pointer%d>" i in
-        Printf.printf "%s %d|%s|" pointer_str node.pointers.(i)
-          (string_of_key node.keys.(i));
-        let src = Printf.sprintf "%s:%s" struct_str pointer_str in
-        let dst = Printf.sprintf "struct%d" node.pointers.(i) in
+let create_graphviz_str btree p =
+  let rec create_structs_str btree p edge_map =
+    let { node_type; cur_size; keys; pointers; _ } = get_node btree p in
+    let structs = ref "" in
+    let struct_id = Printf.sprintf "struct%d" p in
+    structs := !structs ^ Printf.sprintf "%s [label=\"" struct_id;
+    if node_type = Internal then (
+      for i = 0 to cur_size do
+        let pointer_id = Printf.sprintf "<pointer%d>" i in
+        let key_pointer_pair_or_last_pointer =
+          if i <> cur_size then
+            Printf.sprintf "%s %d|%s|" pointer_id pointers.(i)
+              (string_of_key keys.(i))
+          else Printf.sprintf "%s %d\"];\n" pointer_id pointers.(cur_size)
+        in
+        structs := !structs ^ key_pointer_pair_or_last_pointer;
+        let src = Printf.sprintf "%s:%s" struct_id pointer_id in
+        let dst = Printf.sprintf "struct%d" pointers.(i) in
         Hashtbl.add edge_map src dst
       done;
-      let last_pointer_str = Printf.sprintf "<pointer%d>" n in
-      Printf.printf "%s %d\"];\n" last_pointer_str node.pointers.(n);
-      let src = Printf.sprintf "%s:%s" struct_str last_pointer_str in
-      let dst = Printf.sprintf "struct%d" node.pointers.(n) in
-      Hashtbl.add edge_map src dst;
-      for i = 0 to n do
-        print_structs btree node.pointers.(i) edge_map
+      for i = 0 to cur_size do
+        structs := !structs ^ create_structs_str btree pointers.(i) edge_map
       done)
     else
-      for i = 0 to n - 1 do
-        Printf.printf "%s" (string_of_key node.keys.(i));
-        if i <> n - 1 then Printf.printf "|" else Printf.printf "\"];\n"
-      done
+      for i = 0 to cur_size - 1 do
+        let key_str = Printf.sprintf "%s" (string_of_key keys.(i)) in
+        let separator_or_end = if i <> cur_size - 1 then "|" else "\"];\n" in
+        structs := !structs ^ key_str ^ separator_or_end
+      done;
+    !structs
   in
   let header = "digraph BTree {\nrankdir=TB;\nnode [shape=record];\n" in
   let footer = "}\n" in
-  Printf.printf "%s" header;
   let edge_map = Hashtbl.create 10 in
-  print_structs btree p edge_map;
-  Hashtbl.iter (fun src dst -> Printf.printf "%s -> %s\n" src dst) edge_map;
-  Printf.printf "%s" footer
+  let structs = create_structs_str btree p edge_map in
+  let edges =
+    Hashtbl.fold
+      (fun src dst acc -> acc ^ Printf.sprintf "%s -> %s\n" src dst)
+      edge_map ""
+  in
+  header ^ structs ^ edges ^ footer
