@@ -316,6 +316,7 @@ let shift_key_pointer_pair keys pointers capacity n key pointer idx left =
   keys.(idx) <- key;
   if left then pointers.(idx) <- pointer else pointers.(idx + 1) <- pointer
 
+(* n is the total number of keys *)
 let insert_key_pointer_pair keys pointers capacity n key pointer left =
   if key_lt key keys.(0) (* Key is less than all keys*) then
     shift_key_pointer_pair keys pointers capacity n key pointer 0 false
