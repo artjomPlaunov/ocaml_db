@@ -412,7 +412,7 @@ let rec insert_in_parent btree p1 key_v p2 =
     Page.set_int32 sm_head_page 4 (Int32.of_int btree.root_num);
     Storage_manager.set_head_page ~storage_manager:btree.sm sm_head_page;
     ())
-  else
+  else (
     (* fetch parent node into p0_node *)
     let p1_node = get_node btree p1 in
     let p0 = p1_node.parent in
@@ -432,18 +432,15 @@ let rec insert_in_parent btree p1 key_v p2 =
       write_node btree p0_node p0;
       write_node btree p2_node p2;
       () (* No space in parent: split the parent and keep propagating up.*))
-    else
+    else (
       let new_p0_node = empty_node btree in
-      (* We can be at a Leaf or Internal node/level. In either case, the split node will be the
-         same as the parent's node type, as it is on the same level as the parent. *)
+
       new_p0_node.node_type <- p0_node.node_type;
 
-      (*  Key to split on at position ceil((n+1)/2)-1 in buffer. *)
       let n = p0_node.capacity + 1 in
-      let mid =
-        (if n + (1 mod 2) = 0 then (n + 1) / 2 else ((n + 1) / 2) + 1) - 1
-      in
-      (* Create buffers with one extra space for keys and pointers. *)
+      let mid = if (n mod 2) = 0 then n/2 else (n/2)+1 in 
+      let mid = if mid = n-1 then mid - 1 else mid in 
+
       let keys_buf =
         Array.init n (fun i ->
             if i < n - 1 then p0_node.keys.(i) else empty_key btree.key)
@@ -454,48 +451,45 @@ let rec insert_in_parent btree p1 key_v p2 =
       in
       insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) key_v p2 false;
 
-      (* p0_node: first half of buffer.
-         K_1 to K_(mid-1) and P_1 to P_mid. *)
-      for i = 0 to mid - 1 do
+
+      for i = 0 to mid do
         new_p0_node.pointers.(i) <- ptrs_buf.(i)
       done;
-      for i = 0 to mid - 2 do
+      for i = 0 to mid - 1 do
         new_p0_node.keys.(i) <- keys_buf.(i)
       done;
       ();
 
       (* Write p0 to disk. *)
-      new_p0_node.cur_size <- mid - 1;
+      new_p0_node.cur_size <- mid;
       new_p0_node.node_type <- p0_node.node_type;
       new_p0_node.parent <- p0_node.parent;
       write_node btree new_p0_node p0;
       if p0 = btree.root_num then btree.root <- new_p0_node;
 
-      (* Create split node: second half of buffer.
-         P_(mid+1) to P_(n+1) and K_(mid) to K_n. *)
       let p2_node = empty_node btree in
 
       if btree.root_num = p1 then btree.root <- new_p0_node;
 
       p2_node.node_type <- p0_node.node_type;
-      for i = mid to n do
-        p2_node.pointers.(i - mid) <- ptrs_buf.(i);
+      for i = mid+1 to n do
+        p2_node.pointers.(i - mid - 1) <- ptrs_buf.(i);
         ()
       done;
-      for i = mid to n - 1 do
-        p2_node.keys.(i - mid) <- keys_buf.(i);
+      for i = mid+1 to n - 1 do
+        p2_node.keys.(i - mid - 1) <- keys_buf.(i);
         ()
       done;
-      p2_node.cur_size <- n - mid;
+      p2_node.cur_size <- n - mid - 1;
       p2_node.parent <- p0;
 
       (* Write p2 to disk, call insert in parent with new split parent. *)
       let p2 = write_node_append btree p2_node in
       children_update_parents btree p2_node p2;
       write_node btree p2_node p2;
-      let split_key = keys_buf.(mid - 1) in
+      let split_key = keys_buf.(mid) in
       insert_in_parent btree p0 split_key p2
-
+  ))
 let rec insert_aux btree p1 k p2 =
   let p1_node = get_node btree p1 in
   match p1_node.node_type with
@@ -537,10 +531,10 @@ let rec insert_aux btree p1 k p2 =
 
         let new_p1_node = empty_node btree in
 
-        for i = 0 to mid - 1 do
+        for i = 0 to mid-1 do
           new_p1_node.pointers.(i) <- ptrs_buf.(i)
         done;
-        for i = 0 to mid - 1 do
+        for i = 0 to mid-1 do
           new_p1_node.keys.(i) <- keys_buf.(i)
         done;
         ();
@@ -555,6 +549,7 @@ let rec insert_aux btree p1 k p2 =
           p2_node.keys.(i - mid) <- keys_buf.(i);
           ()
         done;
+        (* sibling pointer not being updated here I believe. *)
 
         p2_node.cur_size <- n - mid;
         p2_node.parent <- p1_node.parent;
