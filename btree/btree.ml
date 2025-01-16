@@ -560,17 +560,27 @@ let split_leaf btree p1 k p2 p1_node =
 let rec insert_aux btree p1 k p2 =
   let p1_node = get_node btree p1 in
   match p1_node.node_type with
+  (* Internal node, find pointer to traverse.*)
   | Internal ->
       let i = ref 0 in
+      (* If k < p1.keys[0], traverse the 0'th pointer.*)
       if key_lt k p1_node.keys.(0) then
         insert_aux btree p1_node.pointers.(0) k p2
       else (
+        (* Let n denote the number of keys currently in p1.*)
+        (* Iterate while i < n && k > keys[i]*)
         while !i < p1_node.cur_size && not (key_lteq k p1_node.keys.(!i)) do
           i := !i + 1
         done;
+        (*  At this point, we have either i = n (we are right past the final key)
+            or k <= keys[i], i.e., we found the very first key for which k <= keys[i].  *)
         let child =
+          (* If i = n, then we want to traverse the final pointer. *)
           if !i = p1_node.cur_size then p1_node.pointers.(!i)
+          (* Otherwise, k <= keys[i].*)
+          (* If k == keys[i], traverse the right pointer.*)
           else if key_eq k p1_node.keys.(!i) then p1_node.pointers.(!i + 1)
+          (* If k < keys[i], traverse the left pointer. *)
           else p1_node.pointers.(!i)
         in
         insert_aux btree child k p2)

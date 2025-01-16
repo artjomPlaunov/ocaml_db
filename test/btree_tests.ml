@@ -3,7 +3,7 @@ module Test_utils = struct
   open Storage_manager
 
   let setup_test_env dir =
-    let file_manager = File_manager.make ~db_dirname:dir ~block_size:50 in
+    let file_manager = File_manager.make ~db_dirname:dir ~block_size:70 in
     let storage_manager =
       Storage_manager.make ~file_manager ~storage_file:"test_btree"
     in
@@ -116,7 +116,7 @@ module Btree_tests = struct
     (* ex: dot -Tpng btree.dot -o btree.png *)
     let graphviz_str = Btree.create_graphviz_str t t.root_num in
     Printf.printf "%s" graphviz_str;
-    ""
+    " "
 
   let insert_varchar2s () =
     let dir = "tmp_btree_insert_varchar2s" in
@@ -157,7 +157,7 @@ Btree.insert t (Btree.Varchar "AX") 9999;
 Btree.insert t (Btree.Varchar "AY") 9999;
 Btree.insert t (Btree.Varchar "AZ") 9999;
 Btree.insert t (Btree.Varchar "BA") 9999;
-(* Btree.insert t (Btree.Varchar "BB") 9999;
+Btree.insert t (Btree.Varchar "BB") 9999;
 Btree.insert t (Btree.Varchar "BC") 9999;
 Btree.insert t (Btree.Varchar "BD") 9999;
 Btree.insert t (Btree.Varchar "BE") 9999;
@@ -805,11 +805,11 @@ Btree.insert t (Btree.Varchar "ZV") 9999;
 Btree.insert t (Btree.Varchar "ZW") 9999;
 Btree.insert t (Btree.Varchar "ZX") 9999;
 Btree.insert t (Btree.Varchar "ZY") 9999;
-Btree.insert t (Btree.Varchar "ZZ") 9999; *)
+Btree.insert t (Btree.Varchar "ZZ") 9999; 
 
     let graphviz_str = Btree.create_graphviz_str t t.root_num in
     Printf.printf "%s" graphviz_str;
-    ""
+    " "
 
   let empty_btree_insert_leaf_test () =
     Alcotest.(check string)
