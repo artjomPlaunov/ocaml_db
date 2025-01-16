@@ -413,12 +413,10 @@ let insert_in_root btree p1 key_v p2 =
   Storage_manager.set_head_page ~storage_manager:btree.sm sm_head_page;
   ()
 
-(* Insert in parent -- there is space in parent. *)
 let insert_in_parent_aux btree p1 key_v p2 p0 p0_node = 
   let cur_size = p0_node.cur_size in
   insert_key_pointer_pair p0_node.keys p0_node.pointers p0_node.capacity p0_node.cur_size key_v p2 false;
   p0_node.cur_size <- cur_size + 1;
-  (* Fetch p2 node, update parent link.*)
   let p2_node = get_node btree p2 in
   p2_node.parent <- p0;
   write_node btree p0_node p0;
@@ -485,16 +483,20 @@ let rec split_parent btree p1 key_v p2 p0 p0_node =
 and 
 insert_in_parent btree p1 key_v p2 =
   if btree.root_num = p1 
+  (* If p1 is root, dispatch to insert_in_root. *)
   then 
     insert_in_root btree p1 key_v p2
   else (
+    (* Fetch parent node into p0. *)
     let p1_node = get_node btree p1 in
     let p0 = p1_node.parent in
     let p0_node = get_node btree p0 in
     if
       p0_node.cur_size < p0_node.capacity
+    (* If parent node has space, insert into parent node.*)
     then
       insert_in_parent_aux btree p1 key_v p2 p0 p0_node
+    (* Otherwise we need to split the parent node and call insert_in_parent again.*)
     else 
       split_parent btree p1 key_v p2 p0 p0_node
   )
@@ -505,7 +507,6 @@ let rec insert_aux btree p1 k p2 =
   match p1_node.node_type with
   | Internal ->
       let i = ref 0 in
-      (* First check if we are searching at the very beginning. *)
       if key_lt k p1_node.keys.(0) then
         insert_aux btree p1_node.pointers.(0) k p2
       else (
@@ -525,7 +526,6 @@ let rec insert_aux btree p1 k p2 =
       else
         let n = p1_node.capacity + 1 in
         let mid = if n mod 2 = 0 then n / 2 else (n / 2) + 1 in
-        (* Create buffers with one extra space for keys and pointers. *)
         let keys_buf =
           Array.init n (fun i ->
               if i < p1_node.cur_size then p1_node.keys.(i)
@@ -559,11 +559,9 @@ let rec insert_aux btree p1 k p2 =
           p2_node.keys.(i - mid) <- keys_buf.(i);
           ()
         done;
-        (* sibling pointer not being updated here I believe. *)
 
         p2_node.cur_size <- n - mid;
         p2_node.parent <- p1_node.parent;
-        (* Write p2 to disk, call insert in parent with new split parent. *)
         let p2 = write_node_append btree p2_node in
         let split_key = p2_node.keys.(0) in
 
