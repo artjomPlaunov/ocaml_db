@@ -579,7 +579,7 @@ let rec insert_aux btree p1 k p2 =
               let _ = insert_in_leaf btree p1 k p2 in 
               ()
             else
-              split_leaf btree p1 k p2 p1_node;
+              split_leaf btree p1 k p2 p1_node
 
 
 let insert btree k p = insert_aux btree btree.root_num k p
