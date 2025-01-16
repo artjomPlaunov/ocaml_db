@@ -372,14 +372,14 @@ let children_update_parents btree parent n =
     write_node btree child p
   done
 
-(*  Insert in root procedure. 
-    This is used in insert in parent where p1 is the root node, hence we 
-    don't have a parent node and we need an insert in root procedure. 
+(* Insert in root procedure.
+   This is used in insert in parent where p1 is the root node, hence we
+   don't have a parent node and we need an insert in root procedure.
 
-    Insert in root creates a new root node with the key key_v, and 
-    sets p1 (old root) as the left pointer, p2 as the right pointer.
-    *)
-let insert_in_root btree p1 key_v p2 = 
+   Insert in root creates a new root node with the key key_v, and
+   sets p1 (old root) as the left pointer, p2 as the right pointer.
+*)
+let insert_in_root btree p1 key_v p2 =
   let block_size = File_manager.get_blocksize btree.sm.file_manager in
   (* First, create in memory representation for the new root node: *)
   let new_root = empty_node btree in
@@ -406,108 +406,95 @@ let insert_in_root btree p1 key_v p2 =
   write_node btree p2_node p2;
 
   (* Update root node offset in storage manager metadata. *)
-  let sm_head_page =
-    Storage_manager.get_head_page ~storage_manager:btree.sm
-  in
+  let sm_head_page = Storage_manager.get_head_page ~storage_manager:btree.sm in
   Page.set_int32 sm_head_page 4 (Int32.of_int btree.root_num);
-  Storage_manager.set_head_page ~storage_manager:btree.sm sm_head_page;
-  ()
+  Storage_manager.set_head_page ~storage_manager:btree.sm sm_head_page
 
-let insert_in_parent_aux btree p1 key_v p2 p0 p0_node = 
+let insert_in_parent_aux btree p1 key_v p2 p0 p0_node =
   let cur_size = p0_node.cur_size in
-  insert_key_pointer_pair p0_node.keys p0_node.pointers p0_node.capacity p0_node.cur_size key_v p2 false;
+  insert_key_pointer_pair p0_node.keys p0_node.pointers p0_node.capacity
+    p0_node.cur_size key_v p2 false;
   p0_node.cur_size <- cur_size + 1;
   let p2_node = get_node btree p2 in
   p2_node.parent <- p0;
   write_node btree p0_node p0;
   write_node btree p2_node p2
 
-
-let rec split_parent btree p1 key_v p2 p0 p0_node = 
+let rec split_parent btree p1 key_v p2 p0 p0_node =
   let new_p0_node = empty_node btree in
 
-      new_p0_node.node_type <- p0_node.node_type;
+  new_p0_node.node_type <- p0_node.node_type;
 
-      let n = p0_node.capacity + 1 in
-      let keys_buf =
-        Array.init n (fun i ->
-            if i < n - 1 then p0_node.keys.(i) else empty_key btree.key)
-      in
-      let ptrs_buf =
-        Array.init (n + 1) (fun i ->
-            if i < n then p0_node.pointers.(i) else unused_pointer_constant)
-      in
-      insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) key_v p2 false;
+  let n = p0_node.capacity + 1 in
+  let keys_buf =
+    Array.init n (fun i ->
+        if i < n - 1 then p0_node.keys.(i) else empty_key btree.key)
+  in
+  let ptrs_buf =
+    Array.init (n + 1) (fun i ->
+        if i < n then p0_node.pointers.(i) else unused_pointer_constant)
+  in
+  insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) key_v p2 false;
 
-      let mid = if (n mod 2) = 0 then n/2 else (n/2)+1 in 
-      let mid = if mid = n-1 then mid - 1 else mid in 
+  let mid = if n mod 2 = 0 then n / 2 else (n / 2) + 1 in
+  let mid = if mid = n - 1 then mid - 1 else mid in
 
-      for i = 0 to mid do
-        new_p0_node.pointers.(i) <- ptrs_buf.(i)
-      done;
-      for i = 0 to mid - 1 do
-        new_p0_node.keys.(i) <- keys_buf.(i)
-      done;
-      ();
+  for i = 0 to mid do
+    new_p0_node.pointers.(i) <- ptrs_buf.(i)
+  done;
+  for i = 0 to mid - 1 do
+    new_p0_node.keys.(i) <- keys_buf.(i)
+  done;
 
-      (* Write p0 to disk. *)
-      new_p0_node.cur_size <- mid;
-      new_p0_node.node_type <- p0_node.node_type;
-      new_p0_node.parent <- p0_node.parent;
-      write_node btree new_p0_node p0;
-      if p0 = btree.root_num then btree.root <- new_p0_node;
+  (* Write p0 to disk. *)
+  new_p0_node.cur_size <- mid;
+  new_p0_node.node_type <- p0_node.node_type;
+  new_p0_node.parent <- p0_node.parent;
+  write_node btree new_p0_node p0;
+  if p0 = btree.root_num then btree.root <- new_p0_node;
 
-      let p2_node = empty_node btree in
+  let p2_node = empty_node btree in
 
-      if btree.root_num = p1 then btree.root <- new_p0_node;
+  if btree.root_num = p1 then btree.root <- new_p0_node;
 
-      p2_node.node_type <- p0_node.node_type;
-      for i = mid+1 to n do
-        p2_node.pointers.(i - mid - 1) <- ptrs_buf.(i);
-        ()
-      done;
-      for i = mid+1 to n - 1 do
-        p2_node.keys.(i - mid - 1) <- keys_buf.(i);
-        ()
-      done;
-      p2_node.cur_size <- n - mid - 1;
-      p2_node.parent <- p0;
+  p2_node.node_type <- p0_node.node_type;
+  for i = mid + 1 to n do
+    p2_node.pointers.(i - mid - 1) <- ptrs_buf.(i)
+  done;
+  for i = mid + 1 to n - 1 do
+    p2_node.keys.(i - mid - 1) <- keys_buf.(i)
+  done;
+  p2_node.cur_size <- n - mid - 1;
+  p2_node.parent <- p0;
 
-      (* Write p2 to disk, call insert in parent with new split parent. *)
-      let p2 = write_node_append btree p2_node in
-      children_update_parents btree p2_node p2;
-      write_node btree p2_node p2;
-      let split_key = keys_buf.(mid) in
-      insert_in_parent btree p0 split_key p2
+  (* Write p2 to disk, call insert in parent with new split parent. *)
+  let p2 = write_node_append btree p2_node in
+  children_update_parents btree p2_node p2;
+  write_node btree p2_node p2;
+  let split_key = keys_buf.(mid) in
+  insert_in_parent btree p0 split_key p2
 
-and 
-insert_in_parent btree p1 key_v p2 =
-  if btree.root_num = p1 
-  (* If p1 is root, dispatch to insert_in_root. *)
-  then 
+and insert_in_parent btree p1 key_v p2 =
+  if btree.root_num = p1 (* If p1 is root, dispatch to insert_in_root. *) then
     insert_in_root btree p1 key_v p2
-  else (
+  else
     (* Fetch parent node into p0. *)
     let p1_node = get_node btree p1 in
     let p0 = p1_node.parent in
     let p0_node = get_node btree p0 in
     if
       p0_node.cur_size < p0_node.capacity
-    (* If parent node has space, insert into parent node.*)
-    then
-      insert_in_parent_aux btree p1 key_v p2 p0 p0_node
-    (* Otherwise we need to split the parent node and call insert_in_parent again.*)
-    else 
-      split_parent btree p1 key_v p2 p0 p0_node
-  )
+      (* If parent node has space, insert into parent node.*)
+    then insert_in_parent_aux btree p1 key_v p2 p0 p0_node
+      (* Otherwise we need to split the parent node and call insert_in_parent again.*)
+    else split_parent btree p1 key_v p2 p0 p0_node
 
-let split_leaf btree p1 k p2 p1_node = 
+let split_leaf btree p1 k p2 p1_node =
   let n = p1_node.capacity + 1 in
   let mid = if n mod 2 = 0 then n / 2 else (n / 2) + 1 in
   let keys_buf =
     Array.init n (fun i ->
-        if i < p1_node.cur_size then p1_node.keys.(i)
-        else empty_key btree.key)
+        if i < p1_node.cur_size then p1_node.keys.(i) else empty_key btree.key)
   in
   let ptrs_buf =
     Array.init (n + 1) (fun i ->
@@ -519,13 +506,12 @@ let split_leaf btree p1 k p2 p1_node =
 
   let new_p1_node = empty_node btree in
 
-  for i = 0 to mid-1 do
+  for i = 0 to mid - 1 do
     new_p1_node.pointers.(i) <- ptrs_buf.(i)
   done;
-  for i = 0 to mid-1 do
+  for i = 0 to mid - 1 do
     new_p1_node.keys.(i) <- keys_buf.(i)
   done;
-  ();
   new_p1_node.cur_size <- mid;
 
   let p2_node = empty_node btree in
@@ -534,8 +520,7 @@ let split_leaf btree p1 k p2 p1_node =
   p2_node.node_type <- p1_node.node_type;
   for i = mid to n - 1 do
     p2_node.pointers.(i - mid) <- ptrs_buf.(i);
-    p2_node.keys.(i - mid) <- keys_buf.(i);
-    ()
+    p2_node.keys.(i - mid) <- keys_buf.(i)
   done;
 
   p2_node.cur_size <- n - mid;
@@ -552,10 +537,10 @@ let split_leaf btree p1 k p2 p1_node =
   write_node btree new_p1_node p1;
   insert_in_parent btree p1 split_key p2
 
-(*  Insert key k, record pointer p2 into btree from node p1. 
-    This is dispatched from the root node as p1. 
-    If p1 is an internal node, traverse the pointer according 
-    to the B+ tree condition. 
+(* Insert key k, record pointer p2 into btree from node p1.
+   This is dispatched from the root node as p1.
+   If p1 is an internal node, traverse the pointer according
+   to the B+ tree condition.
 *)
 let rec insert_aux btree p1 k p2 =
   let p1_node = get_node btree p1 in
@@ -572,25 +557,23 @@ let rec insert_aux btree p1 k p2 =
         while !i < p1_node.cur_size && not (key_lteq k p1_node.keys.(!i)) do
           i := !i + 1
         done;
-        (*  At this point, we have either i = n (we are right past the final key)
-            or k <= keys[i], i.e., we found the very first key for which k <= keys[i].  *)
+        (* At this point, we have either i = n (we are right past the final key)
+           or k <= keys[i], i.e., we found the very first key for which k <= keys[i]. *)
         let child =
           (* If i = n, then we want to traverse the final pointer. *)
           if !i = p1_node.cur_size then p1_node.pointers.(!i)
-          (* Otherwise, k <= keys[i].*)
-          (* If k == keys[i], traverse the right pointer.*)
+            (* Otherwise, k <= keys[i].*)
+            (* If k == keys[i], traverse the right pointer.*)
           else if key_eq k p1_node.keys.(!i) then p1_node.pointers.(!i + 1)
-          (* If k < keys[i], traverse the left pointer. *)
+            (* If k < keys[i], traverse the left pointer. *)
           else p1_node.pointers.(!i)
         in
         insert_aux btree child k p2)
-  | Leaf -> if p1_node.cur_size < p1_node.capacity 
-            then
-              let _ = insert_in_leaf btree p1 k p2 in 
-              ()
-            else
-              split_leaf btree p1 k p2 p1_node
-
+  | Leaf ->
+      if p1_node.cur_size < p1_node.capacity then
+        let _ = insert_in_leaf btree p1 k p2 in
+        ()
+      else split_leaf btree p1 k p2 p1_node
 
 let insert btree k p = insert_aux btree btree.root_num k p
 
@@ -611,8 +594,7 @@ let rec print_tree_aux btree p level =
   Printf.printf "\n";
   if node.node_type = Internal then
     for i = 0 to n do
-      print_tree_aux btree node.pointers.(i) (level + 4);
-      ()
+      print_tree_aux btree node.pointers.(i) (level + 4)
     done
 
 let create_graphviz_str btree p =
