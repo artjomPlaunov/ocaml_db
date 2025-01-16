@@ -81,40 +81,45 @@ Byte offset    Leaf Node Layout
      | sibling_ptr  [4 bytes] |  → points to next leaf node
  40  +------------------------+
 *)
+module KeyType = struct
+  type t = TVarchar of int | TInteger
+  type value = Varchar of string | Integer of Int32.t
 
-type key_type = TVarchar of int | TInteger
-type key_val = Varchar of string | Integer of Int32.t
+  let ( < ) k1 k2 =
+    match (k1, k2) with
+    | Varchar s1, Varchar s2 -> s1 < s2
+    | Integer n1, Integer n2 -> n1 < n2
+    | _ -> failwith "incomparable keys"
 
-let key_lt k1 k2 =
-  match (k1, k2) with
-  | Varchar s1, Varchar s2 -> s1 < s2
-  | Integer n1, Integer n2 -> n1 < n2
-  | _ -> failwith "incomparable keys"
+  let ( = ) k1 k2 =
+    match (k1, k2) with
+    | Varchar s1, Varchar s2 -> s1 = s2
+    | Integer n1, Integer n2 -> n1 = n2
+    | _ -> failwith "incomparable keys"
 
-let key_eq k1 k2 =
-  match (k1, k2) with
-  | Varchar s1, Varchar s2 -> s1 = s2
-  | Integer n1, Integer n2 -> n1 = n2
-  | _ -> failwith "incomparable keys"
+  let ( <= ) k1 k2 = k1 < k2 || k1 = k2
+  let ( > ) k1 k2 = not (k1 <= k2)
+  let ( >= ) k1 k2 = not (k1 < k2)
 
-let key_lteq k1 k2 = key_lt k1 k2 || key_eq k1 k2
+  let string_of_key k =
+    match k with
+    | Varchar s -> Printf.sprintf "Varchar %s" s
+    | Integer d -> Printf.sprintf "Integer %d" (Int32.to_int d)
 
-let string_of_key k =
-  match k with
-  | Varchar s -> Printf.sprintf "Varchar %s" s
-  | Integer d -> Printf.sprintf "Integer %d" (Int32.to_int d)
+  let sizeof_key key_type =
+    match key_type with TVarchar n -> n | TInteger -> 4
+
+  let empty_key key_type =
+    match key_type with
+    | TVarchar n -> Varchar (String.make n '"') (* 0x22222222 *)
+    | TInteger -> Integer Int32.max_int
+end
 
 (* Constants used in disk layout for unused fields -- for debugging purposes when
    analyzing a hexdump. *)
 let leaf_constant = Int32.of_int 2863311530 (* 0xAAAAAAAA *)
 let internal_constant = Int32.of_int 3149642683 (* 0xBBBBBBBB *)
 let unused_pointer_constant = 3722304989 (*0xDDDDDDDD *)
-let sizeof_key key_type = match key_type with TVarchar n -> n | TInteger -> 4
-
-let empty_key key_type =
-  match key_type with
-  | TVarchar n -> Varchar (String.make n '"') (* 0x22222222 *)
-  | TInteger -> Integer Int32.max_int
 
 type node_type = Leaf | Internal
 
@@ -144,17 +149,17 @@ type node = {
      n+1 pointers). The last element corresponds
      to the right most pointer in the layout.
   *)
-  keys : key_val array;
+  keys : KeyType.value array;
   pointers : int array;
   (* Max number of keys that can be stored.*)
   capacity : int;
-  key_type : key_type;
+  key_type : KeyType.t;
 }
 
 (* B TREE ********************************************************************)
 type t = {
   sm : Storage_manager.t;
-  key : key_type;
+  key : KeyType.t;
   mutable root : node;
   mutable root_num : int;
 }
@@ -167,7 +172,8 @@ type t = {
    and the last pointer (the N+1 pointer), that leaves us the space we have
    for the remaining N key/pointer pairs.
 *)
-let get_num_keys block_size key_ty = (block_size - 16) / (4 + sizeof_key key_ty)
+let get_num_keys block_size key_ty =
+  (block_size - 16) / (4 + KeyType.sizeof_key key_ty)
 
 let print_node node =
   let _ =
@@ -178,7 +184,7 @@ let print_node node =
   Printf.printf "Parent: %d\n" node.parent;
   for i = 0 to node.cur_size - 1 do
     Printf.printf "P%d: %d\n" i node.pointers.(i);
-    Printf.printf "K%d: %s\n" i (string_of_key node.keys.(i))
+    Printf.printf "K%d: %s\n" i (KeyType.string_of_key node.keys.(i))
   done
 
 let empty_node btree =
@@ -189,7 +195,7 @@ let empty_node btree =
     node_type = Leaf;
     parent = 0;
     cur_size = 0;
-    keys = Array.init capacity (fun _ -> empty_key key_ty);
+    keys = Array.init capacity (fun _ -> KeyType.empty_key key_ty);
     pointers = Array.init (capacity + 1) (fun _ -> unused_pointer_constant);
     capacity;
     key_type = key_ty;
@@ -200,10 +206,10 @@ let deserialize page key_ty block_size =
   let parent = Page.get_int32 page 4 |> Int32.to_int in
   let cur_size = Page.get_int32 page 8 |> Int32.to_int in
   let capacity = get_num_keys block_size key_ty in
-  let keys = Array.init capacity (fun _ -> empty_key key_ty) in
+  let keys = Array.init capacity (fun _ -> KeyType.empty_key key_ty) in
   (* all pointers have value 0xDDDDDDDD *)
   let pointers = Array.init (capacity + 1) (fun _ -> unused_pointer_constant) in
-  let pair_size = 4 + sizeof_key key_ty in
+  let pair_size = 4 + KeyType.sizeof_key key_ty in
   (* Read keys and pointers *)
   for i = 0 to cur_size - 1 do
     (* Read pointer i *)
@@ -242,7 +248,7 @@ let serialize node block_size =
   Page.set_int32 page 0 (serialize_node_type node.node_type);
   Page.set_int32 page 4 (Int32.of_int node.parent);
   Page.set_int32 page 8 (Int32.of_int node.cur_size);
-  let pair_size = 4 + sizeof_key node.key_type in
+  let pair_size = 4 + KeyType.sizeof_key node.key_type in
   for i = 0 to node.capacity - 1 do
     let key_offset = 12 + (i * pair_size) + 4 in
     match node.keys.(i) with
@@ -289,7 +295,7 @@ let create sm key_ty =
       node_type = Leaf;
       parent = 0;
       cur_size = 0;
-      keys = Array.init capacity (fun _ -> empty_key key_ty);
+      keys = Array.init capacity (fun _ -> KeyType.empty_key key_ty);
       pointers = Array.init (capacity + 1) (fun _ -> unused_pointer_constant);
       capacity;
       key_type = key_ty;
@@ -318,12 +324,12 @@ let shift_key_pointer_pair keys pointers capacity n key pointer idx left =
 
 (* n is the total number of keys *)
 let insert_key_pointer_pair keys pointers capacity n key pointer left =
-  if key_lt key keys.(0) (* Key is less than all keys*) then
+  if key < keys.(0) (* Key is less than all keys*) then
     shift_key_pointer_pair keys pointers capacity n key pointer 0 false
   else
     (* TODO: This can be a binary search too. *)
     let i = ref 0 in
-    while !i < n && key_lteq keys.(!i) key do
+    while !i < n && keys.(!i) <= key do
       i := !i + 1
     done;
     (* Negation of while loop condition, i.e. the property at this location:
@@ -359,7 +365,7 @@ let insert_in_leaf btree block key pointer =
 let print_keys_ptrs keys_buf ptrs_buf n =
   for i = 0 to n - 1 do
     Printf.printf "P%d: %d\n" i ptrs_buf.(i);
-    Printf.printf "K%d: %s\n" i (string_of_key keys_buf.(i))
+    Printf.printf "K%d: %s\n" i (KeyType.string_of_key keys_buf.(i))
   done;
   Printf.printf "P%d: %d\n" n ptrs_buf.(n)
 
@@ -428,7 +434,7 @@ let rec split_parent btree p1 key_v p2 p0 p0_node =
   let n = p0_node.capacity + 1 in
   let keys_buf =
     Array.init n (fun i ->
-        if i < n - 1 then p0_node.keys.(i) else empty_key btree.key)
+        if i < n - 1 then p0_node.keys.(i) else KeyType.empty_key btree.key)
   in
   let ptrs_buf =
     Array.init (n + 1) (fun i ->
@@ -494,7 +500,8 @@ let split_leaf btree p1 k p2 p1_node =
   let mid = if n mod 2 = 0 then n / 2 else (n / 2) + 1 in
   let keys_buf =
     Array.init n (fun i ->
-        if i < p1_node.cur_size then p1_node.keys.(i) else empty_key btree.key)
+        if i < p1_node.cur_size then p1_node.keys.(i)
+        else KeyType.empty_key btree.key)
   in
   let ptrs_buf =
     Array.init (n + 1) (fun i ->
@@ -547,14 +554,14 @@ let rec insert_aux btree p1 k p2 =
   match p1_node.node_type with
   (* Internal node, find pointer to traverse.*)
   | Internal ->
-      let i = ref 0 in
+      (* TODO: iterate while i < n && key[i] <= key *)
       (* If k < p1.keys[0], traverse the 0'th pointer.*)
-      if key_lt k p1_node.keys.(0) then
-        insert_aux btree p1_node.pointers.(0) k p2
-      else (
+      if k < p1_node.keys.(0) then insert_aux btree p1_node.pointers.(0) k p2
+      else
         (* Let n denote the number of keys currently in p1.*)
         (* Iterate while i < n && k > keys[i]*)
-        while !i < p1_node.cur_size && not (key_lteq k p1_node.keys.(!i)) do
+        let i = ref 0 in
+        while !i < p1_node.cur_size && p1_node.keys.(!i) < k do
           i := !i + 1
         done;
         (* At this point, we have either i = n (we are right past the final key)
@@ -564,11 +571,11 @@ let rec insert_aux btree p1 k p2 =
           if !i = p1_node.cur_size then p1_node.pointers.(!i)
             (* Otherwise, k <= keys[i].*)
             (* If k == keys[i], traverse the right pointer.*)
-          else if key_eq k p1_node.keys.(!i) then p1_node.pointers.(!i + 1)
+          else if k = p1_node.keys.(!i) then p1_node.pointers.(!i + 1)
             (* If k < keys[i], traverse the left pointer. *)
           else p1_node.pointers.(!i)
         in
-        insert_aux btree child k p2)
+        insert_aux btree child k p2
   | Leaf ->
       if p1_node.cur_size < p1_node.capacity then
         let _ = insert_in_leaf btree p1 k p2 in
@@ -585,7 +592,7 @@ let rec print_tree_aux btree p level =
   Printf.printf "%sParent: %d\n" indent node.parent;
   for i = 0 to n - 1 do
     Printf.printf "%sP%d: %d\n" indent i node.pointers.(i);
-    Printf.printf "%sK%d: %s\n" indent i (string_of_key node.keys.(i))
+    Printf.printf "%sK%d: %s\n" indent i (KeyType.string_of_key node.keys.(i))
   done;
   Printf.printf "%sP%d: %d\n" indent n node.pointers.(n);
   if node.node_type = Leaf then
@@ -609,7 +616,7 @@ let create_graphviz_str btree p =
         let key_pointer_pair_or_last_pointer =
           if i <> cur_size then
             Printf.sprintf "%s %d|%s|" pointer_id pointers.(i)
-              (string_of_key keys.(i))
+              (KeyType.string_of_key keys.(i))
           else Printf.sprintf "%s %d\"];\n" pointer_id pointers.(cur_size)
         in
         structs := !structs ^ key_pointer_pair_or_last_pointer;
@@ -622,7 +629,7 @@ let create_graphviz_str btree p =
       done)
     else
       for i = 0 to cur_size - 1 do
-        let key_str = Printf.sprintf "%s" (string_of_key keys.(i)) in
+        let key_str = Printf.sprintf "%s" (KeyType.string_of_key keys.(i)) in
         let separator_or_end = if i <> cur_size - 1 then "|" else "\"];\n" in
         structs := !structs ^ key_str ^ separator_or_end
       done;
