@@ -501,6 +501,61 @@ insert_in_parent btree p1 key_v p2 =
       split_parent btree p1 key_v p2 p0 p0_node
   )
 
+let split_leaf btree p1 k p2 p1_node = 
+  if p1_node.cur_size < p1_node.capacity then
+    let _ = insert_in_leaf btree p1 k p2 in
+    ()
+  else
+    let n = p1_node.capacity + 1 in
+    let mid = if n mod 2 = 0 then n / 2 else (n / 2) + 1 in
+    let keys_buf =
+      Array.init n (fun i ->
+          if i < p1_node.cur_size then p1_node.keys.(i)
+          else empty_key btree.key)
+    in
+    let ptrs_buf =
+      Array.init (n + 1) (fun i ->
+          if i < p1_node.cur_size + 1 then p1_node.pointers.(i)
+          else unused_pointer_constant)
+    in
+    let sibling_ptr = p1_node.pointers.(p1_node.capacity) in
+    insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) k p2 true;
+
+    let new_p1_node = empty_node btree in
+
+    for i = 0 to mid-1 do
+      new_p1_node.pointers.(i) <- ptrs_buf.(i)
+    done;
+    for i = 0 to mid-1 do
+      new_p1_node.keys.(i) <- keys_buf.(i)
+    done;
+    ();
+    new_p1_node.cur_size <- mid;
+
+    let p2_node = empty_node btree in
+    p2_node.pointers.(p2_node.capacity) <- sibling_ptr;
+
+    p2_node.node_type <- p1_node.node_type;
+    for i = mid to n - 1 do
+      p2_node.pointers.(i - mid) <- ptrs_buf.(i);
+      p2_node.keys.(i - mid) <- keys_buf.(i);
+      ()
+    done;
+
+    p2_node.cur_size <- n - mid;
+    p2_node.parent <- p1_node.parent;
+    let p2 = write_node_append btree p2_node in
+    let split_key = p2_node.keys.(0) in
+
+    (* Write p0 to disk. *)
+    new_p1_node.pointers.(new_p1_node.capacity) <- p2;
+    new_p1_node.node_type <- p1_node.node_type;
+    new_p1_node.parent <- p1_node.parent;
+
+    if btree.root_num = p1 then btree.root <- new_p1_node;
+    write_node btree new_p1_node p1;
+    insert_in_parent btree p1 split_key p2;
+    ()
 
 let rec insert_aux btree p1 k p2 =
   let p1_node = get_node btree p1 in
@@ -519,61 +574,7 @@ let rec insert_aux btree p1 k p2 =
           else p1_node.pointers.(!i)
         in
         insert_aux btree child k p2)
-  | Leaf ->
-      if p1_node.cur_size < p1_node.capacity then
-        let _ = insert_in_leaf btree p1 k p2 in
-        ()
-      else
-        let n = p1_node.capacity + 1 in
-        let mid = if n mod 2 = 0 then n / 2 else (n / 2) + 1 in
-        let keys_buf =
-          Array.init n (fun i ->
-              if i < p1_node.cur_size then p1_node.keys.(i)
-              else empty_key btree.key)
-        in
-        let ptrs_buf =
-          Array.init (n + 1) (fun i ->
-              if i < p1_node.cur_size + 1 then p1_node.pointers.(i)
-              else unused_pointer_constant)
-        in
-        let sibling_ptr = p1_node.pointers.(p1_node.capacity) in
-        insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) k p2 true;
-
-        let new_p1_node = empty_node btree in
-
-        for i = 0 to mid-1 do
-          new_p1_node.pointers.(i) <- ptrs_buf.(i)
-        done;
-        for i = 0 to mid-1 do
-          new_p1_node.keys.(i) <- keys_buf.(i)
-        done;
-        ();
-        new_p1_node.cur_size <- mid;
-
-        let p2_node = empty_node btree in
-        p2_node.pointers.(p2_node.capacity) <- sibling_ptr;
-
-        p2_node.node_type <- p1_node.node_type;
-        for i = mid to n - 1 do
-          p2_node.pointers.(i - mid) <- ptrs_buf.(i);
-          p2_node.keys.(i - mid) <- keys_buf.(i);
-          ()
-        done;
-
-        p2_node.cur_size <- n - mid;
-        p2_node.parent <- p1_node.parent;
-        let p2 = write_node_append btree p2_node in
-        let split_key = p2_node.keys.(0) in
-
-        (* Write p0 to disk. *)
-        new_p1_node.pointers.(new_p1_node.capacity) <- p2;
-        new_p1_node.node_type <- p1_node.node_type;
-        new_p1_node.parent <- p1_node.parent;
-
-        if btree.root_num = p1 then btree.root <- new_p1_node;
-        write_node btree new_p1_node p1;
-        insert_in_parent btree p1 split_key p2;
-        ()
+  | Leaf -> split_leaf btree p1 k p2 p1_node
 
 let insert btree k p = insert_aux btree btree.root_num k p
 
