@@ -1,5 +1,6 @@
 open Parser
 open File
+open Ast
 
 let db_name = "repl_db"
 
@@ -21,19 +22,17 @@ let execute_query interpreter query =
     let output = Buffer.create 256 in
     let _ = interpreter#execute ?output:(Some output) ast in
     match ast with
-    | Query_data.Select _ ->
+    | Query.Select _ ->
         print_string (Buffer.contents output)
-    | Query_data.Insert _ ->
+    | Query.Insert _ ->
         print_endline "Insert operation completed successfully."
-    | Query_data.Delete _ ->
+    | Query.Delete _ ->
         print_endline "Delete operation completed successfully."
-    | Query_data.Modify _ ->
+    | Query.Update _ ->
         print_endline "Update operation completed successfully."
-    | Query_data.CreateTable _ ->
+    | Query.CreateTable _ ->
         print_endline "Table created successfully."
-    | Query_data.CreateView _ ->
-        print_endline "View creation not yet implemented."
-    | Query_data.CreateIndex _ ->
+    | Query.CreateIndex _ ->
         print_endline "Index creation not yet implemented."
   with
   | Parsing.Parse_error -> print_endline "Syntax error in SQL query."

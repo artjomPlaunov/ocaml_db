@@ -1,0 +1,10 @@
+(library
+ (name ast)
+ (public_name ocaml_db.ast)
+ (libraries scans constant record_page)
+ (flags
+  (-w -69)
+  (-w -26))
+ (wrapped true)
+ (modules query select create_table insert delete update create_index))
+

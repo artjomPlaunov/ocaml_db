@@ -1,3 +1,5 @@
+module Constant = Constant
+
 type t = {
   tblname: string;
   flds: string list;

@@ -13,3 +13,6 @@ Todo List:
 - JDBC-like API for network and embedded connection. Test on separate nodes. 
 - Transaction + Recovery Manager testing -- shutdown DB instance and test recovery log algo. 
 - DB wrapper 
+* and especially our modules with the double underscore
+* concurrency tests failed with "New value: 679" (have yet to replicate again)
+* profiling?

@@ -1,5 +1,5 @@
 %{
-  open Query_data
+  open Ast
   open Scans
   open Constant
 
@@ -16,7 +16,7 @@
 %token EQUALS COMMA LPAREN RPAREN
 %token EOF
 
-%start <Query_data.t> prog
+%start <Query.t> prog
 
 %%
 
@@ -50,10 +50,10 @@ predicate:
 
 query:
   | SELECT select_list FROM table_list WHERE predicate { 
-      Query_data.Select { fields = $2; tables = $4; predicate = Some $6 }
+      Query.Select (Select.make $2 $4 (Some $6))
     }
   | SELECT select_list FROM table_list { 
-      Query_data.Select { fields = $2; tables = $4; predicate = None }
+      Query.Select (Select.make $2 $4 None)
     }
   ;
 
@@ -72,13 +72,12 @@ create:
   | delete { $1 }
   | modify { $1 }
   | create_table { $1 }
-  | create_view { $1 }
   | create_index { $1 }
   ;
 
 insert:
   | INSERT INTO ID LPAREN field_list RPAREN VALUES LPAREN const_list RPAREN {
-      Insert (Insert_data.make $3 $5 $9)
+      Query.Insert (Insert.make $3 $5 $9)
     }
   ;
 
@@ -94,13 +93,13 @@ const_list:
 
 delete:
   | DELETE FROM ID WHERE predicate {
-      Delete (Delete_data.make $3 $5)
+      Query.Delete (Delete.make $3 $5)
     }
   ;
 
 modify:
   | UPDATE ID SET field EQUALS expression WHERE predicate {
-      Modify (Modify_data.make $2 $4 $6 $8)
+      Query.Update (Update.make $2 $4 $6 $8)
     }
   ;
 
@@ -112,7 +111,7 @@ create_table:
         | LocalInteger -> Record_page.Schema.add_int_field schema field_name
         | LocalVarchar length -> Record_page.Schema.add_string_field schema field_name length
       ) $5;
-      CreateTable (Create_table_data.make $3 schema)
+      Query.CreateTable (Create_table.make $3 schema)
     }
   ;
 
@@ -130,15 +129,9 @@ type_def:
   | VARCHAR LPAREN INTEGER RPAREN { LocalVarchar $3 }
   ;
 
-create_view:
-  | CREATE VIEW ID AS query {
-      CreateView (Query_data.make_view_data $3 $5)
-    }
-  ;
-
 create_index:
   | CREATE INDEX ID ON ID LPAREN field RPAREN {
-      CreateIndex (Create_index_data.make $3 $5 $7)
+      Query.CreateIndex (Create_index.make $3 $5 $7)
     }
   ;
 

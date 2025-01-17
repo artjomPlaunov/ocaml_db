@@ -5,6 +5,7 @@
  (libraries
   interpreter
   parser
+  ast
   table_manager
   scans
   constant

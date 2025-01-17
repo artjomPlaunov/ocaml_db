@@ -1,7 +1,0 @@
-(library
- (name view_manager)
- (public_name ocaml_db.view_manager)
- (flags
-  (-w -69)
-  (-w -26))
- (libraries table_manager record_page))

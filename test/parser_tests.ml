@@ -1,12 +1,13 @@
 module To_test = struct
   open Parser
+  open Ast
 
   let test_simple_select () =
     let query = "SELECT A, B FROM T1" in
     let lexbuf = Lexing.from_string query in
     let result = Parser.Grammar.prog Lexer.token lexbuf in
     match result with
-    | Query_data.Select { fields; tables; predicate } ->
+    | Query.Select { fields; tables; predicate } ->
         Alcotest.(check (list string)) "fields" [ "A"; "B" ] fields;
         Alcotest.(check (list string)) "tables" [ "T1" ] tables;
         Alcotest.(check bool) "no predicate" true (predicate = None);
@@ -18,7 +19,7 @@ module To_test = struct
     let lexbuf = Lexing.from_string query in
     let result = Parser.Grammar.prog Lexer.token lexbuf in
     match result with
-    | Query_data.Select { fields; tables; predicate = Some _ } ->
+    | Query.Select { fields; tables; predicate = Some _ } ->
         Alcotest.(check (list string)) "fields" [ "A"; "B"; "C" ] fields;
         Alcotest.(check (list string)) "tables" [ "T1" ] tables;
         "SELECT WITH WHERE parsed successfully"
@@ -29,7 +30,7 @@ module To_test = struct
     let lexbuf = Lexing.from_string query in
     let result = Parser.Grammar.prog Lexer.token lexbuf in
     match result with
-    | Query_data.CreateTable { tblname; sch } ->
+    | Query.CreateTable { tblname; sch } ->
         Alcotest.(check string) "table name" "Students" tblname;
         Alcotest.(check bool)
           "schema has field 'id'" true
@@ -88,7 +89,7 @@ module To_test = struct
     let lexbuf = Lexing.from_string query in
     let result = Parser.Grammar.prog Lexer.token lexbuf in
     match result with
-    | Query_data.CreateTable { tblname; sch } ->
+    | Query.CreateTable { tblname; sch } ->
         Alcotest.(check string) "table name" "LargeTable" tblname;
         check_field sch "id" "INT" 0;
         check_field sch "name" "VARCHAR" 50;
@@ -109,7 +110,7 @@ module To_test = struct
     try
       let result = Parser.Grammar.prog Lexer.token lexbuf in
       match result with
-      | Query_data.Insert { tblname; flds; vals } ->
+      | Query.Insert { tblname; flds; vals } ->
           Alcotest.(check string) "table name" "Students" tblname;
           Alcotest.(check (list string)) "fields" [ "id" ] flds;
           Alcotest.(check int) "values count" 1 (List.length vals);
@@ -132,7 +133,7 @@ module To_test = struct
     let lexbuf = Lexing.from_string query in
     let result = Parser.Grammar.prog Lexer.token lexbuf in
     match result with
-    | Query_data.Delete { tblname; pred = _ } ->
+    | Query.Delete { tblname; pred = _ } ->
         Alcotest.(check string) "table name" "Students" tblname;
         "DELETE parsed successfully"
     | _ -> Alcotest.fail "Expected Delete query"
@@ -142,28 +143,18 @@ module To_test = struct
     let lexbuf = Lexing.from_string query in
     let result = Parser.Grammar.prog Lexer.token lexbuf in
     match result with
-    | Query_data.Modify { tblname; fldname; newval; pred = _ } ->
+    | Query.Update { tblname; fldname; newval; pred = _ } ->
         Alcotest.(check string) "table name" "Students" tblname;
         Alcotest.(check string) "field name" "name" fldname;
-        "MODIFY parsed successfully"
+        "UPDATE parsed successfully"
     | _ -> Alcotest.fail "Expected Modify query"
-
-  let test_create_view () =
-    let query = "CREATE VIEW StudentView AS SELECT id FROM Students" in
-    let lexbuf = Lexing.from_string query in
-    let result = Parser.Grammar.prog Lexer.token lexbuf in
-    match result with
-    | Query_data.CreateView { viewname; qrydata = Query_data.Select _ } ->
-        Alcotest.(check string) "view name" "StudentView" viewname;
-        "CREATE VIEW parsed successfully"
-    | _ -> Alcotest.fail "Expected CreateView query"
 
   let test_create_index () =
     let query = "CREATE INDEX idx_name ON table_name (field_name)" in
     let lexbuf = Lexing.from_string query in
     let result = Parser.Grammar.prog Lexer.token lexbuf in
     match result with
-    | Query_data.CreateIndex { idxname; tblname; fldname } ->
+    | Query.CreateIndex { idxname; tblname; fldname } ->
         Alcotest.(check string) "index name" "idx_name" idxname;
         Alcotest.(check string) "table name" "table_name" tblname;
         Alcotest.(check string) "field name" "field_name" fldname;
@@ -178,7 +169,7 @@ module To_test = struct
     try
       let result = Parser.Grammar.prog Lexer.token lexbuf in
       match result with
-      | Query_data.Insert { tblname; flds; vals } ->
+      | Query.Insert { tblname; flds; vals } ->
           Alcotest.(check string) "table name" "Students" tblname;
           Alcotest.(check (list string)) "fields" [ "id"; "name"; "age" ] flds;
           Alcotest.(check int) "values count" 3 (List.length vals);
@@ -228,12 +219,8 @@ let test_delete () =
 
 let test_modify () =
   Alcotest.(check string)
-    "parse modify" "MODIFY parsed successfully" (To_test.test_modify ())
+    "parse modify" "UPDATE parsed successfully" (To_test.test_modify ())
 
-let test_create_view () =
-  Alcotest.(check string)
-    "parse create view" "CREATE VIEW parsed successfully"
-    (To_test.test_create_view ())
 
 let test_create_index () =
   Alcotest.(check string)
@@ -256,7 +243,6 @@ let all_tests () =
     Alcotest.test_case "insert" `Quick test_insert;
     Alcotest.test_case "delete" `Quick test_delete;
     Alcotest.test_case "modify" `Quick test_modify;
-    Alcotest.test_case "create view" `Quick test_create_view;
     Alcotest.test_case "create index" `Quick test_create_index;
     Alcotest.test_case "insert with multiple fields" `Quick
       test_insert_multiple_fields;

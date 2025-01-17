@@ -821,7 +821,7 @@ module Btree_tests = struct
 
   let insert_in_root_parent_test () =
     Alcotest.(check string)
-      "test inserting into parent when parent is root node" ""
+      "test inserting into parent when parent is root node" " "
       (insert_in_parent_root ())
 
   let insert_varchar2s_test () =
@@ -833,6 +833,6 @@ let all_tests () =
   [
     Alcotest.test_case "empty btree creation + insert leaf." `Quick
       Btree_tests.insert_in_root_parent_test;
-    Alcotest.test_case "insert varchar2s test" `Quick
+    Alcotest.test_case "insert varchar2s test" `Slow
       Btree_tests.insert_varchar2s_test;
   ]

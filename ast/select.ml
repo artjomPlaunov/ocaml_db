@@ -1,7 +1,7 @@
 module Predicate = Scans__Predicate
-
 type field = string
 type table = string
+
 
 type t = {
   fields : field list;

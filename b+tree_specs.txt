@@ -1,9 +1,0 @@
-b tree creation function:
-- storage manager is passed on creation - assume index manager can 
-  decide where the b tree should be writing to on disk. 
-
-- root node - what does an empty tree look like in memory and on disk?
-            - leaf node with no filled in values. 
-            - root node is just a pointer to a node, not the node 
-              itself (we can assume that index manager can pass root
-              node as metadata on startup).

@@ -4,6 +4,7 @@
  (modules interpreter)
  (libraries
   parser
+  ast
   table_manager
   scans
   constant

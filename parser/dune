@@ -1,12 +1,12 @@
 (library
  (name parser)
  (public_name ocaml_db.parser)
- (libraries scans constant record_page)
+ (libraries scans constant record_page ast)
  (flags
   (-w -69)
   (-w -26))
  (wrapped true)
- (modules lexer grammar query_data select_data delete_data modify_data insert_data create_table_data create_index_data))
+ (modules lexer grammar))
 
 (ocamllex lexer)
 
