@@ -350,13 +350,6 @@ let insert_in_leaf btree block key pointer =
   write_node btree node block;
   node
 
-let print_keys_ptrs keys_buf ptrs_buf n =
-  for i = 0 to n - 1 do
-    Printf.printf "P%d: %d\n" i ptrs_buf.(i);
-    Printf.printf "K%d: %s\n" i (KeyType.string_of_key keys_buf.(i))
-  done;
-  Printf.printf "P%d: %d\n" n ptrs_buf.(n)
-
 (* Insert in root procedure.
    This is used in insert in parent where p1 is the root node, hence we
    don't have a parent node and we need an insert in root procedure.
@@ -364,13 +357,13 @@ let print_keys_ptrs keys_buf ptrs_buf n =
    Insert in root creates a new root node with the key key_v, and
    sets p1 (old root) as the left pointer, p2 as the right pointer.
 *)
-let insert_in_root btree p1 key_v p2 =
+let insert_in_root btree p1 key_value p2 =
   let block_size = File_manager.get_blocksize btree.sm.file_manager in
   (* First, create in memory representation for the new root node: *)
   let new_root = empty_node btree in
   (* Root is internal since p1 and p2 are children. *)
   new_root.node_type <- Internal;
-  new_root.keys.(0) <- key_v;
+  new_root.keys.(0) <- key_value;
   new_root.pointers.(0) <- p1;
   new_root.pointers.(1) <- p2;
   new_root.cur_size <- 1;
@@ -395,10 +388,10 @@ let insert_in_root btree p1 key_v p2 =
   Page.set_int32 sm_head_page 4 (Int32.of_int btree.root_num);
   Storage_manager.set_head_page ~storage_manager:btree.sm sm_head_page
 
-let insert_in_parent_aux btree p1 key_v p2 p0 p0_node =
+let insert_in_parent_aux btree p1 key_value p2 p0 p0_node =
   let cur_size = p0_node.cur_size in
   insert_key_pointer_pair p0_node.keys p0_node.pointers p0_node.capacity
-    p0_node.cur_size key_v p2 false;
+    p0_node.cur_size key_value p2 false;
   p0_node.cur_size <- cur_size + 1;
   let p2_node = get_node btree p2 in
   p2_node.parent <- p0;
@@ -556,61 +549,41 @@ let rec insert_aux btree p1 k p2 =
 
 let insert btree k p = insert_aux btree btree.root_num k p
 
-let rec print_tree_aux btree p level =
-  let node = get_node btree p in
-  let n = node.cur_size in
-  let indent = String.make level ' ' in
-  Printf.printf "%sBlock %d:\n" indent p;
-  Printf.printf "%sParent: %d\n" indent node.parent;
-  for i = 0 to n - 1 do
-    Printf.printf "%sP%d: %d\n" indent i node.pointers.(i);
-    Printf.printf "%sK%d: %s\n" indent i (KeyType.string_of_key node.keys.(i))
-  done;
-  Printf.printf "%sP%d: %d\n" indent n node.pointers.(n);
-  if node.node_type = Leaf then
-    Printf.printf "%sSibling Pointer: %d\n" indent node.pointers.(node.capacity);
-  ();
-  Printf.printf "\n";
-  if node.node_type = Internal then
-    for i = 0 to n do
-      print_tree_aux btree node.pointers.(i) (level + 4)
-    done
+let rec create_graphviz_structs btree p edge_map =
+  let { node_type; cur_size; keys; pointers; _ } = get_node btree p in
+  let structs = ref "" in
+  let struct_id = Printf.sprintf "struct%d" p in
+  structs := !structs ^ Printf.sprintf "%s [label=\"" struct_id;
+  if node_type = Internal then (
+    for i = 0 to cur_size do
+      let pointer_id = Printf.sprintf "<pointer%d>" i in
+      let key_pointer_pair_or_last_pointer =
+        if i <> cur_size then
+          Printf.sprintf "%s %d|%s|" pointer_id pointers.(i)
+            (KeyType.string_of_key keys.(i))
+        else Printf.sprintf "%s %d\"];\n" pointer_id pointers.(cur_size)
+      in
+      structs := !structs ^ key_pointer_pair_or_last_pointer;
+      let src = Printf.sprintf "%s:%s" struct_id pointer_id in
+      let dst = Printf.sprintf "struct%d" pointers.(i) in
+      Hashtbl.add edge_map src dst
+    done;
+    for i = 0 to cur_size do
+      structs := !structs ^ create_graphviz_structs btree pointers.(i) edge_map
+    done)
+  else
+    for i = 0 to cur_size - 1 do
+      let key_str = Printf.sprintf "%s" (KeyType.string_of_key keys.(i)) in
+      let separator_or_end = if i <> cur_size - 1 then "|" else "\"];\n" in
+      structs := !structs ^ key_str ^ separator_or_end
+    done;
+  !structs
 
 let create_graphviz_str btree p =
-  let rec create_structs_str btree p edge_map =
-    let { node_type; cur_size; keys; pointers; _ } = get_node btree p in
-    let structs = ref "" in
-    let struct_id = Printf.sprintf "struct%d" p in
-    structs := !structs ^ Printf.sprintf "%s [label=\"" struct_id;
-    if node_type = Internal then (
-      for i = 0 to cur_size do
-        let pointer_id = Printf.sprintf "<pointer%d>" i in
-        let key_pointer_pair_or_last_pointer =
-          if i <> cur_size then
-            Printf.sprintf "%s %d|%s|" pointer_id pointers.(i)
-              (KeyType.string_of_key keys.(i))
-          else Printf.sprintf "%s %d\"];\n" pointer_id pointers.(cur_size)
-        in
-        structs := !structs ^ key_pointer_pair_or_last_pointer;
-        let src = Printf.sprintf "%s:%s" struct_id pointer_id in
-        let dst = Printf.sprintf "struct%d" pointers.(i) in
-        Hashtbl.add edge_map src dst
-      done;
-      for i = 0 to cur_size do
-        structs := !structs ^ create_structs_str btree pointers.(i) edge_map
-      done)
-    else
-      for i = 0 to cur_size - 1 do
-        let key_str = Printf.sprintf "%s" (KeyType.string_of_key keys.(i)) in
-        let separator_or_end = if i <> cur_size - 1 then "|" else "\"];\n" in
-        structs := !structs ^ key_str ^ separator_or_end
-      done;
-    !structs
-  in
   let header = "digraph BTree {\nrankdir=TB;\nnode [shape=record];\n" in
   let footer = "}\n" in
   let edge_map = Hashtbl.create 10 in
-  let structs = create_structs_str btree p edge_map in
+  let structs = create_graphviz_structs btree p edge_map in
   let edges =
     Hashtbl.fold
       (fun src dst acc -> acc ^ Printf.sprintf "%s -> %s\n" src dst)
