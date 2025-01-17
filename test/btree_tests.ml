@@ -807,6 +807,11 @@ module Btree_tests = struct
 
     let graphviz_str = Btree.create_graphviz_str t t.root_num in
     Printf.printf "%s" graphviz_str;
+
+    let oc = open_out "tree.dot" in
+    output_string oc graphviz_str;
+    close_out oc;
+
     " "
 
   let empty_btree_insert_leaf_test () =
