@@ -357,15 +357,6 @@ let print_keys_ptrs keys_buf ptrs_buf n =
   done;
   Printf.printf "P%d: %d\n" n ptrs_buf.(n)
 
-(* Update all children of node to point to node n. *)
-let children_update_parents btree parent n =
-  for i = 0 to parent.cur_size do
-    let p = parent.pointers.(i) in
-    let child = get_node btree p in
-    child.parent <- n;
-    write_node btree child p
-  done
-
 (* Insert in root procedure.
    This is used in insert in parent where p1 is the root node, hence we
    don't have a parent node and we need an insert in root procedure.
@@ -414,23 +405,36 @@ let insert_in_parent_aux btree p1 key_v p2 p0 p0_node =
   write_node btree p0_node p0;
   write_node btree p2_node p2
 
+(* correctly assign's children's parent pointer *)
+(* function is only called from an internal node *)
+let children_update_parents btree parent parent_ptr =
+  for i = 0 to parent.cur_size do
+    let ptr = parent.pointers.(i) in
+    let child = get_node btree ptr in
+    child.parent <- parent_ptr;
+    write_node btree child ptr
+  done
+
 let rec split_parent btree p1 key_v p2 p0 p0_node =
+  let { node_type; parent; capacity; cur_size; pointers; keys; _ } = p0_node in
+  (* Update all children of node to point to node n. *)
   let new_p0_node = empty_node btree in
 
-  new_p0_node.node_type <- p0_node.node_type;
+  new_p0_node.node_type <- node_type;
 
-  let n = p0_node.capacity + 1 in
+  let n = capacity + 1 in
   let keys_buf =
     Array.init n (fun i ->
-        if i < n - 1 then p0_node.keys.(i) else KeyType.empty_key btree.key)
+        if i < n - 1 then keys.(i) else KeyType.empty_key btree.key)
   in
   let ptrs_buf =
     Array.init (n + 1) (fun i ->
-        if i < n then p0_node.pointers.(i) else unused_pointer_constant)
+        if i < n then pointers.(i) else unused_pointer_constant)
   in
   insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) key_v p2 false;
 
-  let mid = if n mod 2 = 0 then n / 2 else (n / 2) + 1 in
+  let mid = (n + 1) / 2 in
+  (* handles fan out of size 3 *)
   let mid = if mid = n - 1 then mid - 1 else mid in
 
   for i = 0 to mid do
@@ -442,8 +446,8 @@ let rec split_parent btree p1 key_v p2 p0 p0_node =
 
   (* Write p0 to disk. *)
   new_p0_node.cur_size <- mid;
-  new_p0_node.node_type <- p0_node.node_type;
-  new_p0_node.parent <- p0_node.parent;
+  new_p0_node.node_type <- node_type;
+  new_p0_node.parent <- parent;
   write_node btree new_p0_node p0;
   if p0 = btree.root_num then btree.root <- new_p0_node;
 
@@ -451,14 +455,14 @@ let rec split_parent btree p1 key_v p2 p0 p0_node =
 
   if btree.root_num = p1 then btree.root <- new_p0_node;
 
-  p2_node.node_type <- p0_node.node_type;
+  p2_node.node_type <- node_type;
   for i = mid + 1 to n do
     p2_node.pointers.(i - mid - 1) <- ptrs_buf.(i)
   done;
   for i = mid + 1 to n - 1 do
-    p2_node.keys.(i - mid - 1) <- keys_buf.(i)
+    p2_node.keys.(i - mid - 1) <- keys_buf.(i);
+    p2_node.cur_size <- p2_node.cur_size + 1
   done;
-  p2_node.cur_size <- n - mid - 1;
   p2_node.parent <- p0;
 
   (* Write p2 to disk, call insert in parent with new split parent. *)
