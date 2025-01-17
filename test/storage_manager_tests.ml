@@ -31,8 +31,7 @@ module To_test = struct
     let output = Buffer.create 256 in
     Buffer.add_string output "Free list:\n";
     let rec print_list ptr =
-      if ptr = 0 then
-        Buffer.add_string output "End of free list\n"
+      if ptr = 0 then Buffer.add_string output "End of free list\n"
       else (
         Buffer.add_string output (Printf.sprintf "Block %d -> " ptr);
         let block = Block_id.make ~filename:sfile ~block_num:ptr in
@@ -46,8 +45,12 @@ module To_test = struct
     Buffer.contents output
 
   let test_storage_manager () =
-    let file_manager = File_manager.make ~db_dirname:"tmp_storage_test" ~block_size:8 in
-    let storage_manager = Storage_manager.make ~file_manager ~storage_file:"test_storage" in
+    let file_manager =
+      File_manager.make ~db_dirname:"tmp_storage_test" ~block_size:8
+    in
+    let storage_manager =
+      Storage_manager.make ~file_manager ~storage_file:"test_storage"
+    in
     let output = Buffer.create 256 in
 
     Buffer.add_string output "Initial state:\n";
@@ -55,14 +58,17 @@ module To_test = struct
     Buffer.add_string output (print_free_list storage_manager);
 
     (* Create some pages with integers *)
-    let pages = List.init 5 (fun i ->
-      let page = Page.make ~block_size:8 in
-      Page.set_int32 page 0 (Int32.of_int (i + 1));
-      page)
+    let pages =
+      List.init 5 (fun i ->
+          let page = Page.make ~block_size:8 in
+          Page.set_int32 page 0 (Int32.of_int (i + 1));
+          page)
     in
 
     Buffer.add_string output "\nInitial append of 5 blocks:\n";
-    let blocks = List.map (fun page -> Storage_manager.append ~storage_manager ~page) pages in
+    let blocks =
+      List.map (fun page -> Storage_manager.append ~storage_manager ~page) pages
+    in
     Buffer.add_string output (print_storage_contents storage_manager);
     Buffer.add_string output (print_free_list storage_manager);
 
@@ -88,12 +94,12 @@ module To_test = struct
     Buffer.add_string output "\nAfter first append:\n";
     Buffer.add_string output (print_storage_contents storage_manager);
     Buffer.add_string output (print_free_list storage_manager);
-    
+
     let _ = Storage_manager.append ~storage_manager ~page:page2 in
     Buffer.add_string output "\nAfter second append:\n";
     Buffer.add_string output (print_storage_contents storage_manager);
     Buffer.add_string output (print_free_list storage_manager);
-    
+
     Buffer.add_string output "\nUpdating block 3 with value 999:\n";
     let update_page = Page.make ~block_size:8 in
     Page.set_int32 update_page 0 (Int32.of_int 999);
@@ -107,13 +113,78 @@ module To_test = struct
     final_output
 end
 
-let expected_output = "Initial state:\nStorage contents:\nBlock 0: 0\nFree list:\nEnd of free list\n\nInitial append of 5 blocks:\nStorage contents:\nBlock 0: 0\nBlock 1: 1\nBlock 2: 2\nBlock 3: 3\nBlock 4: 4\nBlock 5: 5\nFree list:\nEnd of free list\n\nDeleting blocks 2 and 4:\nStorage contents:\nBlock 0: 4\nBlock 1: 1\nBlock 2: 0\nBlock 3: 3\nBlock 4: 2\nBlock 5: 5\nFree list:\nBlock 4 -> Block 2 -> End of free list\n\nDeleting remaining blocks (1, 3, and 5):\nStorage contents:\nBlock 0: 5\nBlock 1: 4\nBlock 2: 0\nBlock 3: 1\nBlock 4: 2\nBlock 5: 3\nFree list:\nBlock 5 -> Block 3 -> Block 1 -> Block 4 -> Block 2 -> End of free list\n\nAppending two new blocks:\n\nAfter first append:\nStorage contents:\nBlock 0: 3\nBlock 1: 4\nBlock 2: 0\nBlock 3: 1\nBlock 4: 2\nBlock 5: 200\nFree list:\nBlock 3 -> Block 1 -> Block 4 -> Block 2 -> End of free list\n\nAfter second append:\nStorage contents:\nBlock 0: 1\nBlock 1: 4\nBlock 2: 0\nBlock 3: 201\nBlock 4: 2\nBlock 5: 200\nFree list:\nBlock 1 -> Block 4 -> Block 2 -> End of free list\n\nUpdating block 3 with value 999:\nStorage contents:\nBlock 0: 1\nBlock 1: 4\nBlock 2: 0\nBlock 3: 999\nBlock 4: 2\nBlock 5: 200\nFree list:\nBlock 1 -> Block 4 -> Block 2 -> End of free list\n"
+let expected_output =
+  "Initial state:\n\
+   Storage contents:\n\
+   Block 0: 0\n\
+   Free list:\n\
+   End of free list\n\n\
+   Initial append of 5 blocks:\n\
+   Storage contents:\n\
+   Block 0: 0\n\
+   Block 1: 1\n\
+   Block 2: 2\n\
+   Block 3: 3\n\
+   Block 4: 4\n\
+   Block 5: 5\n\
+   Free list:\n\
+   End of free list\n\n\
+   Deleting blocks 2 and 4:\n\
+   Storage contents:\n\
+   Block 0: 4\n\
+   Block 1: 1\n\
+   Block 2: 0\n\
+   Block 3: 3\n\
+   Block 4: 2\n\
+   Block 5: 5\n\
+   Free list:\n\
+   Block 4 -> Block 2 -> End of free list\n\n\
+   Deleting remaining blocks (1, 3, and 5):\n\
+   Storage contents:\n\
+   Block 0: 5\n\
+   Block 1: 4\n\
+   Block 2: 0\n\
+   Block 3: 1\n\
+   Block 4: 2\n\
+   Block 5: 3\n\
+   Free list:\n\
+   Block 5 -> Block 3 -> Block 1 -> Block 4 -> Block 2 -> End of free list\n\n\
+   Appending two new blocks:\n\n\
+   After first append:\n\
+   Storage contents:\n\
+   Block 0: 3\n\
+   Block 1: 4\n\
+   Block 2: 0\n\
+   Block 3: 1\n\
+   Block 4: 2\n\
+   Block 5: 200\n\
+   Free list:\n\
+   Block 3 -> Block 1 -> Block 4 -> Block 2 -> End of free list\n\n\
+   After second append:\n\
+   Storage contents:\n\
+   Block 0: 1\n\
+   Block 1: 4\n\
+   Block 2: 0\n\
+   Block 3: 201\n\
+   Block 4: 2\n\
+   Block 5: 200\n\
+   Free list:\n\
+   Block 1 -> Block 4 -> Block 2 -> End of free list\n\n\
+   Updating block 3 with value 999:\n\
+   Storage contents:\n\
+   Block 0: 1\n\
+   Block 1: 4\n\
+   Block 2: 0\n\
+   Block 3: 999\n\
+   Block 4: 2\n\
+   Block 5: 200\n\
+   Free list:\n\
+   Block 1 -> Block 4 -> Block 2 -> End of free list\n"
 
 let test_storage_manager () =
   Alcotest.(check string)
-    "storage manager operations"
-    expected_output
+    "storage manager operations" expected_output
     (To_test.test_storage_manager ())
 
 let all_tests () =
-  [Alcotest.test_case "storage manager test" `Quick test_storage_manager] 
+  [ Alcotest.test_case "storage manager test" `Quick test_storage_manager ]

@@ -175,18 +175,6 @@ type t = {
 let get_num_keys block_size key_ty =
   (block_size - 16) / (4 + KeyType.sizeof_key key_ty)
 
-let print_node node =
-  let _ =
-    match node.node_type with
-    | Leaf -> Printf.printf "Leaf Node\n"
-    | Internal -> Printf.printf "Internal Node\n"
-  in
-  Printf.printf "Parent: %d\n" node.parent;
-  for i = 0 to node.cur_size - 1 do
-    Printf.printf "P%d: %d\n" i node.pointers.(i);
-    Printf.printf "K%d: %s\n" i (KeyType.string_of_key node.keys.(i))
-  done
-
 let empty_node btree =
   let block_size = File_manager.get_blocksize btree.sm.file_manager in
   let key_ty = btree.key in
@@ -496,53 +484,48 @@ and insert_in_parent btree p1 key_v p2 =
     else split_parent btree p1 key_v p2 p0 p0_node
 
 let split_leaf btree p1 k p2 p1_node =
-  let n = p1_node.capacity + 1 in
-  let mid = if n mod 2 = 0 then n / 2 else (n / 2) + 1 in
+  let { node_type; parent; capacity; cur_size; pointers; keys; _ } = p1_node in
+  let n = capacity + 1 in
+  let mid = (n + 1) / 2 in
   let keys_buf =
     Array.init n (fun i ->
-        if i < p1_node.cur_size then p1_node.keys.(i)
-        else KeyType.empty_key btree.key)
+        if i < cur_size then keys.(i) else KeyType.empty_key btree.key)
   in
   let ptrs_buf =
     Array.init (n + 1) (fun i ->
-        if i < p1_node.cur_size + 1 then p1_node.pointers.(i)
-        else unused_pointer_constant)
+        if i < cur_size + 1 then pointers.(i) else unused_pointer_constant)
   in
-  let sibling_ptr = p1_node.pointers.(p1_node.capacity) in
+  let sibling_ptr = pointers.(capacity) in
   insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) k p2 true;
 
-  let new_p1_node = empty_node btree in
-
-  for i = 0 to mid - 1 do
-    new_p1_node.pointers.(i) <- ptrs_buf.(i)
-  done;
-  for i = 0 to mid - 1 do
-    new_p1_node.keys.(i) <- keys_buf.(i)
-  done;
-  new_p1_node.cur_size <- mid;
-
-  let p2_node = empty_node btree in
-  p2_node.pointers.(p2_node.capacity) <- sibling_ptr;
-
-  p2_node.node_type <- p1_node.node_type;
+  let right_node = empty_node btree in
   for i = mid to n - 1 do
-    p2_node.pointers.(i - mid) <- ptrs_buf.(i);
-    p2_node.keys.(i - mid) <- keys_buf.(i)
+    right_node.pointers.(i - mid) <- ptrs_buf.(i);
+    right_node.keys.(i - mid) <- keys_buf.(i);
+    right_node.cur_size <- right_node.cur_size + 1
   done;
+  right_node.pointers.(capacity) <- sibling_ptr;
+  right_node.node_type <- node_type;
+  right_node.parent <- parent;
+  (* Write right_node to disk *)
+  let right_node_ptr = write_node_append btree right_node in
 
-  p2_node.cur_size <- n - mid;
-  p2_node.parent <- p1_node.parent;
-  let p2 = write_node_append btree p2_node in
-  let split_key = p2_node.keys.(0) in
+  let left_node = empty_node btree in
+  for i = 0 to mid - 1 do
+    left_node.pointers.(i) <- ptrs_buf.(i);
+    left_node.keys.(i) <- keys_buf.(i);
+    left_node.cur_size <- left_node.cur_size + 1
+  done;
+  left_node.pointers.(capacity) <- p2;
+  left_node.node_type <- node_type;
+  left_node.parent <- parent;
+  (* Write left_node back to disk. *)
+  write_node btree left_node p1;
 
-  (* Write p0 to disk. *)
-  new_p1_node.pointers.(new_p1_node.capacity) <- p2;
-  new_p1_node.node_type <- p1_node.node_type;
-  new_p1_node.parent <- p1_node.parent;
-
-  if btree.root_num = p1 then btree.root <- new_p1_node;
-  write_node btree new_p1_node p1;
-  insert_in_parent btree p1 split_key p2
+  (* get the smallest key from p2 to insert into parent as key partitioning left and right nodes *)
+  if btree.root_num = p1 then btree.root <- left_node;
+  let split_key = right_node.keys.(0) in
+  insert_in_parent btree p1 split_key right_node_ptr
 
 (* Insert key k, record pointer p2 into btree from node p1.
    This is dispatched from the root node as p1.

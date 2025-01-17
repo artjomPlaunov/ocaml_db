@@ -6,8 +6,12 @@ module To_test = struct
   let tbl_mgr_create_and_verify () =
     let db_name = "tmp_tablemanager_test_create" in
     let file_manager = File_manager.make ~db_dirname:db_name ~block_size:1024 in
-    let log_manager = Log_manager.make ~file_manager ~log_file:(db_name ^ "_logs") in
-    let buffer_manager = Buffer_manager.make ~file_manager ~log_manager ~num_buffers:8 () in
+    let log_manager =
+      Log_manager.make ~file_manager ~log_file:(db_name ^ "_logs")
+    in
+    let buffer_manager =
+      Buffer_manager.make ~file_manager ~log_manager ~num_buffers:8 ()
+    in
     let tx = Transaction.make ~file_manager ~log_manager ~buffer_manager in
     let table_mgr = Table_manager.make ~is_new:true ~tx in
 
@@ -18,12 +22,15 @@ module To_test = struct
     Table_manager.create_table ~table_mgr ~tbl_name:"TestTable" ~schema ~tx;
 
     (* Retrieve and verify the layout *)
-    let layout = Table_manager.get_layout ~table_mgr ~tbl_name:"TestTable" ~tx in
+    let layout =
+      Table_manager.get_layout ~table_mgr ~tbl_name:"TestTable" ~tx
+    in
     let slot_size = layout.slot_size in
     let schema_retrieved = layout.schema in
 
     let output = Buffer.create 256 in
-    Buffer.add_string output (Printf.sprintf "TestTable has slot size %d\n" slot_size);
+    Buffer.add_string output
+      (Printf.sprintf "TestTable has slot size %d\n" slot_size);
     Buffer.add_string output "TestTable has the following fields\n";
     List.iter
       (fun field_name ->
@@ -35,7 +42,8 @@ module To_test = struct
               let len = Schema.get_length schema_retrieved field_name in
               Printf.sprintf "VarChar(%d)" len
         in
-        Buffer.add_string output (Printf.sprintf "%s : %s\n" field_name typ_repr))
+        Buffer.add_string output
+          (Printf.sprintf "%s : %s\n" field_name typ_repr))
       schema_retrieved.fields;
     Transaction.commit tx;
     Buffer.contents output
@@ -43,8 +51,12 @@ module To_test = struct
   let tbl_mgr_create_multiple_tables () =
     let db_name = "tmp_tablemanager_test_multiple" in
     let file_manager = File_manager.make ~db_dirname:db_name ~block_size:1024 in
-    let log_manager = Log_manager.make ~file_manager ~log_file:(db_name ^ "_logs") in
-    let buffer_manager = Buffer_manager.make ~file_manager ~log_manager ~num_buffers:8 () in
+    let log_manager =
+      Log_manager.make ~file_manager ~log_file:(db_name ^ "_logs")
+    in
+    let buffer_manager =
+      Buffer_manager.make ~file_manager ~log_manager ~num_buffers:8 ()
+    in
     let tx = Transaction.make ~file_manager ~log_manager ~buffer_manager in
     let table_mgr = Table_manager.make ~is_new:true ~tx in
 
@@ -65,8 +77,10 @@ module To_test = struct
       let schema_retrieved = layout.schema in
 
       let output = Buffer.create 256 in
-      Buffer.add_string output (Printf.sprintf "%s has slot size %d\n" name slot_size);
-      Buffer.add_string output (Printf.sprintf "%s has the following fields\n" name);
+      Buffer.add_string output
+        (Printf.sprintf "%s has slot size %d\n" name slot_size);
+      Buffer.add_string output
+        (Printf.sprintf "%s has the following fields\n" name);
       List.iter
         (fun field_name ->
           let typ = Schema.get_type schema_retrieved field_name in
@@ -77,7 +91,8 @@ module To_test = struct
                 let len = Schema.get_length schema_retrieved field_name in
                 Printf.sprintf "VarChar(%d)" len
           in
-          Buffer.add_string output (Printf.sprintf "%s : %s\n" field_name typ_repr))
+          Buffer.add_string output
+            (Printf.sprintf "%s : %s\n" field_name typ_repr))
         schema_retrieved.fields;
       Buffer.contents output
     in
@@ -88,13 +103,25 @@ module To_test = struct
     output1 ^ "\n" ^ output2
 end
 
-let tbl_mgr_create_and_verify_expected = "TestTable has slot size 32\nTestTable has the following fields\nID : int\nName : VarChar(20)\n"
-let tbl_mgr_create_multiple_tables_expected = "Table1 has slot size 62\nTable1 has the following fields\nID : int\nDescription : VarChar(50)\n\nTable2 has slot size 62\nTable2 has the following fields\nID : int\nDescription : VarChar(50)\n"
+let tbl_mgr_create_and_verify_expected =
+  "TestTable has slot size 32\n\
+   TestTable has the following fields\n\
+   ID : int\n\
+   Name : VarChar(20)\n"
+
+let tbl_mgr_create_multiple_tables_expected =
+  "Table1 has slot size 62\n\
+   Table1 has the following fields\n\
+   ID : int\n\
+   Description : VarChar(50)\n\n\
+   Table2 has slot size 62\n\
+   Table2 has the following fields\n\
+   ID : int\n\
+   Description : VarChar(50)\n"
 
 let test_tbl_mgr_create_and_verify () =
   Alcotest.(check string)
-    "table manager create and verify test"
-    tbl_mgr_create_and_verify_expected
+    "table manager create and verify test" tbl_mgr_create_and_verify_expected
     (To_test.tbl_mgr_create_and_verify ())
 
 let test_tbl_mgr_create_multiple_tables () =
@@ -103,4 +130,9 @@ let test_tbl_mgr_create_multiple_tables () =
     tbl_mgr_create_multiple_tables_expected
     (To_test.tbl_mgr_create_multiple_tables ())
 
-let all_tests () = [ Alcotest.test_case "create int logs" `Quick test_tbl_mgr_create_and_verify; Alcotest.test_case "create multiple tables" `Quick test_tbl_mgr_create_multiple_tables ]
+let all_tests () =
+  [
+    Alcotest.test_case "create int logs" `Quick test_tbl_mgr_create_and_verify;
+    Alcotest.test_case "create multiple tables" `Quick
+      test_tbl_mgr_create_multiple_tables;
+  ]

@@ -21,7 +21,6 @@ module Btree_tests = struct
     let key_type = KeyType.TVarchar 4 in
     let t = Btree.create storage_manager key_type in
     (* Empty tree.*)
-    Btree.print_node t.root;
     let _ = Btree.insert_in_leaf t 1 (KeyType.Varchar (String.make 4 'J')) 4 in
     let _ = Btree.insert_in_leaf t 1 (KeyType.Varchar (String.make 4 'A')) 3 in
     let _ = Btree.insert_in_leaf t 1 (KeyType.Varchar (String.make 4 'V')) 2 in
@@ -30,7 +29,6 @@ module Btree_tests = struct
     let _ = Btree.insert_in_leaf t 1 (KeyType.Varchar (String.make 4 'Z')) 6 in
     let _ = Btree.insert_in_leaf t 1 (KeyType.Varchar (String.make 4 'C')) 7 in
     let _ = Btree.insert_in_leaf t 1 (KeyType.Varchar (String.make 4 'P')) 8 in
-    Btree.print_node t.root;
     " "
 
   let insert_in_parent_root () =

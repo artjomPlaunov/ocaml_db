@@ -73,8 +73,7 @@ end
 
 let test_concurrency1 () =
   Alcotest.(check string)
-    "simple concurrency test"
-    "Initial value: 677\nNew value: 678\n"
+    "simple concurrency test" "Initial value: 677\nNew value: 678\n"
     (To_test.test_concurrency1 ())
 
 let all_tests () =
