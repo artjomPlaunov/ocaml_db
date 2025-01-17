@@ -412,7 +412,6 @@ let rec split_parent btree p1 key_v p2 p0 p0_node =
   let { node_type; parent; capacity; cur_size; pointers; keys; _ } = p0_node in
   (* Update all children of node to point to node n. *)
   let new_p0_node = empty_node btree in
-
   new_p0_node.node_type <- node_type;
 
   let n = capacity + 1 in
@@ -427,35 +426,24 @@ let rec split_parent btree p1 key_v p2 p0 p0_node =
   insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) key_v p2 false;
 
   let mid = (n + 1) / 2 in
-  (* handles fan out of size 3 *)
+  (* TODO: i think if we make right nodes heavy we wouldn't need to handle the degenerate case for 3 *)
   let mid = if mid = n - 1 then mid - 1 else mid in
 
-  for i = 0 to mid do
-    new_p0_node.pointers.(i) <- ptrs_buf.(i)
-  done;
-  for i = 0 to mid - 1 do
-    new_p0_node.keys.(i) <- keys_buf.(i)
-  done;
-
-  (* Write p0 to disk. *)
+  Array.blit ptrs_buf 0 new_p0_node.pointers 0 (mid + 1);
+  Array.blit keys_buf 0 new_p0_node.keys 0 mid;
   new_p0_node.cur_size <- mid;
   new_p0_node.node_type <- node_type;
   new_p0_node.parent <- parent;
+  (* Write p0 to disk. *)
   write_node btree new_p0_node p0;
   if p0 = btree.root_num then btree.root <- new_p0_node;
 
   let p2_node = empty_node btree in
-
   if btree.root_num = p1 then btree.root <- new_p0_node;
-
   p2_node.node_type <- node_type;
-  for i = mid + 1 to n do
-    p2_node.pointers.(i - mid - 1) <- ptrs_buf.(i)
-  done;
-  for i = mid + 1 to n - 1 do
-    p2_node.keys.(i - mid - 1) <- keys_buf.(i);
-    p2_node.cur_size <- p2_node.cur_size + 1
-  done;
+  Array.blit ptrs_buf (mid + 1) p2_node.pointers 0 (n + 1 - (mid + 1));
+  Array.blit keys_buf (mid + 1) p2_node.keys 0 (n - (mid + 1));
+  p2_node.cur_size <- n - (mid + 1);
   p2_node.parent <- p0;
 
   (* Write p2 to disk, call insert in parent with new split parent. *)
@@ -496,27 +484,26 @@ let split_leaf btree p1 k p2 p1_node =
   insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) k p2 true;
 
   let right_node = empty_node btree in
-  for i = mid to n - 1 do
-    right_node.pointers.(i - mid) <- ptrs_buf.(i);
-    right_node.keys.(i - mid) <- keys_buf.(i);
-    right_node.cur_size <- right_node.cur_size + 1
-  done;
+  (* copy pointers and keys i = mid to n-1 into right_node's pointers and keys *)
+  Array.blit ptrs_buf mid right_node.pointers 0 (n - mid);
+  Array.blit keys_buf mid right_node.keys 0 (n - mid);
+  (* update metadata and parent + sibling pointers *)
+  right_node.cur_size <- n - mid;
   right_node.pointers.(capacity) <- sibling_ptr;
   right_node.node_type <- node_type;
   right_node.parent <- parent;
-  (* Write right_node to disk *)
+  (* write right_node to disk *)
   let right_node_ptr = write_node_append btree right_node in
 
   let left_node = empty_node btree in
-  for i = 0 to mid - 1 do
-    left_node.pointers.(i) <- ptrs_buf.(i);
-    left_node.keys.(i) <- keys_buf.(i);
-    left_node.cur_size <- left_node.cur_size + 1
-  done;
+  (* copy pointers and keys i = 0 to mid-1 into left_node's pointers and keys *)
+  Array.blit ptrs_buf 0 left_node.pointers 0 mid;
+  Array.blit keys_buf 0 left_node.keys 0 mid;
+  left_node.cur_size <- mid;
   left_node.pointers.(capacity) <- p2;
   left_node.node_type <- node_type;
   left_node.parent <- parent;
-  (* Write left_node back to disk. *)
+  (* flush left_node back to disk. *)
   write_node btree left_node p1;
 
   (* get the smallest key from p2 to insert into parent as key partitioning left and right nodes *)
