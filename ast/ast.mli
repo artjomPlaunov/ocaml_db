@@ -8,7 +8,7 @@ module Expression = Scans__Expression
 (** {1 Select Module} *)
 module Select : sig 
     type t
-    val make : table list -> table list -> Predicate.t option -> t
+    val make : field list -> table list -> Predicate.t option -> t
     val fields : t -> table list
     val tables : t -> table list
     val predicate : t -> Predicate.t option
