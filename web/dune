@@ -1,0 +1,12 @@
+(executable
+ (name server)
+ (libraries
+  dream
+  yojson
+  unix
+  btree ; your btree library
+  file ; needed for file_manager
+  storage_manager)
+ ; needed for storage setup
+ (preprocess
+  (pps lwt_ppx)))
