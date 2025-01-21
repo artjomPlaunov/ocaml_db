@@ -470,25 +470,25 @@ and insert_in_parent btree p1 key_v p2 =
 
 let split_leaf btree p1 k p2 p1_node =
   let { node_type; parent; capacity; cur_size; pointers; keys; _ } = p1_node in
-  let n = capacity + 1 in
-  let mid = (n + 1) / 2 in
+  let new_capacity = capacity + 1 in
+  let mid = (new_capacity + 1) / 2 in
   let keys_buf =
-    Array.init n (fun i ->
+    Array.init new_capacity (fun i ->
         if i < cur_size then keys.(i) else KeyType.empty_key btree.key)
   in
   let ptrs_buf =
-    Array.init (n + 1) (fun i ->
+    Array.init (new_capacity + 1) (fun i ->
         if i < cur_size + 1 then pointers.(i) else unused_pointer_constant)
   in
   let sibling_ptr = pointers.(capacity) in
-  insert_key_pointer_pair keys_buf ptrs_buf n (n - 1) k p2 true;
+  insert_key_pointer_pair keys_buf ptrs_buf new_capacity capacity k p2 true;
 
   let right_node = empty_node btree in
   (* copy pointers and keys i = mid to n-1 into right_node's pointers and keys *)
-  Array.blit ptrs_buf mid right_node.pointers 0 (n - mid);
-  Array.blit keys_buf mid right_node.keys 0 (n - mid);
+  Array.blit ptrs_buf mid right_node.pointers 0 (new_capacity - mid);
+  Array.blit keys_buf mid right_node.keys 0 (new_capacity - mid);
   (* update metadata and parent + sibling pointers *)
-  right_node.cur_size <- n - mid;
+  right_node.cur_size <- new_capacity - mid;
   right_node.pointers.(capacity) <- sibling_ptr;
   right_node.node_type <- node_type;
   right_node.parent <- parent;
@@ -500,7 +500,7 @@ let split_leaf btree p1 k p2 p1_node =
   Array.blit ptrs_buf 0 left_node.pointers 0 mid;
   Array.blit keys_buf 0 left_node.keys 0 mid;
   left_node.cur_size <- mid;
-  left_node.pointers.(capacity) <- p2;
+  left_node.pointers.(capacity) <- right_node_ptr;
   left_node.node_type <- node_type;
   left_node.parent <- parent;
   (* flush left_node back to disk. *)
@@ -537,33 +537,41 @@ let rec insert_aux btree p1 k p2 =
 let insert btree k p = insert_aux btree btree.root_num k p
 
 let rec create_graphviz_structs btree p edge_map =
-  let { node_type; cur_size; keys; pointers; _ } = get_node btree p in
+  let { node_type; cur_size; keys; pointers; capacity } = get_node btree p in
   let structs = ref "" in
   let struct_id = Printf.sprintf "struct%d" p in
   structs := !structs ^ Printf.sprintf "%s [label=\"" struct_id;
-  if node_type = Internal then (
-    for i = 0 to cur_size do
-      let pointer_id = Printf.sprintf "<pointer%d>" i in
-      let key_pointer_pair_or_last_pointer =
-        if i <> cur_size then
-          Printf.sprintf "%s %d|%s|" pointer_id pointers.(i)
-            (KeyType.string_of_key keys.(i))
-        else Printf.sprintf "%s %d\"];\n" pointer_id pointers.(cur_size)
-      in
-      structs := !structs ^ key_pointer_pair_or_last_pointer;
-      let src = Printf.sprintf "%s:%s" struct_id pointer_id in
-      let dst = Printf.sprintf "struct%d" pointers.(i) in
-      Hashtbl.add edge_map src dst
-    done;
-    for i = 0 to cur_size do
-      structs := !structs ^ create_graphviz_structs btree pointers.(i) edge_map
-    done)
-  else
-    for i = 0 to cur_size - 1 do
-      let key_str = Printf.sprintf "%s" (KeyType.string_of_key keys.(i)) in
-      let separator_or_end = if i <> cur_size - 1 then "|" else "\"];\n" in
-      structs := !structs ^ key_str ^ separator_or_end
-    done;
+  (if node_type = Internal then (
+     for i = 0 to cur_size do
+       let pointer_id = Printf.sprintf "<pointer%d>" i in
+       let key_pointer_pair_or_last_pointer =
+         if i <> cur_size then
+           Printf.sprintf "%s %d|%s|" pointer_id pointers.(i)
+             (KeyType.string_of_key keys.(i))
+         else Printf.sprintf "%s %d\"];\n" pointer_id pointers.(cur_size)
+       in
+       structs := !structs ^ key_pointer_pair_or_last_pointer;
+       let src = Printf.sprintf "%s:%s" struct_id pointer_id in
+       let dst = Printf.sprintf "struct%d" pointers.(i) in
+       Hashtbl.add edge_map src dst
+     done;
+     for i = 0 to cur_size do
+       structs := !structs ^ create_graphviz_structs btree pointers.(i) edge_map
+     done)
+   else
+     let sibling_pointer = pointers.(capacity) in
+     let sibling_pointer_id = Printf.sprintf "<pointer%d>" capacity in
+     let src = Printf.sprintf "%s:%s" struct_id sibling_pointer_id in
+     let dst = Printf.sprintf "struct%d" sibling_pointer in
+     for i = 0 to cur_size - 1 do
+       let key_str = Printf.sprintf "%s" (KeyType.string_of_key keys.(i)) in
+       let separator_or_end =
+         if i <> cur_size - 1 then "|"
+         else Printf.sprintf "|%s\"][color=\"green\"];\n" sibling_pointer_id
+       in
+       structs := !structs ^ key_str ^ separator_or_end
+     done;
+     Hashtbl.add edge_map src dst);
   !structs
 
 let create_graphviz_str btree p =
