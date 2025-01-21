@@ -67,40 +67,16 @@ module Btree_tests = struct
        Btree.insert_aux t t.root_num (Btree.Varchar (String.make 4 'H')) 7; *)
     Btree.insert t (KeyType.Varchar (String.make 4 'A')) 9999;
 
-    Btree.insert t (KeyType.Varchar (String.make 4 'U')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'C')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'D')) 9999;
+    Btree.insert t (KeyType.Varchar (String.make 4 'A')) 9999;
+    Btree.insert t (KeyType.Varchar (String.make 4 'A')) 9999;
+    Btree.insert t (KeyType.Varchar (String.make 4 'A')) 9999;
+    Btree.insert t (KeyType.Varchar (String.make 4 'A')) 9999;
 
-    Btree.insert t (KeyType.Varchar (String.make 4 'S')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'E')) 9999;
+    Btree.insert t (KeyType.Varchar (String.make 4 'A')) 9999;
+    Btree.insert t (KeyType.Varchar (String.make 4 'A')) 9999;
+    Btree.insert t (KeyType.Varchar (String.make 4 'A')) 9999;
 
-    Btree.insert t (KeyType.Varchar (String.make 4 'Z')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'L')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'F')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'G')) 9999;
 
-    Btree.insert t (KeyType.Varchar (String.make 4 'I')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'J')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'K')) 9999;
-
-    Btree.insert t (KeyType.Varchar (String.make 4 'M')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'W')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'X')) 9999;
-
-    Btree.insert t (KeyType.Varchar (String.make 4 'Q')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'B')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'N')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'O')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'P')) 9999;
-
-    Btree.insert t (KeyType.Varchar (String.make 4 'R')) 9999;
-
-    Btree.insert t (KeyType.Varchar (String.make 4 'T')) 9999;
-
-    Btree.insert t (KeyType.Varchar (String.make 4 'V')) 9999;
-
-    Btree.insert t (KeyType.Varchar (String.make 4 'Y')) 9999;
-    Btree.insert t (KeyType.Varchar (String.make 4 'H')) 9999;
 
     (*
     Btree.print_tree_aux t t.root_num 0;
@@ -114,7 +90,7 @@ module Btree_tests = struct
     (* ex: dot -Tpng btree.dot -o btree.png *)
     let graphviz_str = Btree.create_graphviz_str t t.root_num in
     Printf.printf "%s" graphviz_str;
-    " "
+    ""
 
   let insert_varchar2s () =
     let dir = "tmp_btree_insert_varchar2s" in
@@ -812,7 +788,7 @@ module Btree_tests = struct
     output_string oc graphviz_str;
     close_out oc;
 
-    " "
+    ""
 
   let empty_btree_insert_leaf_test () =
     Alcotest.(check string)
