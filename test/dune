@@ -7,7 +7,6 @@
   log_manager_tests
   file_manager_tests
   log_record_tests
-  execute_query_tests
   transaction_tests
   btree_tests
   record_page_tests
@@ -31,7 +30,6 @@
   transaction
   table_manager
   buffer_manager
-  interpreter
   parser
   log_record
   alcotest

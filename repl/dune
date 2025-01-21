@@ -3,7 +3,7 @@
  (public_name ocaml_db_repl)
  (modules repl)
  (libraries
-  interpreter
+  execution
   parser
   ast
   table_manager

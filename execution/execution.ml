@@ -6,6 +6,8 @@ open Table_manager
 
 type t = { tx : Transaction.t }
 
+let make ~tx = { tx }
+
 let get_table_layout e tbl_name =
   let table_mgr = Table_manager.make ~is_new:false ~tx:e.tx in
   Table_manager.get_layout ~table_mgr ~tbl_name ~tx:e.tx

@@ -2,6 +2,8 @@
 
 type t
 
+val make : tx:Transaction.t -> t
+
 (** e executes select operation op; Store results in output. *)
 val select : e:t -> output:Buffer.t -> op:Ast.Select.t -> unit
 
@@ -17,5 +19,6 @@ val update : e:t -> op:Ast.Update.t -> unit
 (** e executes create table operation op. *)
 val create_table : e:t -> op:Ast.Create_table.t -> unit
 
+(** e executes query. *)
 val execute : e:t -> query:Ast.Query.t -> ?output:Buffer.t -> unit -> unit
 

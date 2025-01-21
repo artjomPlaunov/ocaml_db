@@ -34,6 +34,7 @@ let set_int32 rec_page slot field_name value =
     ~value ~to_log:true
 
 let set_string rec_page slot field_name value =
+  Printf.printf "%s\n" value;
   let field_offset = Layout.get_offset rec_page.layout field_name in
   let field_pos = offset rec_page.layout slot + field_offset in
   Transaction.set_string ~tx:rec_page.tx ~block:rec_page.block ~offset:field_pos
