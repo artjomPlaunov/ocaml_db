@@ -41,10 +41,24 @@ let html =
 </html>
 |}
 
+let rec delete_directory dir =
+  try
+    let entries = Sys.readdir dir in
+    Array.iter (fun entry ->
+      let path = Filename.concat dir entry in
+      if Sys.is_directory path then
+        delete_directory path
+      else
+        Sys.remove path
+    ) entries;
+    Sys.rmdir dir
+  with Sys_error _ -> ()
+
 let btree_ref = ref None
 
 let init_btree () =
   let dir = "web_btree_data" in
+  delete_directory dir;
   (try Unix.mkdir dir 0o755 with Unix.Unix_error (Unix.EEXIST, _, _) -> ());
   let file_manager = File.File_manager.make ~db_dirname:dir ~block_size:40 in
   let storage_manager =
