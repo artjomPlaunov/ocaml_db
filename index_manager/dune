@@ -1,0 +1,8 @@
+(library
+ (name index_manager)
+ (public_name ocaml_db.index_manager)
+ (flags
+  (-w -69)
+  (-w -26))
+ (modules index_manager)
+ (libraries transaction record_page scans))

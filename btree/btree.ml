@@ -231,23 +231,40 @@ let get_node btree p =
   let page = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p in
   deserialize page btree.key block_size
 
+(*  Serialize B+ tree node into layout on Page. 
+*)
 let serialize node block_size =
+  (* Initialize Page which will hold our node layout. *)
   let page = Page.make ~block_size in
+  (* Set node type at first 4 bytes.*)
   Page.set_int32 page 0 (serialize_node_type node.node_type);
+  (* Set parent at offset 4.*)
   Page.set_int32 page 4 (Int32.of_int node.parent);
+  (* Set current size at offset 8. *)
   Page.set_int32 page 8 (Int32.of_int node.cur_size);
+  (* Calculate (pointer,key) pair size: 
+    4 bytes for pointer + M bytes for key*)
   let pair_size = 4 + KeyType.sizeof_key node.key_type in
+  (* Layout keys *)
   for i = 0 to node.capacity - 1 do
     let key_offset = 12 + (i * pair_size) + 4 in
     match node.keys.(i) with
     | Varchar s -> Page.set_string_raw page key_offset s
     | Integer n -> Page.set_int32 page key_offset n
   done;
+  (* Layout pointers. *)
   for i = 0 to node.capacity do
     let pointer_offset = 12 + (i * pair_size) in
     Page.set_int32 page pointer_offset (Int32.of_int node.pointers.(i))
   done;
+  (* Calculate final pointer offset.*)
   let final_pointer_offset = 12 + (node.capacity * pair_size) in
+  
+  (*  If we are at a leaf node, ensure we are serializing the sibling pointer. 
+      This may have already occured in the previous pointers loop if the node 
+      is at capacity, but if the node is below capacity then this ensures 
+      we write it.  
+  *)
   if node.node_type = Leaf then
     Page.set_int32 page final_pointer_offset
       (Int32.of_int node.pointers.(node.capacity));

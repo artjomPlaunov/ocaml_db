@@ -4,11 +4,13 @@ This implements the basic functionalities using basically the same design as the
 
 This is meant as a pedagogical tool for people that want to do hacking on a simple database and happen to like writing in OCaml. The main branch will be up to date with all new features, and there will be a separate branch with the initial skeleton for people that want to start from a bare bones base on their own. 
 
-Supported Grammar: 
+Examples of supported queries (will have a formal grammar here later)
 
-CREATE TABLE table_name (f1 INT, f2 VARCHAR(10))
+CREATE TABLE t (f1 INT, f2 VARCHAR(10))
 
-SELECT f1, f2, f3 FROM table_name WHERE f2 = 5
+SELECT f1, f2, f3 FROM t  WHERE f2 = 5
+
+INSERT INTO t ()
 
 
 
