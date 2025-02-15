@@ -81,6 +81,7 @@ Byte offset    Leaf Node Layout
      | sibling_ptr  [4 bytes] |  → points to next leaf node
  40  +------------------------+
 *)
+
 module KeyType = struct
   type t = TVarchar of int | TInteger
   type value = Varchar of string | Integer of Int32.t
@@ -172,6 +173,14 @@ type t = {
    and the last pointer (the N+1 pointer), that leaves us the space we have
    for the remaining N key/pointer pairs.
 *)
+
+
+let node_type_offset = 0
+let parent_ptr_offset = 4
+let num_keys_offset = 8
+let key_pointer_pair_offset = 12
+let ptr_size_in_bytes = 4
+
 let get_num_keys block_size key_ty =
   (block_size - 16) / (4 + KeyType.sizeof_key key_ty)
 
@@ -225,10 +234,10 @@ let deserialize page key_ty block_size =
   { node_type; parent; cur_size; keys; pointers; capacity; key_type = key_ty }
 
 (* Fetch a block from the btree and deserialize it into a btree node.
-   params: p is a pointer to a block in the btree. *)
-let get_node btree p =
+   params: ptr is a pointer to a block in the btree. *)
+let get_node btree ptr =
   let block_size = File_manager.get_blocksize btree.sm.file_manager in
-  let page = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:p in
+  let page = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:ptr in
   deserialize page btree.key block_size
 
 (*  Serialize B+ tree node into layout on Page. 
@@ -350,9 +359,22 @@ let insert_key_pointer_pair keys pointers capacity n key pointer left =
       if left then pointers.(!i) <- pointer else pointers.(!i + 1) <- pointer)
     else shift_key_pointer_pair keys pointers capacity n key pointer !i left
 
+let insert_key_pointer_pair_leaf_under_capacity keys ptrs key ptr key_type=
+  let i = ref 0 in
+  while !i < Array.length keys && keys.(!i) <> KeyType.empty_key key_type && keys.(!i) < key do
+    i := !i + 1
+  done;
+  let j = ref !i in
+  while !j < Array.length keys && keys.(!j) <> KeyType.empty_key key_type do
+    j := !j + 1
+  done;
+  Array.blit keys !i keys (!i+1) (!j - !i);
+  Array.blit ptrs !i ptrs (!i+1) (!j - !i);
+  keys.(!i) <- key;
+  ptrs.(!i) <- ptr
+
 let insert_in_leaf btree block key pointer =
   let node = get_node btree block in
-
   (* Empty node, add at the front. *)
   if node.cur_size = 0 then (
     node.keys.(0) <- key;
@@ -360,8 +382,7 @@ let insert_in_leaf btree block key pointer =
     node.cur_size <- 1)
   else (
     assert (node.cur_size <> node.capacity);
-    insert_key_pointer_pair node.keys node.pointers node.capacity node.cur_size
-      key pointer true;
+    insert_key_pointer_pair_leaf_under_capacity node.keys node.pointers key pointer node.key_type;
     node.cur_size <- node.cur_size + 1);
   if btree.root_num = block then btree.root <- node;
   write_node btree node block;
@@ -485,8 +506,8 @@ and insert_in_parent btree p1 key_v p2 =
       (* Otherwise we need to split the parent node and call insert_in_parent again.*)
     else split_parent btree p1 key_v p2 p0 p0_node
 
-let split_leaf btree p1 k p2 p1_node =
-  let { node_type; parent; capacity; cur_size; pointers; keys; _ } = p1_node in
+let split_leaf btree leaf_ptr key ptr =
+  let { node_type; parent; capacity; cur_size; pointers; keys; _ } = get_node btree leaf_ptr in
   let new_capacity = capacity + 1 in
   let mid = (new_capacity + 1) / 2 in
   let keys_buf =
@@ -498,7 +519,7 @@ let split_leaf btree p1 k p2 p1_node =
         if i < cur_size + 1 then pointers.(i) else unused_pointer_constant)
   in
   let sibling_ptr = pointers.(capacity) in
-  insert_key_pointer_pair keys_buf ptrs_buf new_capacity capacity k p2 true;
+  insert_key_pointer_pair keys_buf ptrs_buf new_capacity capacity key ptr true;
 
   let right_node = empty_node btree in
   (* copy pointers and keys i = mid to n-1 into right_node's pointers and keys *)
@@ -521,12 +542,12 @@ let split_leaf btree p1 k p2 p1_node =
   left_node.node_type <- node_type;
   left_node.parent <- parent;
   (* flush left_node back to disk. *)
-  write_node btree left_node p1;
+  write_node btree left_node leaf_ptr;
 
   (* get the smallest key from p2 to insert into parent as key partitioning left and right nodes *)
-  if btree.root_num = p1 then btree.root <- left_node;
+  if btree.root_num = leaf_ptr then btree.root <- left_node;
   let split_key = right_node.keys.(0) in
-  insert_in_parent btree p1 split_key right_node_ptr
+  insert_in_parent btree leaf_ptr split_key right_node_ptr
 
 (* Insert key k, record pointer p2 into btree from node p1.
    This is dispatched from the root node as p1.
@@ -549,9 +570,9 @@ let rec insert_aux btree p1 k p2 =
       if p1_node.cur_size < p1_node.capacity then
         let _ = insert_in_leaf btree p1 k p2 in
         ()
-      else split_leaf btree p1 k p2 p1_node
+      else split_leaf btree p1 k p2
 
-let insert btree k p = insert_aux btree btree.root_num k p
+let insert btree key ptr = insert_aux btree btree.root_num key ptr
 
 let rec create_graphviz_structs btree p edge_map =
   let { node_type; cur_size; keys; pointers; capacity } = get_node btree p in
