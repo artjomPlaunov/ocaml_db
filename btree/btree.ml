@@ -359,7 +359,7 @@ let insert_key_pointer_pair keys pointers capacity n key pointer left =
       if left then pointers.(!i) <- pointer else pointers.(!i + 1) <- pointer)
     else shift_key_pointer_pair keys pointers capacity n key pointer !i left
 
-let insert_key_pointer_pair_leaf_under_capacity keys ptrs key ptr key_type=
+let insert_key_pointer_pair_in_leaf keys ptrs key ptr key_type=
   let i = ref 0 in
   while !i < Array.length keys && keys.(!i) <> KeyType.empty_key key_type && keys.(!i) < key do
     i := !i + 1
@@ -382,7 +382,7 @@ let insert_in_leaf btree block key pointer =
     node.cur_size <- 1)
   else (
     assert (node.cur_size <> node.capacity);
-    insert_key_pointer_pair_leaf_under_capacity node.keys node.pointers key pointer node.key_type;
+    insert_key_pointer_pair_in_leaf node.keys node.pointers key pointer node.key_type;
     node.cur_size <- node.cur_size + 1);
   if btree.root_num = block then btree.root <- node;
   write_node btree node block;
@@ -519,7 +519,8 @@ let split_leaf btree leaf_ptr key ptr =
         if i < cur_size + 1 then pointers.(i) else unused_pointer_constant)
   in
   let sibling_ptr = pointers.(capacity) in
-  insert_key_pointer_pair keys_buf ptrs_buf new_capacity capacity key ptr true;
+  insert_key_pointer_pair_in_leaf keys_buf ptrs_buf key ptr btree.key;
+  (* insert_key_pointer_pair keys_buf ptrs_buf new_capacity capacity key ptr true; *)
 
   let right_node = empty_node btree in
   (* copy pointers and keys i = mid to n-1 into right_node's pointers and keys *)
