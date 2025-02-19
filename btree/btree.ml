@@ -252,33 +252,23 @@ let get_node btree ptr =
 (*  Serialize B+ tree node into layout on Page. 
 *)
 let serialize node block_size =
-  (* Initialize Page which will hold our node layout. *)
   let page = Page.make ~block_size in
-  (* Set node type at first 4 bytes.*)
   Page.set_int32 page node_type_offset (serialize_node_type node.node_type);
-  (* Set parent at offset 4.*)
   Page.set_int32 page parent_ptr_offset (Int32.of_int node.parent);
-  (* Set current size at offset 8. *)
   Page.set_int32 page cur_size_offset (Int32.of_int node.cur_size);
-  (* Calculate (pointer,key) pair size: 
-    4 bytes for pointer + M bytes for key*)
   let pair_size = 4 + KeyType.sizeof_key node.key_type in
-  (* Layout keys *)
   for i = 0 to node.capacity - 1 do
     let key_offset = 12 + (i * pair_size) + 4 in
     match node.keys.(i) with
     | Varchar s -> Page.set_string_raw page key_offset s
     | Integer n -> Page.set_int32 page key_offset n
   done;
-  (* Layout pointers. *)
   for i = 0 to node.capacity do
     let pointer_offset = 12 + (i * pair_size) in
     Page.set_int32 page pointer_offset (Int32.of_int node.pointers.(i))
   done;
-  (* Calculate final pointer offset.*)
   let final_pointer_offset = 12 + (node.capacity * pair_size) in
-
-  (*  If we are at a leaf node, ensure we are serializing the sibling pointer. 
+  (*  If we are at a leaf node, ensure we are serializing the sibling pointer.
       This may have already occured in the previous pointers loop if the node 
       is at capacity, but if the node is below capacity then this ensures 
       we write it.  
@@ -366,7 +356,6 @@ let insert_key_pointer_pair_in_leaf_node keys ptrs key ptr key_type =
 
 let insert_in_leaf btree block key pointer =
   let node = get_node btree block in
-  (* Empty node, add at the front. *)
   if node.cur_size = 0 then (
     node.keys.(0) <- key;
     node.pointers.(0) <- pointer;
@@ -553,7 +542,6 @@ let split_leaf btree leaf_ptr key ptr =
 let rec insert_aux btree p1 k p2 =
   let p1_node = get_node btree p1 in
   match p1_node.node_type with
-  (* Internal node, find pointer to traverse.*)
   | Internal ->
       (* find the first i where key[i] > key -- iterate while i < n && key[i] <= key *)
       let i = ref 0 in
