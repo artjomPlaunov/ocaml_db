@@ -174,7 +174,6 @@ type t = {
    for the remaining N key/pointer pairs.
 *)
 
-
 let node_type_offset = 0
 let parent_ptr_offset = 4
 let cur_size_offset = 8
@@ -231,13 +230,23 @@ let deserialize page key_ty block_size =
   if node_type = Leaf then
     pointers.(capacity) <-
       Page.get_int32 page sister_pointer_offset |> Int32.to_int;
-  { node_type; parent = parent_ptr; cur_size; keys; pointers; capacity; key_type = key_ty }
+  {
+    node_type;
+    parent = parent_ptr;
+    cur_size;
+    keys;
+    pointers;
+    capacity;
+    key_type = key_ty;
+  }
 
 (* Fetch a block from the btree and deserialize it into a btree node.
    params: ptr is a pointer to a block in the btree. *)
 let get_node btree ptr =
   let block_size = File_manager.get_blocksize btree.sm.file_manager in
-  let page = Storage_manager.get_block ~storage_manager:btree.sm ~block_num:ptr in
+  let page =
+    Storage_manager.get_block ~storage_manager:btree.sm ~block_num:ptr
+  in
   deserialize page btree.key block_size
 
 (*  Serialize B+ tree node into layout on Page. 
@@ -268,7 +277,7 @@ let serialize node block_size =
   done;
   (* Calculate final pointer offset.*)
   let final_pointer_offset = 12 + (node.capacity * pair_size) in
-  
+
   (*  If we are at a leaf node, ensure we are serializing the sibling pointer. 
       This may have already occured in the previous pointers loop if the node 
       is at capacity, but if the node is below capacity then this ensures 
@@ -321,29 +330,37 @@ let create sm key_ty =
 
 let insert_key_pointer_pair_in_inner_node keys ptrs key ptr key_type =
   let i = ref 0 in
-  while !i < Array.length keys && keys.(!i) <> KeyType.empty_key key_type && keys.(!i) < key do
+  while
+    !i < Array.length keys
+    && keys.(!i) <> KeyType.empty_key key_type
+    && keys.(!i) < key
+  do
     i := !i + 1
   done;
   let j = ref !i in
   while !j < Array.length keys && keys.(!j) <> KeyType.empty_key key_type do
     j := !j + 1
   done;
-  Array.blit keys !i keys (!i+1) (!j - !i);
-  Array.blit ptrs (!i+1) ptrs (!i+2) (!j - !i);
+  Array.blit keys !i keys (!i + 1) (!j - !i);
+  Array.blit ptrs (!i + 1) ptrs (!i + 2) (!j - !i);
   keys.(!i) <- key;
-  ptrs.(!i+1) <- ptr
+  ptrs.(!i + 1) <- ptr
 
-let insert_key_pointer_pair_in_leaf_node keys ptrs key ptr key_type=
+let insert_key_pointer_pair_in_leaf_node keys ptrs key ptr key_type =
   let i = ref 0 in
-  while !i < Array.length keys && keys.(!i) <> KeyType.empty_key key_type && keys.(!i) < key do
+  while
+    !i < Array.length keys
+    && keys.(!i) <> KeyType.empty_key key_type
+    && keys.(!i) < key
+  do
     i := !i + 1
   done;
   let j = ref !i in
   while !j < Array.length keys && keys.(!j) <> KeyType.empty_key key_type do
     j := !j + 1
   done;
-  Array.blit keys !i keys (!i+1) (!j - !i);
-  Array.blit ptrs !i ptrs (!i+1) (!j - !i);
+  Array.blit keys !i keys (!i + 1) (!j - !i);
+  Array.blit ptrs !i ptrs (!i + 1) (!j - !i);
   keys.(!i) <- key;
   ptrs.(!i) <- ptr
 
@@ -356,7 +373,8 @@ let insert_in_leaf btree block key pointer =
     node.cur_size <- 1)
   else (
     assert (node.cur_size <> node.capacity);
-    insert_key_pointer_pair_in_leaf_node node.keys node.pointers key pointer node.key_type;
+    insert_key_pointer_pair_in_leaf_node node.keys node.pointers key pointer
+      node.key_type;
     node.cur_size <- node.cur_size + 1);
   if btree.root_num = block then btree.root <- node;
   write_node btree node block;
@@ -402,7 +420,8 @@ let insert_in_root btree p1 key_value p2 =
 
 let insert_in_parent_aux btree p1 key_value p2 p0 p0_node =
   let cur_size = p0_node.cur_size in
-  insert_key_pointer_pair_in_inner_node p0_node.keys p0_node.pointers key_value p2 btree.key;
+  insert_key_pointer_pair_in_inner_node p0_node.keys p0_node.pointers key_value
+    p2 btree.key;
   p0_node.cur_size <- cur_size + 1;
   let p2_node = get_node btree p2 in
   p2_node.parent <- p0;
@@ -419,27 +438,28 @@ let children_update_parents btree parent parent_ptr =
     write_node btree child ptr
   done
 
-
 let rec split_parent btree p1 key_v p2 parent =
-  let { node_type; parent; capacity; cur_size; pointers; keys; _ } = get_node btree parent in
+  let { node_type; parent; capacity; cur_size; pointers; keys; _ } =
+    get_node btree parent
+  in
   (* Update all children of node to point to node n. *)
   let new_parent_node = empty_node btree in
   new_parent_node.node_type <- node_type;
 
-  let n = capacity + 1 in
+  let new_capacity = capacity + 1 in
   let keys_buf =
-    Array.init n (fun i ->
-        if i < n - 1 then keys.(i) else KeyType.empty_key btree.key)
+    Array.init new_capacity (fun i ->
+        if i < cur_size then keys.(i) else KeyType.empty_key btree.key)
   in
   let ptrs_buf =
-    Array.init (n + 1) (fun i ->
-        if i < n then pointers.(i) else unused_pointer_constant)
+    Array.init (new_capacity + 1) (fun i ->
+        if i < cur_size + 1 then pointers.(i) else unused_pointer_constant)
   in
   insert_key_pointer_pair_in_inner_node keys_buf ptrs_buf key_v p2 btree.key;
 
-  let mid = (n + 1) / 2 in
+  let mid = (new_capacity + 1) / 2 in
   (* TODO: i think if we make right nodes heavy we wouldn't need to handle the degenerate case for 3 *)
-  let mid = if mid = n - 1 then mid - 1 else mid in
+  let mid = if mid = new_capacity - 1 then mid - 1 else mid in
 
   Array.blit ptrs_buf 0 new_parent_node.pointers 0 (mid + 1);
   Array.blit keys_buf 0 new_parent_node.keys 0 mid;
@@ -453,9 +473,9 @@ let rec split_parent btree p1 key_v p2 parent =
   let p2_node = empty_node btree in
   if btree.root_num = p1 then btree.root <- new_parent_node;
   p2_node.node_type <- node_type;
-  Array.blit ptrs_buf (mid + 1) p2_node.pointers 0 (n + 1 - (mid + 1));
-  Array.blit keys_buf (mid + 1) p2_node.keys 0 (n - (mid + 1));
-  p2_node.cur_size <- n - (mid + 1);
+  Array.blit ptrs_buf (mid + 1) p2_node.pointers 0 (new_capacity + 1 - (mid + 1));
+  Array.blit keys_buf (mid + 1) p2_node.keys 0 (new_capacity - (mid + 1));
+  p2_node.cur_size <- new_capacity - (mid + 1);
   p2_node.parent <- parent;
 
   (* Write p2 to disk, call insert in parent with new split parent. *)
@@ -481,7 +501,9 @@ and insert_in_parent btree p1 key_v p2 =
     else split_parent btree p1 key_v p2 parent
 
 let split_leaf btree leaf_ptr key ptr =
-  let { node_type; parent; capacity; cur_size; pointers; keys; _ } = get_node btree leaf_ptr in
+  let { node_type; parent; capacity; cur_size; pointers; keys; _ } =
+    get_node btree leaf_ptr
+  in
   let new_capacity = capacity + 1 in
   let mid = (new_capacity + 1) / 2 in
   let keys_buf =
