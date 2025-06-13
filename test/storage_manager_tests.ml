@@ -1,5 +1,5 @@
 module To_test = struct
-  open File
+  open File_manager
   open Storage_manager
 
   let write_output_to_file output =

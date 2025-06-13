@@ -1,5 +1,5 @@
 module To_test = struct
-  open File
+  open File_manager
 
   let get_logs lm =
     let iterator = Log_manager.get_iterator lm in

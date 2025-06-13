@@ -1,27 +1,24 @@
-open File
+open File_manager
 
 type t = {
   bufferpool : Db_buffer.t array;
   mutable num_available : int;
   cache : Lru_replacer.t;
-  max_wait_time : Int64.t;
 }
 
 exception BufferAbortException
 
 external clock_gettime_ns : unit -> int64 = "clock_gettime_ocaml"
 
-let make ?(max_wait_time = 10000) ~file_manager ~log_manager ~num_buffers () =
+let make  ~file_manager ~log_manager ~num_buffers () =
   let bufferpool =
     Array.init num_buffers (fun i -> Db_buffer.make ~file_manager ~log_manager)
   in
   let cache = Lru_replacer.make ~capacity_k:3 ~num_buffers in
-  let max_wait_time_i64 = Int64.of_int max_wait_time in
   {
     bufferpool;
     num_available = num_buffers;
     cache;
-    max_wait_time = max_wait_time_i64;
   }
 
 let available buffer_manager = buffer_manager.num_available
@@ -32,11 +29,6 @@ let flush_all buffer_manager tx_num =
       if Db_buffer.modifying_tx buffer == tx_num then Db_buffer.flush buffer)
     buffer_manager.bufferpool
 
-let timedout { max_wait_time; _ } start_time =
-  let start_time_i64 = Int64.of_int start_time in
-  let time_now = clock_gettime_ns () in
-  let delta = Int64.sub time_now start_time_i64 in
-  max_wait_time > delta
 
 let find_buffer_opt buffer_mgr block =
   Array.find_opt
@@ -85,12 +77,6 @@ let try_pinning_opt buffer_mgr block : Db_buffer.t option =
       Db_buffer.pin find_buf;
       Some find_buf
 
-let waiting_too_long start_time max_time =
-  (* system.currtime_ms - starttime > max_time*)
-  let start_time_i64 = Int64.of_int start_time in
-  let cur_time = clock_gettime_ns () in
-  let delta = Int64.sub cur_time start_time_i64 in
-  delta > max_time
 
 (* TODO: this code does not work in a multithreaded context,
    so it is a dumbed down version that just tries to immediately get

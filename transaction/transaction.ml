@@ -1,4 +1,4 @@
-open File
+open File_manager
 
 module IntSet = Set.Make (struct
   type t = int
@@ -34,14 +34,14 @@ let make ~file_manager ~log_manager ~buffer_manager =
   }
 
 let size ~tx ~filename =
-  let block = File.Block_id.make ~filename ~block_num:tx.eof in
-  File.File_manager.size tx.file_manager filename
+  let block = Block_id.make ~filename ~block_num:tx.eof in
+  File_manager.size tx.file_manager filename
 
 let append ~tx ~filename =
-  let block = File.Block_id.make ~filename ~block_num:tx.eof in
-  File.File_manager.append tx.file_manager filename
+  let block = Block_id.make ~filename ~block_num:tx.eof in
+  File_manager.append tx.file_manager filename
 
-let block_size ~tx = File.File_manager.get_blocksize tx.file_manager
+let block_size ~tx = File_manager.get_blocksize tx.file_manager
 let pin ~tx ~block = Transaction__Buffer_list.pin ~buf_list:tx.buffers ~block
 
 let unpin ~tx ~block =

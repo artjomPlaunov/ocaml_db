@@ -1,3 +1,6 @@
+module Block_id = Block_id
+module Page = Page
+
 type t = {
   is_new : bool;
   db_dir : Unix.dir_handle;

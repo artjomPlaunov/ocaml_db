@@ -1,4 +1,4 @@
-open File
+open File_manager
 
 type t = {
   file_manager : File_manager.t;

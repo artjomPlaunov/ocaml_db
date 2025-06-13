@@ -1,5 +1,5 @@
 module Test_utils = struct
-  open File
+  open File_manager
   open Storage_manager
 
   let setup_test_env dir =
@@ -40,7 +40,7 @@ module Btree_tests = struct
 
     (* create another node, so we can insert a new key, pointer pair into the root we created above*)
     let key_ty = t.key in
-    let block_size = File.File_manager.get_blocksize t.sm.file_manager in
+    let block_size = File_manager.get_blocksize t.sm.file_manager in
 
     let empty = Btree.empty_node t in
     (* let empty_page = Btree.serialize empty block_size in
@@ -101,7 +101,7 @@ module Btree_tests = struct
 
     (* create another node, so we can insert a new key, pointer pair into the root we created above*)
     let key_ty = t.key in
-    let block_size = File.File_manager.get_blocksize t.sm.file_manager in
+    let block_size = File_manager.get_blocksize t.sm.file_manager in
 
     let empty = Btree.empty_node t in
     Btree.insert t (KeyType.Varchar "AA") 9999;

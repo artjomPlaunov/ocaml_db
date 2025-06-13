@@ -6,7 +6,7 @@
   yojson
   unix
   btree
-  file
+  file_manager
   storage_manager)
  (preprocess
   (pps lwt_ppx)))

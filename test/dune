@@ -21,7 +21,7 @@
   (-w -26))
  (libraries
   threads
-  file
+  file_manager
   log_manager
   storage_manager
   scans

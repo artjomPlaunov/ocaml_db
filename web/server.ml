@@ -58,7 +58,7 @@ let init_btree () =
   let dir = "web_btree_data" in
   delete_directory dir;
   (try Unix.mkdir dir 0o755 with Unix.Unix_error (Unix.EEXIST, _, _) -> ());
-  let file_manager = File.File_manager.make ~db_dirname:dir ~block_size:40 in
+  let file_manager = File_manager.make ~db_dirname:dir ~block_size:40 in
   let storage_manager =
     Storage_manager.make ~file_manager ~storage_file:"test_btree"
   in

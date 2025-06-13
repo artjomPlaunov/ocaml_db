@@ -1,11 +1,10 @@
-open File
+open File_manager
 
 type t
 
 exception BufferAbortException
 
 val make :
-  ?max_wait_time:int ->
   file_manager:File_manager.t ->
   log_manager:Log_manager.t ->
   num_buffers:int ->

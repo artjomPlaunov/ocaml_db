@@ -1,5 +1,5 @@
 module To_test = struct
-  open File
+  open File_manager
   module Schema = Record_page.Schema
   module Layout = Record_page.Layout
 

@@ -5,4 +5,4 @@
  (flags
   (-w -69)
   (-w -26))
- (libraries file))
+ (libraries file_manager))

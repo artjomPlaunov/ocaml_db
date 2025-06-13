@@ -1,5 +1,5 @@
 open Storage_manager
-open File
+open File_manager
 
 (*
 Both leaf and internal nodes have the same layout, but the pointer fields can have 

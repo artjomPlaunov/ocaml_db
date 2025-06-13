@@ -11,7 +11,7 @@ class t tx tbl_name layout = object (self)
       Record_page.format rec_page;
       rec_page
     ) else (
-      let block = File.Block_id.make ~filename:(tbl_name ^ ".tbl") ~block_num:0 in
+      let block = File_manager.Block_id.make ~filename:(tbl_name ^ ".tbl") ~block_num:0 in
       Record_page.make tx block layout
     )
 
@@ -22,7 +22,7 @@ class t tx tbl_name layout = object (self)
 
   method private move_to_block block_num =
     self#close;
-    let block = File.Block_id.make ~filename:file_name ~block_num in
+    let block = File_manager.Block_id.make ~filename:file_name ~block_num in
     rec_page <- Record_page.make tx block layout;
     cur_slot <- -1
 
@@ -35,7 +35,7 @@ class t tx tbl_name layout = object (self)
 
   method private get_block_num =
     let block = Record_page.block rec_page in
-    File.Block_id.block_num block
+    File_manager.Block_id.block_num block
 
   method private at_last_block =
     let block_num = self#get_block_num in
@@ -48,7 +48,7 @@ class t tx tbl_name layout = object (self)
 
   method move_to_rid ~rid =
     self#close;
-    let block = File.Block_id.make ~filename:file_name 
+    let block = File_manager.Block_id.make ~filename:file_name 
       ~block_num:(Record_id.get_block_num ~rid) in
     rec_page <- Record_page.make tx block layout;
     cur_slot <- Record_id.get_slot ~rid

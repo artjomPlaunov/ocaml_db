@@ -1,5 +1,5 @@
 module To_test = struct
-  open File
+  open File_manager
 
   let test_create_int_log () =
     let env = Test_utils.make_log_record_test_env ~db_name:"log_record_test1" in

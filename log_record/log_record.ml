@@ -1,4 +1,4 @@
-open File
+open File_manager
 
 type t =
   | Checkpoint
@@ -138,11 +138,11 @@ let to_string log_record =
   | Checkpoint -> Printf.sprintf "<CHECKPOINT>"
   | UpdateInt r ->
       Printf.sprintf "<UPDATE INT %d %s %d %d>" r.tx_num
-        (File.Block_id.to_string r.block)
+        (Block_id.to_string r.block)
         r.offset (Int32.to_int r.value)
   | UpdateString r ->
       Printf.sprintf "<UPDATE STRING %d %s %d %s>" r.tx_num
-        (File.Block_id.to_string r.block)
+        (Block_id.to_string r.block)
         r.offset r.value
   | Commit r -> Printf.sprintf "<COMMIT %d>" r.tx_num
   | Rollback r -> Printf.sprintf "<ROLLBACK %d>" r.tx_num

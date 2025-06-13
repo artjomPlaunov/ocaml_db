@@ -1,5 +1,4 @@
 open Parser
-open File
 open Ast
 
 let db_name = "repl_db"

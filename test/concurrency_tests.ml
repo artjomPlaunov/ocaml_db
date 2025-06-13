@@ -1,5 +1,5 @@
 module To_test = struct
-  open File
+  open File_manager
 
   let f_a fm lm bm () =
     let tx =

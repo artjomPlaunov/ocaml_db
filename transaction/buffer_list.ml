@@ -1,4 +1,4 @@
-open File
+open File_manager
 
 type t = {
   buffers : (Block_id.t, Buffer_manager__Db_buffer.t) Hashtbl.t;

@@ -1,5 +1,5 @@
 module To_test = struct
-  open File
+  open File_manager
 
   let write_and_read_string_and_int32 () =
     let file_mgr =
@@ -12,7 +12,7 @@ module To_test = struct
     let page1 = Page.make ~block_size in
     let str_pos = 88 in
     Page.set_string page1 str_pos "abcdefghijklm";
-    let size = File.Page.max_len (String.length "abcdefghijklm") in
+    let size = Page.max_len (String.length "abcdefghijklm") in
     let num_pos = str_pos + size in
     Page.set_int32 page1 num_pos (Int32.of_int 69);
     File_manager.write file_mgr block page1;

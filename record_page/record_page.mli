@@ -98,10 +98,10 @@ end
 (** Represents a page of records *)
 type t
 
-val make : Transaction.t -> File.Block_id.t -> Layout.t -> t
+val make : Transaction.t -> File_manager.Block_id.t -> Layout.t -> t
 (** Create a new record page *)
 
-val block : t -> File.Block_id.t
+val block : t -> File_manager.Block_id.t
 (** Get the block ID of this record page *)
 
 val get_int32 : t -> int -> string -> Int32.t

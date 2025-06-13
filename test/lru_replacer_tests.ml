@@ -1,7 +1,7 @@
 module Lru_replacer = Buffer_manager__Lru_replacer
 
 module To_test = struct
-  open File
+  open File_manager
 
   let lru_eviction1 () =
     let cache = Lru_replacer.make ~capacity_k:2 ~num_buffers:7 in

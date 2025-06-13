@@ -5,5 +5,5 @@
  (flags
   (-w -69)
   (-w -26))
- (libraries file transaction)
+ (libraries file_manager transaction)
  (wrapped true))

@@ -1,14 +1,14 @@
 module To_test = struct
-  open File
+  open File_manager
   open Test_utils
 
   let single_buffer_update () =
     let env = make_buffer_test_env ~db_name:"buffertest1" ~num_buffers:1 in
-    let block1 = File.Block_id.make ~filename:"tmp_testfile" ~block_num:1 in
-    let block2 = File.Block_id.make ~filename:"tmp_testfile" ~block_num:2 in
+    let block1 = Block_id.make ~filename:"tmp_testfile" ~block_num:1 in
+    let block2 = Block_id.make ~filename:"tmp_testfile" ~block_num:2 in
     let buf1 = Buffer_manager.pin env.buffer_manager block1 in
     let page = Buffer_manager__Db_buffer.contents buf1 in
-    let n = Int32.to_int (File.Page.get_int32 page 80) in
+    let n = Int32.to_int (Page.get_int32 page 80) in
     let before_msg = Printf.sprintf "Buffer contents before update: %d\n" n in
     Page.set_int32 page 80 (Int32.of_int (n + 1));
     let after_msg =
@@ -26,7 +26,7 @@ module To_test = struct
     let block1 = Block_id.make ~filename:"tmp_testfile" ~block_num:0 in
     let buf1 = Buffer_manager.pin env.buffer_manager block1 in
     let p = Buffer_manager__Db_buffer.contents buf1 in
-    let n = Int32.to_int (File.Page.get_int32 p 0) in
+    let n = Int32.to_int (Page.get_int32 p 0) in
     let before_msg1 =
       Printf.sprintf "Buffer contents at offset 0 before first update: %d\n" n
     in
@@ -43,7 +43,7 @@ module To_test = struct
     let block4 = Block_id.make ~filename:"tmp_testfile" ~block_num:4 in
     let buf2 = Buffer_manager.pin env.buffer_manager block2 in
     let p2 = Buffer_manager__Db_buffer.contents buf2 in
-    let _ = Int32.to_int (File.Page.get_int32 p2 0) in
+    let _ = Int32.to_int (Page.get_int32 p2 0) in
     let buf3 = Buffer_manager.pin env.buffer_manager block3 in
     let buf4 = Buffer_manager.pin env.buffer_manager block4 in
     Buffer_manager.unpin env.buffer_manager buf2;
@@ -52,7 +52,7 @@ module To_test = struct
 
     let buf2 = Buffer_manager.pin env.buffer_manager block1 in
     let p2 = Buffer_manager__Db_buffer.contents buf2 in
-    let n2 = Int32.to_int (File.Page.get_int32 p2 80) in
+    let n2 = Int32.to_int (Page.get_int32 p2 80) in
     let before_msg2 =
       Printf.sprintf "Buffer contents at offset 80 before second update: %d\n"
         n2

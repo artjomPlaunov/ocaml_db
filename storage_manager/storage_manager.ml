@@ -1,4 +1,4 @@
-open File
+open File_manager
 
 (* Note on block layout: 
   
@@ -38,7 +38,7 @@ let append ~storage_manager ~page =
   let block_size = File_manager.get_blocksize fm in 
   let sfile = storage_manager.storage_file in 
   let head_page = storage_manager.head_page in 
-  let head_ptr = Block_id.make ~filename:sfile ~block_num:0 in
+  let head_ptr = File_manager.Block_id.make ~filename:sfile ~block_num:0 in
   let next_ptr = Int32.to_int (Page.get_int32 head_page 0) in 
   (* if next is 0, free list is empty so we append at end of file. *)
   if next_ptr = 0 then (

@@ -42,7 +42,7 @@ let length_in_bytes schema field_name =
   let ty = get_type schema field_name in
   match ty with
   | Integer -> 4
-  | Varchar -> File.Page.max_len (get_length schema field_name)
+  | Varchar -> File_manager.Page.max_len (get_length schema field_name)
 
 let to_string schema =
   let field_strings = List.map (fun field_name ->

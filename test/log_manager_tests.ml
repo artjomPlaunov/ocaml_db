@@ -1,5 +1,5 @@
 module To_test = struct
-  open File
+  open File_manager
 
   let create_log_record log_msg log_num =
     let num_pos = Page.max_len (String.length log_msg) in

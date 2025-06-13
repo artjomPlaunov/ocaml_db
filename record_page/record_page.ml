@@ -6,7 +6,7 @@ type t = {
   empty : int;
   used : int;
   tx : Transaction.t;
-  block : File.Block_id.t;
+  block : File_manager.Block_id.t;
   layout : Layout.t;
 }
 

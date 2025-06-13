@@ -5,4 +5,4 @@
  (flags
   (-w -69)
   (-w -26))
- (libraries file log_record log_manager buffer_manager))
+ (libraries file_manager log_record log_manager buffer_manager))

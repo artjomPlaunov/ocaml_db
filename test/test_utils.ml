@@ -1,4 +1,4 @@
-open File
+open File_manager
 open Log_manager
 open Log_record
 open Buffer_manager
