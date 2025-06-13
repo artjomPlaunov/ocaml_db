@@ -8,7 +8,6 @@ type t = {
 
 exception InitDbErr
 exception FileMgrReadErr
-(*exception NotImplemented*)
 
 let rec clean_temp_dirs db_dirname db_dir =
   try

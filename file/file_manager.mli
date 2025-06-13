@@ -1,5 +1,6 @@
 type t
 
+(**  Create new file manager for directory db_dirname and specify block size. *)
 val make : db_dirname:string -> block_size:int -> t
 val is_new : t -> bool
 val get_blocksize : t -> int
